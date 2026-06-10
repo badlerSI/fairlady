@@ -7,7 +7,7 @@ import random
 from datetime import datetime
 
 from engine.state import GameState
-from engine import rules, economy, world
+from engine import rules, economy, world, encounters
 
 ADV_KINDS = ("city", "track", "amusement", "encounter", "museum", "park")
 
@@ -137,6 +137,23 @@ def _e_detour(s, rng):
                      "They've shut the pass. Dust wall. We go around, and around is never free."]}
 
 
+def _e_pulled_over(s, rng):
+    """The lights actually come on. Opens an interactive stop — talk your way out."""
+    lines = encounters.start_stop(s, "plate" if s.heat >= 40 else "taillight")
+    return {
+        "tag": "DRAMA", "id": "pulled_over",
+        "lines": lines,
+        "cue": "a cruiser lit you up and you're pulled over on the shoulder in an unregistered "
+               "SEMA show car that talks, with no wallet — it's in a drawer back at the North "
+               "Hall; she whispers, barely moving air: stay calm, she'll stay quiet, the talking "
+               "is all yours now and it had better be good",
+        "stub": ["(whisper) Lights. Okay. I'm furniture — I'm the quietest car in Nevada. You "
+                 "talk. Courtesy, the show, the build. You forgot your wallet, not your nerve.",
+                 "(whisper) Don't look at the mirror, look at the wheel. I go silent, you go "
+                 "charming. SEMA car, load-out run, wallet's at the hall. Sell it."],
+    }
+
+
 def _e_homestretch(s, rng):
     s.flags["homestretch"] = True
     return {"tag": "DRAMA", "id": "homestretch",
@@ -152,8 +169,10 @@ def _e_homestretch(s, rng):
 EVENTS = [
     {"id": "overheat", "pred": lambda s: (s.place.terrain or 1) > 1.05 and s.fuel_l > 1,
      "weight": lambda s: 1.4, "fire": _e_overheat},
-    {"id": "plate", "pred": lambda s: s.heat >= 30,
+    {"id": "plate", "pred": lambda s: s.heat >= 30 and not s.flags.get("report_withdrawn"),
      "weight": lambda s: 0.8 + s.heat / 60.0, "fire": _e_plate},
+    {"id": "pulled_over", "pred": lambda s: s.heat >= 25 and not s.flags.get("report_withdrawn"),
+     "weight": lambda s: 0.6 + s.heat / 70.0, "fire": _e_pulled_over},
     {"id": "owner", "pred": lambda s: s.flags.get("owner_revealed", 0) < 3,
      "weight": lambda s: 1.1, "fire": _e_owner},
     {"id": "recognized", "pred": lambda s: s.place.kind in ADV_KINDS,

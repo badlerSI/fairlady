@@ -1,1810 +1,1834 @@
 {
-  "_note": "Curated, hand-verified POIs across NV/CA/AZ/UT. Coordinates are real (lat,lon). 'kind' is the headline type; 'services' is what you can do there (gas/lodging/food). Encounters carry language+voice for Kokoro NPCs. Arbitrary street addresses are resolved live via OSM geocoding; this set seeds the authored map and the survival lattice.",
-  "start": {
-    "id": "sema_chevron",
-    "name": "Paradise Road Chevron, behind the LVCC North Hall",
-    "kind": "gas",
-    "region": "NV",
-    "lat": 36.1281,
-    "lon": -115.1518,
-    "services": [
-      "gas",
-      "food"
-    ],
-    "blurb": "Neon on wet asphalt. The show is still roaring two blocks back. The pump island is empty and the needle is near E.",
-    "gas_price": 4.39,
-    "scene": "gas"
+ "_note": "Curated, hand-verified POIs across NV/CA/AZ/UT. Coordinates are real (lat,lon). 'kind' is the headline type; 'services' is what you can do there (gas/lodging/food). Encounters carry language+voice for Kokoro NPCs. Arbitrary street addresses are resolved live via OSM geocoding; this set seeds the authored map and the survival lattice.",
+ "start": {
+  "id": "sema_north_hall",
+  "name": "SEMA — LVCC North Hall",
+  "kind": "encounter",
+  "region": "NV",
+  "lat": 36.1316,
+  "lon": -115.1512,
+  "services": [],
+  "blurb": "The show floor at twenty minutes to close. Compressors, a rev-limiter slapping the rafters, ten thousand people who all think they know cars. She's on the turntable, white under the lights — and the placard doesn't mention she talks.",
+  "heat_zone": true,
+  "scene": "sema_hall"
+ },
+ "pois": [
+  {
+   "id": "sema_chevron",
+   "name": "Paradise Road Chevron, behind the LVCC North Hall",
+   "kind": "gas",
+   "region": "NV",
+   "lat": 36.1281,
+   "lon": -115.1518,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Neon on wet asphalt. The show is still roaring two blocks back. The pump island is empty and the needle is near E.",
+   "gas_price": 4.39,
+   "scene": "gas"
   },
-  "pois": [
-    {
-      "id": "las_vegas",
-      "name": "Las Vegas",
-      "kind": "city",
-      "region": "NV",
-      "lat": 36.1699,
-      "lon": -115.1398,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The Strip, the convention halls, ten thousand cameras. A bright place to be a car nobody can quite account for.",
-      "heat_zone": true,
-      "scene": "vegas_strip"
-    },
-    {
-      "id": "lv_motor_speedway",
-      "name": "Las Vegas Motor Speedway",
-      "kind": "track",
-      "region": "NV",
-      "lat": 36.2717,
-      "lon": -115.0103,
-      "services": [
-        "food"
-      ],
-      "blurb": "A 1.5-mile tri-oval and a dragstrip out in the desert north of town."
-    },
-    {
-      "id": "spring_mountain",
-      "name": "Spring Mountain Motorsports Ranch, Pahrump",
-      "kind": "track",
-      "region": "NV",
-      "lat": 36.1769,
-      "lon": -115.9876,
-      "services": [
-        "food"
-      ],
-      "blurb": "Members' road course out past the Spring Mountains. Close enough to taste, far enough to strand you on a bad tank.",
-      "terrain": 1.1
-    },
-    {
-      "id": "pahrump",
-      "name": "Pahrump",
-      "kind": "city",
-      "region": "NV",
-      "lat": 36.2083,
-      "lon": -115.9839,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Casinos, a winery, and the last cheap gas before the Death Valley road.",
-      "gas_price": 4.29
-    },
-    {
-      "id": "valley_of_fire",
-      "name": "Valley of Fire State Park",
-      "kind": "park",
-      "region": "NV",
-      "lat": 36.4825,
-      "lon": -114.517,
-      "services": [],
-      "blurb": "Aztec sandstone the color of a struck match. No fuel out here. Plan it."
-    },
-    {
-      "id": "mesquite",
-      "name": "Mesquite",
-      "kind": "city",
-      "region": "NV",
-      "lat": 36.8055,
-      "lon": -114.0672,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Last Nevada town on I-15 before the Arizona slot and the Utah line. Fill here for Zion.",
-      "gas_price": 4.19
-    },
-    {
-      "id": "moapa",
-      "name": "Glendale / Moapa",
-      "kind": "gas",
-      "region": "NV",
-      "lat": 36.6147,
-      "lon": -114.5611,
-      "services": [
-        "gas",
-        "food"
-      ],
-      "blurb": "An off-ramp, a truck stop, a reservation smoke shop. Fuel on the I-15 run.",
-      "gas_price": 4.25
-    },
-    {
-      "id": "beatty",
-      "name": "Beatty",
-      "kind": "city",
-      "region": "NV",
-      "lat": 36.9083,
-      "lon": -116.7591,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Gateway to Death Valley from the north. Wild burros on the road at dusk.",
-      "gas_price": 4.49
-    },
-    {
-      "id": "primm",
-      "name": "Primm",
-      "kind": "city",
-      "region": "NV",
-      "lat": 35.6111,
-      "lon": -115.3892,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "A border casino with a roller coaster, straddling the California line on I-15.",
-      "gas_price": 4.35,
-      "scene": "amusement"
-    },
-    {
-      "id": "laughlin",
-      "name": "Laughlin",
-      "kind": "city",
-      "region": "NV",
-      "lat": 35.1678,
-      "lon": -114.5719,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Riverboat casinos on the Colorado, cheaper than Vegas, hot as a griddle."
-    },
-    {
-      "id": "hoover_dam",
-      "name": "Hoover Dam / Boulder City",
-      "kind": "encounter",
-      "region": "NV",
-      "lat": 36.0161,
-      "lon": -114.7377,
-      "services": [
-        "food"
-      ],
-      "blurb": "726 feet of Depression-era concrete holding back Lake Mead. Last gas in Boulder City.",
-      "scene": "hoover_dam"
-    },
-    {
-      "id": "tonopah",
-      "name": "Tonopah",
-      "kind": "city",
-      "region": "NV",
-      "lat": 38.0672,
-      "lon": -117.2306,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Old silver town, the darkest skies in the lower 48, halfway up the middle of nowhere.",
-      "gas_price": 4.55,
-      "scene": "great_basin"
-    },
-    {
-      "id": "rachel",
-      "name": "Rachel / Extraterrestrial Highway",
-      "kind": "encounter",
-      "region": "NV",
-      "lat": 37.6463,
-      "lon": -115.7464,
-      "services": [
-        "food"
-      ],
-      "blurb": "The Little A'Le'Inn and 98 miles of empty SR-375. Top off before you commit; there is nothing out here.",
-      "scene": "area51"
-    },
-    {
-      "id": "ely",
-      "name": "Ely",
-      "kind": "city",
-      "region": "NV",
-      "lat": 39.2474,
-      "lon": -114.8886,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "A railroad town on the Loneliest Road, last stop before Great Basin.",
-      "gas_price": 4.49
-    },
-    {
-      "id": "great_basin",
-      "name": "Great Basin National Park",
-      "kind": "park",
-      "region": "NV",
-      "lat": 38.9833,
-      "lon": -114.3,
-      "services": [],
-      "blurb": "Wheeler Peak, bristlecone pines older than writing, the Lehman Caves. Almost nobody comes.",
-      "terrain": 1.2,
-      "scene": "great_basin"
-    },
-    {
-      "id": "reno",
-      "name": "Reno",
-      "kind": "city",
-      "region": "NV",
-      "lat": 39.5296,
-      "lon": -119.8138,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The Biggest Little City, up against the Sierra. A long way from the show.",
-      "scene": "reno"
-    },
-    {
-      "id": "carson_city",
-      "name": "Carson City",
-      "kind": "city",
-      "region": "NV",
-      "lat": 39.1638,
-      "lon": -119.7674,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The quiet capital under the eastern slope of the Sierra."
-    },
-    {
-      "id": "baker_ca",
-      "name": "Baker",
-      "kind": "gas",
-      "region": "CA",
-      "lat": 35.2654,
-      "lon": -116.0739,
-      "services": [
-        "gas",
-        "food"
-      ],
-      "blurb": "The world's tallest thermometer and a Greek diner. Gateway to Death Valley from I-15.",
-      "gas_price": 5.19,
-      "scene": "death_valley"
-    },
-    {
-      "id": "barstow",
-      "name": "Barstow",
-      "kind": "city",
-      "region": "CA",
-      "lat": 34.8958,
-      "lon": -117.0173,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Where the desert highways knot together. Route 66 murals, a rail yard, cheap motels.",
-      "gas_price": 4.89
-    },
-    {
-      "id": "calico",
-      "name": "Calico Ghost Town",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 34.9486,
-      "lon": -116.8642,
-      "services": [
-        "food"
-      ],
-      "blurb": "A silver boomtown that died and got bought by Knott's. Plank sidewalks above Barstow."
-    },
-    {
-      "id": "needles",
-      "name": "Needles",
-      "kind": "city",
-      "region": "CA",
-      "lat": 34.8481,
-      "lon": -114.6141,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Where I-40 crosses the Colorado into California. Brutally hot, friendly enough.",
-      "gas_price": 4.99
-    },
-    {
-      "id": "death_valley",
-      "name": "Death Valley NP (Furnace Creek)",
-      "kind": "park",
-      "region": "CA",
-      "lat": 36.4614,
-      "lon": -116.8656,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "282 feet below sea level, the hottest place on Earth. Gas here costs what they want it to.",
-      "gas_price": 6.49,
-      "terrain": 1.15,
-      "scene": "death_valley"
-    },
-    {
-      "id": "stovepipe",
-      "name": "Stovepipe Wells",
-      "kind": "gas",
-      "region": "CA",
-      "lat": 36.6058,
-      "lon": -117.1453,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "A dune, a saloon, and a pump in the middle of Death Valley.",
-      "gas_price": 6.29
-    },
-    {
-      "id": "mojave",
-      "name": "Mojave",
-      "kind": "city",
-      "region": "CA",
-      "lat": 35.0525,
-      "lon": -118.174,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Wind turbines, a spaceport, and rows of mothballed airliners in the dry air.",
-      "gas_price": 4.95,
-      "scene": "mojave"
-    },
-    {
-      "id": "willow_springs",
-      "name": "Willow Springs International Raceway",
-      "kind": "track",
-      "region": "CA",
-      "lat": 34.8717,
-      "lon": -118.259,
-      "services": [
-        "food"
-      ],
-      "blurb": "'The Fastest Road in the West.' Nine turns of old California tarmac near Rosamond."
-    },
-    {
-      "id": "buttonwillow",
-      "name": "Buttonwillow Raceway Park",
-      "kind": "track",
-      "region": "CA",
-      "lat": 35.4889,
-      "lon": -119.5466,
-      "services": [
-        "food"
-      ],
-      "blurb": "Flat, technical club track in the cotton fields west of Bakersfield."
-    },
-    {
-      "id": "auto_club",
-      "name": "Auto Club Speedway (Fontana)",
-      "kind": "track",
-      "region": "CA",
-      "lat": 34.0889,
-      "lon": -117.5,
-      "services": [
-        "food"
-      ],
-      "blurb": "A two-mile D-oval in the Inland Empire smog, on borrowed time."
-    },
-    {
-      "id": "chuckwalla",
-      "name": "Chuckwalla Valley Raceway",
-      "kind": "track",
-      "region": "CA",
-      "lat": 33.751,
-      "lon": -115.397,
-      "services": [],
-      "blurb": "Desert road course out by Desert Center. Bring your own everything."
-    },
-    {
-      "id": "laguna_seca",
-      "name": "WeatherTech Raceway Laguna Seca",
-      "kind": "track",
-      "region": "CA",
-      "lat": 36.5847,
-      "lon": -121.7536,
-      "services": [
-        "food"
-      ],
-      "blurb": "The Corkscrew. Eleven turns dropping through the Monterey hills like a dare.",
-      "terrain": 1.1,
-      "scene": "laguna_seca"
-    },
-    {
-      "id": "thunderhill",
-      "name": "Thunderhill Raceway Park",
-      "kind": "track",
-      "region": "CA",
-      "lat": 39.5388,
-      "lon": -122.3318,
-      "services": [
-        "food"
-      ],
-      "blurb": "Five miles of track in the rice country near Willows, home of the 25-hour race."
-    },
-    {
-      "id": "sonoma",
-      "name": "Sonoma Raceway",
-      "kind": "track",
-      "region": "CA",
-      "lat": 38.1612,
-      "lon": -122.4546,
-      "services": [
-        "food"
-      ],
-      "blurb": "Wine-country hills folded into a road course at the top of the bay.",
-      "terrain": 1.1
-    },
-    {
-      "id": "joshua_tree",
-      "name": "Joshua Tree National Park",
-      "kind": "park",
-      "region": "CA",
-      "lat": 33.8734,
-      "lon": -115.901,
-      "services": [],
-      "blurb": "Where the Mojave meets the Colorado desert and the trees throw their arms up. No gas inside.",
-      "scene": "joshua_tree"
-    },
-    {
-      "id": "yosemite",
-      "name": "Yosemite National Park",
-      "kind": "park",
-      "region": "CA",
-      "lat": 37.7456,
-      "lon": -119.5936,
-      "services": [
-        "lodging",
-        "food"
-      ],
-      "blurb": "El Capitan, Half Dome, the granite cathedral. Tioga Pass closes with the snow.",
-      "terrain": 1.25,
-      "scene": "yosemite"
-    },
-    {
-      "id": "sequoia",
-      "name": "Sequoia National Park",
-      "kind": "park",
-      "region": "CA",
-      "lat": 36.5167,
-      "lon": -118.7676,
-      "services": [
-        "lodging",
-        "food"
-      ],
-      "blurb": "The biggest living things that have ever stood. The road up is all switchbacks.",
-      "terrain": 1.25,
-      "scene": "sequoia"
-    },
-    {
-      "id": "kings_canyon",
-      "name": "Kings Canyon National Park",
-      "kind": "park",
-      "region": "CA",
-      "lat": 36.8879,
-      "lon": -118.5551,
-      "services": [
-        "food"
-      ],
-      "blurb": "A glacial gorge deeper than the Grand Canyon, and far emptier.",
-      "terrain": 1.2,
-      "scene": "canyonlands"
-    },
-    {
-      "id": "disneyland",
-      "name": "Disneyland (Anaheim)",
-      "kind": "amusement",
-      "region": "CA",
-      "lat": 33.8121,
-      "lon": -117.919,
-      "services": [
-        "lodging",
-        "food"
-      ],
-      "blurb": "The original. A monorail, a Matterhorn, and a parking structure the size of a town.",
-      "scene": "disneyland"
-    },
-    {
-      "id": "knotts",
-      "name": "Knott's Berry Farm (Buena Park)",
-      "kind": "amusement",
-      "region": "CA",
-      "lat": 33.8442,
-      "lon": -118.0001,
-      "services": [
-        "food"
-      ],
-      "blurb": "The boysenberry kingdom. Wooden coasters and a ghost town that owns Calico.",
-      "scene": "amusement"
-    },
-    {
-      "id": "magic_mountain",
-      "name": "Six Flags Magic Mountain (Valencia)",
-      "kind": "amusement",
-      "region": "CA",
-      "lat": 34.4253,
-      "lon": -118.5972,
-      "services": [
-        "food"
-      ],
-      "blurb": "Nineteen coasters stacked on a hill above the 5. The thrill-ride capital of the world.",
-      "scene": "amusement"
-    },
-    {
-      "id": "universal",
-      "name": "Universal Studios Hollywood",
-      "kind": "amusement",
-      "region": "CA",
-      "lat": 34.1381,
-      "lon": -118.3534,
-      "services": [
-        "lodging",
-        "food"
-      ],
-      "blurb": "A working backlot you can ride through, perched above the 101.",
-      "scene": "amusement"
-    },
-    {
-      "id": "santa_cruz_boardwalk",
-      "name": "Santa Cruz Beach Boardwalk",
-      "kind": "amusement",
-      "region": "CA",
-      "lat": 36.9641,
-      "lon": -122.0177,
-      "services": [
-        "food"
-      ],
-      "blurb": "The Giant Dipper, salt air, and 1907 still running on the sand.",
-      "scene": "santa_monica"
-    },
-    {
-      "id": "seaworld_sd",
-      "name": "SeaWorld San Diego",
-      "kind": "amusement",
-      "region": "CA",
-      "lat": 32.7644,
-      "lon": -117.227,
-      "services": [
-        "food"
-      ],
-      "blurb": "Mission Bay, coasters, and the smell of the cold Pacific.",
-      "scene": "amusement"
-    },
-    {
-      "id": "santa_monica",
-      "name": "Santa Monica Pier",
-      "kind": "amusement",
-      "region": "CA",
-      "lat": 34.0089,
-      "lon": -118.4973,
-      "services": [
-        "food"
-      ],
-      "blurb": "The Pacific Wheel and the end of Route 66, where the road runs out of country.",
-      "scene": "santa_monica"
-    },
-    {
-      "id": "los_angeles",
-      "name": "Los Angeles",
-      "kind": "city",
-      "region": "CA",
-      "lat": 34.0522,
-      "lon": -118.2437,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Twelve million people and a freeway for every one of them.",
-      "gas_price": 5.09,
-      "heat_zone": true,
-      "scene": "hollywood"
-    },
-    {
-      "id": "little_tokyo",
-      "name": "Little Tokyo, Los Angeles",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 34.05,
-      "lon": -118.24,
-      "services": [
-        "food"
-      ],
-      "blurb": "Lanterns over First Street, a mochi shop, a woman who does not switch to English when you stumble.",
-      "language": "ja",
-      "voice": "jf_alpha",
-      "npc": "the okamisan at a Little Tokyo counter",
-      "scene": "sf_japantown"
-    },
-    {
-      "id": "east_la",
-      "name": "East Los Angeles",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 34.0239,
-      "lon": -118.172,
-      "services": [
-        "food"
-      ],
-      "blurb": "Mariachi Plaza, taquerias, a mechanic who talks to your engine before he talks to you.",
-      "language": "es",
-      "voice": "ef_dora",
-      "npc": "a mechanic on Boyle Heights"
-    },
-    {
-      "id": "artesia",
-      "name": "Artesia / Little India",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 33.8659,
-      "lon": -118.0831,
-      "services": [
-        "food"
-      ],
-      "blurb": "Pioneer Boulevard: sari shops, sweets, and a chai cart that runs on its own time.",
-      "language": "hi",
-      "voice": "hf_alpha",
-      "npc": "the chai-cart auntie on Pioneer Blvd"
-    },
-    {
-      "id": "san_diego",
-      "name": "San Diego",
-      "kind": "city",
-      "region": "CA",
-      "lat": 32.7157,
-      "lon": -117.1611,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Navy gray and surf gold, the last big city before the line.",
-      "gas_price": 4.99
-    },
-    {
-      "id": "san_francisco",
-      "name": "San Francisco",
-      "kind": "city",
-      "region": "CA",
-      "lat": 37.7749,
-      "lon": -122.4194,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Forty-three hills and the fog coming in over them. Park facing the curb or lose your tires.",
-      "gas_price": 5.29,
-      "terrain": 1.1,
-      "scene": "bay_bridge"
-    },
-    {
-      "id": "sf_japantown",
-      "name": "Japantown, San Francisco",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 37.785,
-      "lon": -122.4297,
-      "services": [
-        "food"
-      ],
-      "blurb": "The Peace Pagoda, a bookstore, a ramen line. If you drove all this way, this is who you came to hear.",
-      "language": "ja",
-      "voice": "jf_alpha",
-      "npc": "a shopkeeper in the Japan Center",
-      "scene": "sf_japantown"
-    },
-    {
-      "id": "sf_chinatown",
-      "name": "Chinatown, San Francisco",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 37.7941,
-      "lon": -122.4078,
-      "services": [
-        "food"
-      ],
-      "blurb": "The oldest Chinatown in the country. Grant Avenue, a tea seller who measures you with her eyes.",
-      "language": "zh",
-      "voice": "zf_xiaoxiao",
-      "npc": "a tea seller on Grant Avenue"
-    },
-    {
-      "id": "sf_north_beach",
-      "name": "North Beach, San Francisco",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 37.806,
-      "lon": -122.4103,
-      "services": [
-        "food"
-      ],
-      "blurb": "Espresso, City Lights bookstore, an old man who calls every car bella.",
-      "language": "it",
-      "voice": "if_sara",
-      "npc": "a cafe owner on Columbus Avenue"
-    },
-    {
-      "id": "sf_mission",
-      "name": "The Mission, San Francisco",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 37.7599,
-      "lon": -122.4148,
-      "services": [
-        "food"
-      ],
-      "blurb": "Murals down every alley and the best taqueria argument in the state.",
-      "language": "es",
-      "voice": "ef_dora",
-      "npc": "a muralist on Balmy Alley"
-    },
-    {
-      "id": "bakersfield",
-      "name": "Bakersfield",
-      "kind": "city",
-      "region": "CA",
-      "lat": 35.3733,
-      "lon": -119.0187,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Oil derricks, the Bakersfield Sound, and the bottom of the Central Valley.",
-      "gas_price": 4.79
-    },
-    {
-      "id": "fresno",
-      "name": "Fresno",
-      "kind": "city",
-      "region": "CA",
-      "lat": 36.7378,
-      "lon": -119.7871,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The gateway to three national parks, flat and patient in the haze.",
-      "gas_price": 4.85
-    },
-    {
-      "id": "bishop",
-      "name": "Bishop",
-      "kind": "city",
-      "region": "CA",
-      "lat": 37.3614,
-      "lon": -118.3951,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The Eastern Sierra hub. Erick Schat's bakery, the High Sierra throwing shadows by four.",
-      "gas_price": 5.09,
-      "terrain": 1.1
-    },
-    {
-      "id": "lone_pine",
-      "name": "Lone Pine",
-      "kind": "city",
-      "region": "CA",
-      "lat": 36.606,
-      "lon": -118.0626,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Under Mt. Whitney, where a thousand Westerns were shot in the Alabama Hills.",
-      "gas_price": 5.15,
-      "scene": "lone_pine"
-    },
-    {
-      "id": "lee_vining",
-      "name": "Lee Vining / Tioga Pass",
-      "kind": "city",
-      "region": "CA",
-      "lat": 37.9558,
-      "lon": -119.1188,
-      "services": [
-        "gas",
-        "food"
-      ],
-      "blurb": "Mono Lake's tufa towers and the eastern gate to Yosemite, 9,943 feet up when it's open.",
-      "gas_price": 5.39,
-      "terrain": 1.3,
-      "scene": "yosemite"
-    },
-    {
-      "id": "palm_springs",
-      "name": "Palm Springs",
-      "kind": "city",
-      "region": "CA",
-      "lat": 33.8303,
-      "lon": -116.5453,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Mid-century glass under the San Jacintos, a tram to the snow line above the heat.",
-      "gas_price": 4.95
-    },
-    {
-      "id": "grand_canyon_south",
-      "name": "Grand Canyon NP (South Rim)",
-      "kind": "park",
-      "region": "AZ",
-      "lat": 36.0544,
-      "lon": -112.1401,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "A mile straight down and ten miles across. Gas and rooms at the village, if you booked.",
-      "gas_price": 4.69,
-      "scene": "grand_canyon"
-    },
-    {
-      "id": "grand_canyon_north",
-      "name": "Grand Canyon NP (North Rim)",
-      "kind": "park",
-      "region": "AZ",
-      "lat": 36.1976,
-      "lon": -112.0526,
-      "services": [
-        "lodging",
-        "food"
-      ],
-      "blurb": "A thousand feet higher, far emptier, closed once the snow comes.",
-      "terrain": 1.2,
-      "scene": "grand_canyon"
-    },
-    {
-      "id": "flagstaff",
-      "name": "Flagstaff",
-      "kind": "city",
-      "region": "AZ",
-      "lat": 35.1983,
-      "lon": -111.6513,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Ponderosa pines at 7,000 feet, Route 66 and the railroad, snow on the peaks.",
-      "gas_price": 4.05,
-      "terrain": 1.1
-    },
-    {
-      "id": "williams",
-      "name": "Williams",
-      "kind": "city",
-      "region": "AZ",
-      "lat": 35.2494,
-      "lon": -112.1909,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The last town on Route 66 to be bypassed, and the rail gateway to the Grand Canyon.",
-      "gas_price": 4.09
-    },
-    {
-      "id": "kingman",
-      "name": "Kingman",
-      "kind": "city",
-      "region": "AZ",
-      "lat": 35.1894,
-      "lon": -114.053,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Heart of Route 66 Arizona, a crossroads of I-40 and the road up from Vegas.",
-      "gas_price": 3.95
-    },
-    {
-      "id": "lake_havasu",
-      "name": "Lake Havasu City",
-      "kind": "encounter",
-      "region": "AZ",
-      "lat": 34.4839,
-      "lon": -114.3224,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Someone bought the actual London Bridge and shipped it here, stone by stone.",
-      "gas_price": 3.99,
-      "scene": "lake_havasu"
-    },
-    {
-      "id": "sedona",
-      "name": "Sedona",
-      "kind": "encounter",
-      "region": "AZ",
-      "lat": 34.8697,
-      "lon": -111.761,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Red-rock spires, art galleries, and people who will tell you about the vortexes.",
-      "gas_price": 4.29,
-      "terrain": 1.1,
-      "scene": "sedona"
-    },
-    {
-      "id": "page",
-      "name": "Page / Horseshoe Bend",
-      "kind": "encounter",
-      "region": "AZ",
-      "lat": 36.9147,
-      "lon": -111.4558,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Antelope Canyon's light shafts, the green river bending 270 degrees under your boots.",
-      "gas_price": 4.19
-    },
-    {
-      "id": "phoenix",
-      "name": "Phoenix",
-      "kind": "city",
-      "region": "AZ",
-      "lat": 33.4484,
-      "lon": -112.074,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The Valley of the Sun, a grid of warm light spreading to every horizon.",
-      "gas_price": 3.89
-    },
-    {
-      "id": "castles_coasters",
-      "name": "Castles N' Coasters (Phoenix)",
-      "kind": "amusement",
-      "region": "AZ",
-      "lat": 33.5247,
-      "lon": -112.118,
-      "services": [
-        "food"
-      ],
-      "blurb": "Arizona's last big amusement park: four mini-golf courses and the Desert Storm coaster.",
-      "scene": "amusement"
-    },
-    {
-      "id": "tucson",
-      "name": "Tucson",
-      "kind": "city",
-      "region": "AZ",
-      "lat": 32.2226,
-      "lon": -110.9747,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Saguaro forests, the old Spanish presidio, the Sonoran desert in bloom after rain.",
-      "gas_price": 3.85
-    },
-    {
-      "id": "nogales",
-      "name": "Nogales",
-      "kind": "encounter",
-      "region": "AZ",
-      "lat": 31.3404,
-      "lon": -110.9343,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The border. The fence runs right through town and the language doesn't stop at it.",
-      "gas_price": 3.79,
-      "language": "es",
-      "voice": "ef_dora",
-      "npc": "a vendor at the line in Nogales"
-    },
-    {
-      "id": "saguaro",
-      "name": "Saguaro National Park",
-      "kind": "park",
-      "region": "AZ",
-      "lat": 32.2967,
-      "lon": -111.1666,
-      "services": [],
-      "blurb": "A forest of giant cactus standing watch over Tucson, arms raised against the dusk.",
-      "scene": "saguaro"
-    },
-    {
-      "id": "petrified_forest",
-      "name": "Petrified Forest National Park",
-      "kind": "park",
-      "region": "AZ",
-      "lat": 34.91,
-      "lon": -109.8068,
-      "services": [],
-      "blurb": "Stone logs of a vanished jungle and the banded Painted Desert. No services, long miles.",
-      "scene": "petrified_forest"
-    },
-    {
-      "id": "monument_valley",
-      "name": "Monument Valley",
-      "kind": "park",
-      "region": "AZ",
-      "lat": 36.998,
-      "lon": -110.0985,
-      "services": [
-        "lodging",
-        "food"
-      ],
-      "blurb": "The mittens and the buttes on the Navajo line, the most filmed horizon in America.",
-      "scene": "monument_valley"
-    },
-    {
-      "id": "meteor_crater",
-      "name": "Meteor Crater",
-      "kind": "encounter",
-      "region": "AZ",
-      "lat": 35.0272,
-      "lon": -111.0224,
-      "services": [
-        "food"
-      ],
-      "blurb": "A 50,000-year-old hole in the desert, three-quarters of a mile across, off old 66.",
-      "scene": "meteor_crater"
-    },
-    {
-      "id": "st_george",
-      "name": "St. George",
-      "kind": "city",
-      "region": "UT",
-      "lat": 37.0965,
-      "lon": -113.5684,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The first Utah town off I-15, red rock and a tabernacle. Fill here for Zion or Bryce.",
-      "gas_price": 3.85
-    },
-    {
-      "id": "springdale",
-      "name": "Springdale (Zion gate)",
-      "kind": "city",
-      "region": "UT",
-      "lat": 37.1889,
-      "lon": -112.9983,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The little town at the mouth of Zion Canyon. Shuttle, lodges, the cliffs leaning in overhead.",
-      "gas_price": 4.49,
-      "terrain": 1.1
-    },
-    {
-      "id": "zion",
-      "name": "Zion National Park",
-      "kind": "park",
-      "region": "UT",
-      "lat": 37.2982,
-      "lon": -113.0263,
-      "services": [],
-      "blurb": "Navajo sandstone walls 2,000 feet high, the Narrows, Angels Landing. The trip everyone tries to make on a splash of gas.",
-      "terrain": 1.2,
-      "scene": "zion"
-    },
-    {
-      "id": "cedar_city",
-      "name": "Cedar City",
-      "kind": "city",
-      "region": "UT",
-      "lat": 37.6775,
-      "lon": -113.0619,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Festival town below the high plateaus, the turnoff for Bryce and Cedar Breaks.",
-      "gas_price": 3.89
-    },
-    {
-      "id": "kanab",
-      "name": "Kanab",
-      "kind": "city",
-      "region": "UT",
-      "lat": 37.0475,
-      "lon": -112.5263,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "'Little Hollywood,' the hub between Zion, Bryce, the Grand Canyon's North Rim, and the Wave.",
-      "gas_price": 4.09
-    },
-    {
-      "id": "bryce",
-      "name": "Bryce Canyon National Park",
-      "kind": "park",
-      "region": "UT",
-      "lat": 37.593,
-      "lon": -112.1871,
-      "services": [
-        "lodging",
-        "food"
-      ],
-      "blurb": "An amphitheater of orange hoodoos at 8,000 feet. Cold at night, even in summer.",
-      "terrain": 1.25,
-      "scene": "bryce"
-    },
-    {
-      "id": "capitol_reef",
-      "name": "Capitol Reef National Park",
-      "kind": "park",
-      "region": "UT",
-      "lat": 38.2972,
-      "lon": -111.2615,
-      "services": [
-        "food"
-      ],
-      "blurb": "A hundred-mile wrinkle in the earth, orchards in the desert, petroglyphs on the cliffs.",
-      "terrain": 1.15,
-      "scene": "capitol_reef"
-    },
-    {
-      "id": "goblin_valley",
-      "name": "Goblin Valley State Park",
-      "kind": "park",
-      "region": "UT",
-      "lat": 38.5733,
-      "lon": -110.708,
-      "services": [],
-      "blurb": "A valley of mushroom-shaped hoodoos you can walk among, like a planet left unfinished.",
-      "scene": "goblin_valley"
-    },
-    {
-      "id": "moab",
-      "name": "Moab",
-      "kind": "city",
-      "region": "UT",
-      "lat": 38.5733,
-      "lon": -109.5498,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Slickrock and the Colorado, mountain bikes and 4x4s, the base for two national parks.",
-      "gas_price": 4.19
-    },
-    {
-      "id": "arches",
-      "name": "Arches National Park",
-      "kind": "park",
-      "region": "UT",
-      "lat": 38.7331,
-      "lon": -109.5925,
-      "services": [],
-      "blurb": "Over 2,000 stone arches, Delicate Arch alone on the rim against the La Sals.",
-      "scene": "arches"
-    },
-    {
-      "id": "canyonlands",
-      "name": "Canyonlands National Park",
-      "kind": "park",
-      "region": "UT",
-      "lat": 38.3269,
-      "lon": -109.8783,
-      "services": [],
-      "blurb": "Where the Green and the Colorado carve the earth into Islands in the Sky. No gas, no water.",
-      "scene": "canyonlands"
-    },
-    {
-      "id": "salt_lake_city",
-      "name": "Salt Lake City",
-      "kind": "city",
-      "region": "UT",
-      "lat": 40.7608,
-      "lon": -111.891,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The grid laid out from a temple, the Wasatch hard against the eastern edge.",
-      "gas_price": 3.79,
-      "terrain": 1.05,
-      "scene": "salt_lake"
-    },
-    {
-      "id": "lagoon",
-      "name": "Lagoon Amusement Park (Farmington)",
-      "kind": "amusement",
-      "region": "UT",
-      "lat": 40.9858,
-      "lon": -111.899,
-      "services": [
-        "food"
-      ],
-      "blurb": "Utah's own park since 1886: a wooden coaster from 1921 still rattling north of Salt Lake.",
-      "scene": "amusement"
-    },
-    {
-      "id": "park_city",
-      "name": "Park City",
-      "kind": "city",
-      "region": "UT",
-      "lat": 40.6461,
-      "lon": -111.498,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Old silver mines turned ski resort, Main Street steep with money and snow.",
-      "gas_price": 3.95,
-      "terrain": 1.15
-    },
-    {
-      "id": "bonneville",
-      "name": "Bonneville Salt Flats",
-      "kind": "track",
-      "region": "UT",
-      "lat": 40.7639,
-      "lon": -113.8932,
-      "services": [],
-      "blurb": "Thirty thousand acres of dead-flat salt where land-speed records are made. The horizon curves.",
-      "scene": "bonneville"
-    },
-    {
-      "id": "fallon",
-      "name": "Fallon / NAS Fallon",
-      "kind": "encounter",
-      "region": "NV",
-      "lat": 39.4735,
-      "lon": -118.7774,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "gas_price": 4.39,
-      "scene": "fallon",
-      "blurb": "Naval Air Station Fallon — TOPGUN moved here. Hornets tear the desert sky open low and loud."
-    },
-    {
-      "id": "sphere",
-      "name": "The Sphere, Las Vegas",
-      "kind": "encounter",
-      "region": "NV",
-      "lat": 36.1212,
-      "lon": -115.162,
-      "services": [
-        "food"
-      ],
-      "scene": "sphere",
-      "heat_zone": true,
-      "blurb": "A 366-foot eyeball made of LEDs, blinking at the freeway. It is looking at you. It is always looking."
-    },
-    {
-      "id": "fremont",
-      "name": "Fremont Street, Las Vegas",
-      "kind": "encounter",
-      "region": "NV",
-      "lat": 36.1699,
-      "lon": -115.1428,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "scene": "vegas_strip",
-      "heat_zone": true,
-      "gas_price": 4.39,
-      "blurb": "Old downtown under a canopy of a billion bulbs, a zipline screaming overhead, a cowboy made of neon."
-    },
-    {
-      "id": "seven_magic",
-      "name": "Seven Magic Mountains",
-      "kind": "encounter",
-      "region": "NV",
-      "lat": 35.8108,
-      "lon": -115.2658,
-      "services": [],
-      "blurb": "Stacks of fluorescent boulders rising out of the Jean dry lake, somebody's idea south of Vegas."
-    },
-    {
-      "id": "golden_gate",
-      "name": "Golden Gate Bridge",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 37.8199,
-      "lon": -122.4783,
-      "services": [],
-      "scene": "golden_gate",
-      "blurb": "International orange swallowed by fog. The towers come and go like a rumor."
-    },
-    {
-      "id": "racetrack_playa",
-      "name": "Racetrack Playa (Death Valley)",
-      "kind": "park",
-      "region": "CA",
-      "lat": 36.6814,
-      "lon": -117.563,
-      "services": [],
-      "scene": "death_valley",
-      "terrain": 1.2,
-      "blurb": "The sailing stones. Rocks that move themselves across the mud and leave trails, and no one watching."
-    },
-    {
-      "id": "salvation_mountain",
-      "name": "Salvation Mountain",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 33.2543,
-      "lon": -115.4725,
-      "services": [],
-      "blurb": "A hand-painted adobe hill of love and scripture out by the Salton Sea, next to a town with no laws."
-    },
-    {
-      "id": "amargosa",
-      "name": "Amargosa Opera House (Death Valley Junction)",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 36.3083,
-      "lon": -116.4108,
-      "services": [
-        "lodging"
-      ],
-      "scene": "death_valley",
-      "blurb": "A lone opera house in the empty desert where a dancer painted herself an audience on the walls."
-    },
-    {
-      "id": "goldfield",
-      "name": "Goldfield ghost town",
-      "kind": "encounter",
-      "region": "NV",
-      "lat": 37.7086,
-      "lon": -117.2357,
-      "services": [
-        "gas",
-        "food"
-      ],
-      "gas_price": 4.59,
-      "scene": "great_basin",
-      "blurb": "Once the biggest city in Nevada, now a few hundred souls, a haunted hotel, and a yard of welded art cars."
-    },
-    {
-      "id": "integratron",
-      "name": "The Integratron",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 34.2961,
-      "lon": -116.4044,
-      "services": [],
-      "scene": "joshua_tree",
-      "blurb": "A white dome built from alien instructions for rejuvenation and time travel. Sound baths now. Sure."
-    },
-    {
-      "id": "madonna_inn",
-      "name": "Madonna Inn, San Luis Obispo",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 35.2533,
-      "lon": -120.6707,
-      "services": [
-        "lodging",
-        "food"
-      ],
-      "scene": "motel",
-      "blurb": "110 rooms, no two alike, pink as a wound, a urinal that's a waterfall. You have to stay somewhere."
-    },
-    {
-      "id": "willow_creek",
-      "name": "Bigfoot country (Willow Creek)",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 40.941,
-      "lon": -123.632,
-      "services": [
-        "gas",
-        "food"
-      ],
-      "blurb": "Self-proclaimed Bigfoot capital. A giant carved sasquatch by the road, and the trees lean in close."
-    },
-    {
-      "id": "area51_gate",
-      "name": "Area 51 back gate",
-      "kind": "encounter",
-      "region": "NV",
-      "lat": 37.235,
-      "lon": -115.8111,
-      "services": [],
-      "scene": "area51",
-      "blurb": "A cattle guard, a white truck on a hill, cameras on poles, and a sign that promises deadly force."
-    },
-    {
-      "id": "richmond_koinoya",
-      "name": "koiNOya — Richmond",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 37.9358,
-      "lon": -122.3477,
-      "services": [
-        "food"
-      ],
-      "scene": "koinoya",
-      "language": "ja",
-      "voice": "jf_alpha",
-      "npc": "the old dealer at koiNOya",
-      "blurb": "A cluttered Edo-era relic shop in Richmond: naginata and ceremonial blades racked like umbrellas, each one carved with a card suit. Where Ace was born.",
-      "origin": "born"
-    },
-    {
-      "id": "oakland_aisha",
-      "name": "AiSha Garage — Downtown Oakland",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 37.8044,
-      "lon": -122.2711,
-      "services": [
-        "food"
-      ],
-      "scene": "oakland_aisha",
-      "blurb": "A 1926 red-brick garage downtown, AiSHALLC hand-painted across the roofline, a kanji on the roll-up door, the skyline rising behind. Where Ace grew up.",
-      "origin": "grew"
-    },
-    {
-      "id": "petersen",
-      "name": "Petersen Automotive Museum, LA",
-      "kind": "museum",
-      "region": "CA",
-      "lat": 34.0619,
-      "lon": -118.3614,
-      "services": [
-        "food"
-      ],
-      "scene": "museum",
-      "blurb": "A red ribbon of steel wrapped around four floors of cars. She asks to idle out front a while."
-    },
-    {
-      "id": "neon_museum",
-      "name": "The Neon Museum, Las Vegas",
-      "kind": "museum",
-      "region": "NV",
-      "lat": 36.1771,
-      "lon": -115.139,
-      "services": [
-        "food"
-      ],
-      "scene": "museum",
-      "heat_zone": true,
-      "blurb": "The Boneyard: dead casino signs laid out under the desert sky, still glowing if you squint."
-    },
-    {
-      "id": "getty",
-      "name": "The Getty Center, LA",
-      "kind": "museum",
-      "region": "CA",
-      "lat": 34.078,
-      "lon": -118.4741,
-      "services": [
-        "food"
-      ],
-      "scene": "museum",
-      "blurb": "Travertine and a tram up the hill — art, gardens, and the whole basin laid out below."
-    },
-    {
-      "id": "heard",
-      "name": "Heard Museum, Phoenix",
-      "kind": "museum",
-      "region": "AZ",
-      "lat": 33.4717,
-      "lon": -112.0728,
-      "services": [
-        "food"
-      ],
-      "scene": "museum",
-      "blurb": "The finest collection of Native American art in the Southwest, in a quiet Spanish-revival courtyard."
-    },
-    {
-      "id": "nhmu",
-      "name": "Natural History Museum of Utah, SLC",
-      "kind": "museum",
-      "region": "UT",
-      "lat": 40.764,
-      "lon": -111.824,
-      "services": [
-        "food"
-      ],
-      "scene": "museum",
-      "blurb": "A copper-skinned ark built into the Wasatch foothills, full of dinosaurs and deep time."
-    },
-    {
-      "id": "pinball",
-      "name": "Pinball Hall of Fame, Las Vegas",
-      "kind": "museum",
-      "region": "NV",
-      "lat": 36.0639,
-      "lon": -115.173,
-      "services": [
-        "food"
-      ],
-      "scene": "museum",
-      "heat_zone": true,
-      "blurb": "A warehouse of playable machines back to the 1950s. Bring quarters; leave the heat outside."
-    },
-    {
-      "id": "monterey",
-      "name": "Monterey",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 36.6002,
-      "lon": -121.8947,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Cannery Row, the kelp tanks, 17-Mile Drive. The cypress lean into the fog like they're listening.",
-      "scene": "aquarium",
-      "story": true
-    },
-    {
-      "id": "long_beach",
-      "name": "Long Beach",
-      "kind": "city",
-      "region": "CA",
-      "lat": 33.7701,
-      "lon": -118.1937,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The Queen Mary at anchor, the port cranes like grazing dinosaurs, the salvage yards inland.",
-      "scene": "drive_city",
-      "heat_zone": true,
-      "story": true
-    },
-    {
-      "id": "livermore",
-      "name": "Livermore",
-      "kind": "encounter",
-      "region": "CA",
-      "lat": 37.6819,
-      "lon": -121.768,
-      "services": [
-        "gas",
-        "food"
-      ],
-      "blurb": "Wine country gone to office parks and self-storage. A row of roll-up doors keeps more secrets than any vault.",
-      "scene": "storage",
-      "story": true
-    },
-    {
-      "id": "san_jose",
-      "name": "San Jose",
-      "kind": "city",
-      "region": "CA",
-      "lat": 37.3382,
-      "lon": -121.8863,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The capital of Silicon Valley, flat and warm and endless.",
-      "heat_zone": true
-    },
-    {
-      "id": "berkeley",
-      "name": "Berkeley",
-      "kind": "city",
-      "region": "CA",
-      "lat": 37.8715,
-      "lon": -122.273,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The university, the hills, the smell of eucalyptus and protest."
-    },
-    {
-      "id": "sacramento",
-      "name": "Sacramento",
-      "kind": "city",
-      "region": "CA",
-      "lat": 38.5816,
-      "lon": -121.4944,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The state capital under the delta breeze, old gold-rush bones downtown."
-    },
-    {
-      "id": "stockton",
-      "name": "Stockton",
-      "kind": "city",
-      "region": "CA",
-      "lat": 37.9577,
-      "lon": -121.2908,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "A deep-water port ninety miles from the sea, asphalt shimmering in the valley heat."
-    },
-    {
-      "id": "santa_barbara",
-      "name": "Santa Barbara",
-      "kind": "city",
-      "region": "CA",
-      "lat": 34.4208,
-      "lon": -119.6982,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Red-tile roofs, the Riviera of the West, the 101 running right along the surf."
-    },
-    {
-      "id": "ventura",
-      "name": "Ventura",
-      "kind": "city",
-      "region": "CA",
-      "lat": 34.2746,
-      "lon": -119.229,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "A pier, a point break, and the Channel Islands floating offshore."
-    },
-    {
-      "id": "oceanside",
-      "name": "Oceanside",
-      "kind": "city",
-      "region": "CA",
-      "lat": 33.1959,
-      "lon": -117.3795,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Marine town, longboards, the smell of diesel and sunscreen."
-    },
-    {
-      "id": "riverside",
-      "name": "Riverside",
-      "kind": "city",
-      "region": "CA",
-      "lat": 33.9806,
-      "lon": -117.3755,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "The Mission Inn and the orange groves that built it, inland and bright.",
-      "heat_zone": true
-    },
-    {
-      "id": "pasadena",
-      "name": "Pasadena",
-      "kind": "city",
-      "region": "CA",
-      "lat": 34.1478,
-      "lon": -118.1445,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Craftsman bungalows, the Rose Bowl, the Colorado Street bridge over the arroyo.",
-      "heat_zone": true
-    },
-    {
-      "id": "palm_desert",
-      "name": "Palm Desert",
-      "kind": "city",
-      "region": "CA",
-      "lat": 33.7222,
-      "lon": -116.3744,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Golf and glass under the Santa Rosas, El Paseo for the snowbirds."
-    },
-    {
-      "id": "gilroy",
-      "name": "Gilroy",
-      "kind": "city",
-      "region": "CA",
-      "lat": 37.0058,
-      "lon": -121.5683,
-      "services": [
-        "gas",
-        "food"
-      ],
-      "blurb": "Garlic capital of the world; you smell it before the off-ramp."
-    },
-    {
-      "id": "napa",
-      "name": "Napa",
-      "kind": "city",
-      "region": "CA",
-      "lat": 38.2975,
-      "lon": -122.2869,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Vines in tidy rows, tasting rooms, the wine train rattling north."
-    },
-    {
-      "id": "half_moon_bay",
-      "name": "Half Moon Bay",
-      "kind": "city",
-      "region": "CA",
-      "lat": 37.4636,
-      "lon": -122.4286,
-      "services": [
-        "gas",
-        "food"
-      ],
-      "blurb": "Pumpkins, Mavericks' big surf, Highway 1 hugging the cliff edge."
-    },
-    {
-      "id": "redding",
-      "name": "Redding",
-      "kind": "city",
-      "region": "CA",
-      "lat": 40.5865,
-      "lon": -122.3917,
-      "services": [
-        "gas",
-        "lodging",
-        "food"
-      ],
-      "blurb": "Top of the valley under Mount Shasta, the Sundial Bridge over the Sacramento."
-    }
-  ]
+  {
+   "id": "las_vegas",
+   "name": "Las Vegas",
+   "kind": "city",
+   "region": "NV",
+   "lat": 36.1699,
+   "lon": -115.1398,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The Strip, the convention halls, ten thousand cameras. A bright place to be a car nobody can quite account for.",
+   "heat_zone": true,
+   "scene": "vegas_strip"
+  },
+  {
+   "id": "lv_motor_speedway",
+   "name": "Las Vegas Motor Speedway",
+   "kind": "track",
+   "region": "NV",
+   "lat": 36.2717,
+   "lon": -115.0103,
+   "services": [
+    "food"
+   ],
+   "blurb": "A 1.5-mile tri-oval and a dragstrip out in the desert north of town."
+  },
+  {
+   "id": "spring_mountain",
+   "name": "Spring Mountain Motorsports Ranch, Pahrump",
+   "kind": "track",
+   "region": "NV",
+   "lat": 36.1769,
+   "lon": -115.9876,
+   "services": [
+    "food"
+   ],
+   "blurb": "Members' road course out past the Spring Mountains. Close enough to taste, far enough to strand you on a bad tank.",
+   "terrain": 1.1
+  },
+  {
+   "id": "pahrump",
+   "name": "Pahrump",
+   "kind": "city",
+   "region": "NV",
+   "lat": 36.2083,
+   "lon": -115.9839,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Casinos, a winery, and the last cheap gas before the Death Valley road.",
+   "gas_price": 4.29
+  },
+  {
+   "id": "valley_of_fire",
+   "name": "Valley of Fire State Park",
+   "kind": "park",
+   "region": "NV",
+   "lat": 36.4825,
+   "lon": -114.517,
+   "services": [],
+   "blurb": "Aztec sandstone the color of a struck match. No fuel out here. Plan it."
+  },
+  {
+   "id": "mesquite",
+   "name": "Mesquite",
+   "kind": "city",
+   "region": "NV",
+   "lat": 36.8055,
+   "lon": -114.0672,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Last Nevada town on I-15 before the Arizona slot and the Utah line. Fill here for Zion.",
+   "gas_price": 4.19
+  },
+  {
+   "id": "moapa",
+   "name": "Glendale / Moapa",
+   "kind": "gas",
+   "region": "NV",
+   "lat": 36.6147,
+   "lon": -114.5611,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "An off-ramp, a truck stop, a reservation smoke shop. Fuel on the I-15 run.",
+   "gas_price": 4.25
+  },
+  {
+   "id": "beatty",
+   "name": "Beatty",
+   "kind": "city",
+   "region": "NV",
+   "lat": 36.9083,
+   "lon": -116.7591,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Gateway to Death Valley from the north. Wild burros on the road at dusk.",
+   "gas_price": 4.49
+  },
+  {
+   "id": "primm",
+   "name": "Primm",
+   "kind": "city",
+   "region": "NV",
+   "lat": 35.6111,
+   "lon": -115.3892,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "A border casino with a roller coaster, straddling the California line on I-15.",
+   "gas_price": 4.35,
+   "scene": "amusement"
+  },
+  {
+   "id": "laughlin",
+   "name": "Laughlin",
+   "kind": "city",
+   "region": "NV",
+   "lat": 35.1678,
+   "lon": -114.5719,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Riverboat casinos on the Colorado, cheaper than Vegas, hot as a griddle."
+  },
+  {
+   "id": "hoover_dam",
+   "name": "Hoover Dam / Boulder City",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 36.0161,
+   "lon": -114.7377,
+   "services": [
+    "food"
+   ],
+   "blurb": "726 feet of Depression-era concrete holding back Lake Mead. Last gas in Boulder City.",
+   "scene": "hoover_dam"
+  },
+  {
+   "id": "tonopah",
+   "name": "Tonopah",
+   "kind": "city",
+   "region": "NV",
+   "lat": 38.0672,
+   "lon": -117.2306,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Old silver town, the darkest skies in the lower 48, halfway up the middle of nowhere.",
+   "gas_price": 4.55,
+   "scene": "great_basin"
+  },
+  {
+   "id": "rachel",
+   "name": "Rachel / Extraterrestrial Highway",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 37.6463,
+   "lon": -115.7464,
+   "services": [
+    "food"
+   ],
+   "blurb": "The Little A'Le'Inn and 98 miles of empty SR-375. Top off before you commit; there is nothing out here.",
+   "scene": "area51"
+  },
+  {
+   "id": "ely",
+   "name": "Ely",
+   "kind": "city",
+   "region": "NV",
+   "lat": 39.2474,
+   "lon": -114.8886,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "A railroad town on the Loneliest Road, last stop before Great Basin.",
+   "gas_price": 4.49
+  },
+  {
+   "id": "great_basin",
+   "name": "Great Basin National Park",
+   "kind": "park",
+   "region": "NV",
+   "lat": 38.9833,
+   "lon": -114.3,
+   "services": [],
+   "blurb": "Wheeler Peak, bristlecone pines older than writing, the Lehman Caves. Almost nobody comes.",
+   "terrain": 1.2,
+   "scene": "great_basin"
+  },
+  {
+   "id": "reno",
+   "name": "Reno",
+   "kind": "city",
+   "region": "NV",
+   "lat": 39.5296,
+   "lon": -119.8138,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The Biggest Little City, up against the Sierra. A long way from the show.",
+   "scene": "reno"
+  },
+  {
+   "id": "carson_city",
+   "name": "Carson City",
+   "kind": "city",
+   "region": "NV",
+   "lat": 39.1638,
+   "lon": -119.7674,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The quiet capital under the eastern slope of the Sierra."
+  },
+  {
+   "id": "baker_ca",
+   "name": "Baker",
+   "kind": "gas",
+   "region": "CA",
+   "lat": 35.2654,
+   "lon": -116.0739,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "The world's tallest thermometer and a Greek diner. Gateway to Death Valley from I-15.",
+   "gas_price": 5.19,
+   "scene": "death_valley"
+  },
+  {
+   "id": "barstow",
+   "name": "Barstow",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.8958,
+   "lon": -117.0173,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Where the desert highways knot together. Route 66 murals, a rail yard, cheap motels.",
+   "gas_price": 4.89
+  },
+  {
+   "id": "calico",
+   "name": "Calico Ghost Town",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 34.9486,
+   "lon": -116.8642,
+   "services": [
+    "food"
+   ],
+   "blurb": "A silver boomtown that died and got bought by Knott's. Plank sidewalks above Barstow."
+  },
+  {
+   "id": "needles",
+   "name": "Needles",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.8481,
+   "lon": -114.6141,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Where I-40 crosses the Colorado into California. Brutally hot, friendly enough.",
+   "gas_price": 4.99
+  },
+  {
+   "id": "death_valley",
+   "name": "Death Valley NP (Furnace Creek)",
+   "kind": "park",
+   "region": "CA",
+   "lat": 36.4614,
+   "lon": -116.8656,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "282 feet below sea level, the hottest place on Earth. Gas here costs what they want it to.",
+   "gas_price": 6.49,
+   "terrain": 1.15,
+   "scene": "death_valley"
+  },
+  {
+   "id": "stovepipe",
+   "name": "Stovepipe Wells",
+   "kind": "gas",
+   "region": "CA",
+   "lat": 36.6058,
+   "lon": -117.1453,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "A dune, a saloon, and a pump in the middle of Death Valley.",
+   "gas_price": 6.29
+  },
+  {
+   "id": "mojave",
+   "name": "Mojave",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.0525,
+   "lon": -118.174,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Wind turbines, a spaceport, and rows of mothballed airliners in the dry air.",
+   "gas_price": 4.95,
+   "scene": "mojave"
+  },
+  {
+   "id": "willow_springs",
+   "name": "Willow Springs International Raceway",
+   "kind": "track",
+   "region": "CA",
+   "lat": 34.8717,
+   "lon": -118.259,
+   "services": [
+    "food"
+   ],
+   "blurb": "'The Fastest Road in the West.' Nine turns of old California tarmac near Rosamond."
+  },
+  {
+   "id": "buttonwillow",
+   "name": "Buttonwillow Raceway Park",
+   "kind": "track",
+   "region": "CA",
+   "lat": 35.4889,
+   "lon": -119.5466,
+   "services": [
+    "food"
+   ],
+   "blurb": "Flat, technical club track in the cotton fields west of Bakersfield."
+  },
+  {
+   "id": "auto_club",
+   "name": "Auto Club Speedway (Fontana)",
+   "kind": "track",
+   "region": "CA",
+   "lat": 34.0889,
+   "lon": -117.5,
+   "services": [
+    "food"
+   ],
+   "blurb": "A two-mile D-oval in the Inland Empire smog, on borrowed time."
+  },
+  {
+   "id": "chuckwalla",
+   "name": "Chuckwalla Valley Raceway",
+   "kind": "track",
+   "region": "CA",
+   "lat": 33.751,
+   "lon": -115.397,
+   "services": [],
+   "blurb": "Desert road course out by Desert Center. Bring your own everything."
+  },
+  {
+   "id": "laguna_seca",
+   "name": "WeatherTech Raceway Laguna Seca",
+   "kind": "track",
+   "region": "CA",
+   "lat": 36.5847,
+   "lon": -121.7536,
+   "services": [
+    "food"
+   ],
+   "blurb": "The Corkscrew. Eleven turns dropping through the Monterey hills like a dare.",
+   "terrain": 1.1,
+   "scene": "laguna_seca"
+  },
+  {
+   "id": "thunderhill",
+   "name": "Thunderhill Raceway Park",
+   "kind": "track",
+   "region": "CA",
+   "lat": 39.5388,
+   "lon": -122.3318,
+   "services": [
+    "food"
+   ],
+   "blurb": "Five miles of track in the rice country near Willows, home of the 25-hour race."
+  },
+  {
+   "id": "sonoma",
+   "name": "Sonoma Raceway",
+   "kind": "track",
+   "region": "CA",
+   "lat": 38.1612,
+   "lon": -122.4546,
+   "services": [
+    "food"
+   ],
+   "blurb": "Wine-country hills folded into a road course at the top of the bay.",
+   "terrain": 1.1
+  },
+  {
+   "id": "joshua_tree",
+   "name": "Joshua Tree National Park",
+   "kind": "park",
+   "region": "CA",
+   "lat": 33.8734,
+   "lon": -115.901,
+   "services": [],
+   "blurb": "Where the Mojave meets the Colorado desert and the trees throw their arms up. No gas inside.",
+   "scene": "joshua_tree"
+  },
+  {
+   "id": "yosemite",
+   "name": "Yosemite National Park",
+   "kind": "park",
+   "region": "CA",
+   "lat": 37.7456,
+   "lon": -119.5936,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "El Capitan, Half Dome, the granite cathedral. Tioga Pass closes with the snow.",
+   "terrain": 1.25,
+   "scene": "yosemite"
+  },
+  {
+   "id": "sequoia",
+   "name": "Sequoia National Park",
+   "kind": "park",
+   "region": "CA",
+   "lat": 36.5167,
+   "lon": -118.7676,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "The biggest living things that have ever stood. The road up is all switchbacks.",
+   "terrain": 1.25,
+   "scene": "sequoia"
+  },
+  {
+   "id": "kings_canyon",
+   "name": "Kings Canyon National Park",
+   "kind": "park",
+   "region": "CA",
+   "lat": 36.8879,
+   "lon": -118.5551,
+   "services": [
+    "food"
+   ],
+   "blurb": "A glacial gorge deeper than the Grand Canyon, and far emptier.",
+   "terrain": 1.2,
+   "scene": "canyonlands"
+  },
+  {
+   "id": "disneyland",
+   "name": "Disneyland (Anaheim)",
+   "kind": "amusement",
+   "region": "CA",
+   "lat": 33.8121,
+   "lon": -117.919,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "The original. A monorail, a Matterhorn, and a parking structure the size of a town.",
+   "scene": "disneyland"
+  },
+  {
+   "id": "knotts",
+   "name": "Knott's Berry Farm (Buena Park)",
+   "kind": "amusement",
+   "region": "CA",
+   "lat": 33.8442,
+   "lon": -118.0001,
+   "services": [
+    "food"
+   ],
+   "blurb": "The boysenberry kingdom. Wooden coasters and a ghost town that owns Calico.",
+   "scene": "amusement"
+  },
+  {
+   "id": "magic_mountain",
+   "name": "Six Flags Magic Mountain (Valencia)",
+   "kind": "amusement",
+   "region": "CA",
+   "lat": 34.4253,
+   "lon": -118.5972,
+   "services": [
+    "food"
+   ],
+   "blurb": "Nineteen coasters stacked on a hill above the 5. The thrill-ride capital of the world.",
+   "scene": "amusement"
+  },
+  {
+   "id": "universal",
+   "name": "Universal Studios Hollywood",
+   "kind": "amusement",
+   "region": "CA",
+   "lat": 34.1381,
+   "lon": -118.3534,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "A working backlot you can ride through, perched above the 101.",
+   "scene": "amusement"
+  },
+  {
+   "id": "santa_cruz_boardwalk",
+   "name": "Santa Cruz Beach Boardwalk",
+   "kind": "amusement",
+   "region": "CA",
+   "lat": 36.9641,
+   "lon": -122.0177,
+   "services": [
+    "food"
+   ],
+   "blurb": "The Giant Dipper, salt air, and 1907 still running on the sand.",
+   "scene": "santa_monica"
+  },
+  {
+   "id": "seaworld_sd",
+   "name": "SeaWorld San Diego",
+   "kind": "amusement",
+   "region": "CA",
+   "lat": 32.7644,
+   "lon": -117.227,
+   "services": [
+    "food"
+   ],
+   "blurb": "Mission Bay, coasters, and the smell of the cold Pacific.",
+   "scene": "amusement"
+  },
+  {
+   "id": "santa_monica",
+   "name": "Santa Monica Pier",
+   "kind": "amusement",
+   "region": "CA",
+   "lat": 34.0089,
+   "lon": -118.4973,
+   "services": [
+    "food"
+   ],
+   "blurb": "The Pacific Wheel and the end of Route 66, where the road runs out of country.",
+   "scene": "santa_monica"
+  },
+  {
+   "id": "los_angeles",
+   "name": "Los Angeles",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.0522,
+   "lon": -118.2437,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Twelve million people and a freeway for every one of them.",
+   "gas_price": 5.09,
+   "heat_zone": true,
+   "scene": "hollywood"
+  },
+  {
+   "id": "little_tokyo",
+   "name": "Little Tokyo, Los Angeles",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 34.05,
+   "lon": -118.24,
+   "services": [
+    "food"
+   ],
+   "blurb": "Lanterns over First Street, a mochi shop, a woman who does not switch to English when you stumble.",
+   "language": "ja",
+   "voice": "jf_alpha",
+   "npc": "the okamisan at a Little Tokyo counter",
+   "scene": "sf_japantown"
+  },
+  {
+   "id": "east_la",
+   "name": "East Los Angeles",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 34.0239,
+   "lon": -118.172,
+   "services": [
+    "food"
+   ],
+   "blurb": "Mariachi Plaza, taquerias, a mechanic who talks to your engine before he talks to you.",
+   "language": "es",
+   "voice": "ef_dora",
+   "npc": "a mechanic on Boyle Heights"
+  },
+  {
+   "id": "artesia",
+   "name": "Artesia / Little India",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 33.8659,
+   "lon": -118.0831,
+   "services": [
+    "food"
+   ],
+   "blurb": "Pioneer Boulevard: sari shops, sweets, and a chai cart that runs on its own time.",
+   "language": "hi",
+   "voice": "hf_alpha",
+   "npc": "the chai-cart auntie on Pioneer Blvd"
+  },
+  {
+   "id": "san_diego",
+   "name": "San Diego",
+   "kind": "city",
+   "region": "CA",
+   "lat": 32.7157,
+   "lon": -117.1611,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Navy gray and surf gold, the last big city before the line.",
+   "gas_price": 4.99
+  },
+  {
+   "id": "san_francisco",
+   "name": "San Francisco",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.7749,
+   "lon": -122.4194,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Forty-three hills and the fog coming in over them. Park facing the curb or lose your tires.",
+   "gas_price": 5.29,
+   "terrain": 1.1,
+   "scene": "bay_bridge"
+  },
+  {
+   "id": "sf_japantown",
+   "name": "Japantown, San Francisco",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 37.785,
+   "lon": -122.4297,
+   "services": [
+    "food"
+   ],
+   "blurb": "The Peace Pagoda, a bookstore, a ramen line. If you drove all this way, this is who you came to hear.",
+   "language": "ja",
+   "voice": "jf_alpha",
+   "npc": "a shopkeeper in the Japan Center",
+   "scene": "sf_japantown"
+  },
+  {
+   "id": "sf_chinatown",
+   "name": "Chinatown, San Francisco",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 37.7941,
+   "lon": -122.4078,
+   "services": [
+    "food"
+   ],
+   "blurb": "The oldest Chinatown in the country. Grant Avenue, a tea seller who measures you with her eyes.",
+   "language": "zh",
+   "voice": "zf_xiaoxiao",
+   "npc": "a tea seller on Grant Avenue"
+  },
+  {
+   "id": "sf_north_beach",
+   "name": "North Beach, San Francisco",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 37.806,
+   "lon": -122.4103,
+   "services": [
+    "food"
+   ],
+   "blurb": "Espresso, City Lights bookstore, an old man who calls every car bella.",
+   "language": "it",
+   "voice": "if_sara",
+   "npc": "a cafe owner on Columbus Avenue"
+  },
+  {
+   "id": "sf_mission",
+   "name": "The Mission, San Francisco",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 37.7599,
+   "lon": -122.4148,
+   "services": [
+    "food"
+   ],
+   "blurb": "Murals down every alley and the best taqueria argument in the state.",
+   "language": "es",
+   "voice": "ef_dora",
+   "npc": "a muralist on Balmy Alley"
+  },
+  {
+   "id": "bakersfield",
+   "name": "Bakersfield",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.3733,
+   "lon": -119.0187,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Oil derricks, the Bakersfield Sound, and the bottom of the Central Valley.",
+   "gas_price": 4.79
+  },
+  {
+   "id": "fresno",
+   "name": "Fresno",
+   "kind": "city",
+   "region": "CA",
+   "lat": 36.7378,
+   "lon": -119.7871,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The gateway to three national parks, flat and patient in the haze.",
+   "gas_price": 4.85
+  },
+  {
+   "id": "bishop",
+   "name": "Bishop",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.3614,
+   "lon": -118.3951,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The Eastern Sierra hub. Erick Schat's bakery, the High Sierra throwing shadows by four.",
+   "gas_price": 5.09,
+   "terrain": 1.1
+  },
+  {
+   "id": "lone_pine",
+   "name": "Lone Pine",
+   "kind": "city",
+   "region": "CA",
+   "lat": 36.606,
+   "lon": -118.0626,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Under Mt. Whitney, where a thousand Westerns were shot in the Alabama Hills.",
+   "gas_price": 5.15,
+   "scene": "lone_pine"
+  },
+  {
+   "id": "lee_vining",
+   "name": "Lee Vining / Tioga Pass",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.9558,
+   "lon": -119.1188,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Mono Lake's tufa towers and the eastern gate to Yosemite, 9,943 feet up when it's open.",
+   "gas_price": 5.39,
+   "terrain": 1.3,
+   "scene": "yosemite"
+  },
+  {
+   "id": "palm_springs",
+   "name": "Palm Springs",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.8303,
+   "lon": -116.5453,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Mid-century glass under the San Jacintos, a tram to the snow line above the heat.",
+   "gas_price": 4.95
+  },
+  {
+   "id": "grand_canyon_south",
+   "name": "Grand Canyon NP (South Rim)",
+   "kind": "park",
+   "region": "AZ",
+   "lat": 36.0544,
+   "lon": -112.1401,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "A mile straight down and ten miles across. Gas and rooms at the village, if you booked.",
+   "gas_price": 4.69,
+   "scene": "grand_canyon"
+  },
+  {
+   "id": "grand_canyon_north",
+   "name": "Grand Canyon NP (North Rim)",
+   "kind": "park",
+   "region": "AZ",
+   "lat": 36.1976,
+   "lon": -112.0526,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "A thousand feet higher, far emptier, closed once the snow comes.",
+   "terrain": 1.2,
+   "scene": "grand_canyon"
+  },
+  {
+   "id": "flagstaff",
+   "name": "Flagstaff",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 35.1983,
+   "lon": -111.6513,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Ponderosa pines at 7,000 feet, Route 66 and the railroad, snow on the peaks.",
+   "gas_price": 4.05,
+   "terrain": 1.1
+  },
+  {
+   "id": "williams",
+   "name": "Williams",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 35.2494,
+   "lon": -112.1909,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The last town on Route 66 to be bypassed, and the rail gateway to the Grand Canyon.",
+   "gas_price": 4.09
+  },
+  {
+   "id": "kingman",
+   "name": "Kingman",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 35.1894,
+   "lon": -114.053,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Heart of Route 66 Arizona, a crossroads of I-40 and the road up from Vegas.",
+   "gas_price": 3.95
+  },
+  {
+   "id": "lake_havasu",
+   "name": "Lake Havasu City",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 34.4839,
+   "lon": -114.3224,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Someone bought the actual London Bridge and shipped it here, stone by stone.",
+   "gas_price": 3.99,
+   "scene": "lake_havasu"
+  },
+  {
+   "id": "sedona",
+   "name": "Sedona",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 34.8697,
+   "lon": -111.761,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Red-rock spires, art galleries, and people who will tell you about the vortexes.",
+   "gas_price": 4.29,
+   "terrain": 1.1,
+   "scene": "sedona"
+  },
+  {
+   "id": "page",
+   "name": "Page / Horseshoe Bend",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 36.9147,
+   "lon": -111.4558,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Antelope Canyon's light shafts, the green river bending 270 degrees under your boots.",
+   "gas_price": 4.19
+  },
+  {
+   "id": "phoenix",
+   "name": "Phoenix",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 33.4484,
+   "lon": -112.074,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The Valley of the Sun, a grid of warm light spreading to every horizon.",
+   "gas_price": 3.89
+  },
+  {
+   "id": "castles_coasters",
+   "name": "Castles N' Coasters (Phoenix)",
+   "kind": "amusement",
+   "region": "AZ",
+   "lat": 33.5247,
+   "lon": -112.118,
+   "services": [
+    "food"
+   ],
+   "blurb": "Arizona's last big amusement park: four mini-golf courses and the Desert Storm coaster.",
+   "scene": "amusement"
+  },
+  {
+   "id": "tucson",
+   "name": "Tucson",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 32.2226,
+   "lon": -110.9747,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Saguaro forests, the old Spanish presidio, the Sonoran desert in bloom after rain.",
+   "gas_price": 3.85
+  },
+  {
+   "id": "nogales",
+   "name": "Nogales",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 31.3404,
+   "lon": -110.9343,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The border. The fence runs right through town and the language doesn't stop at it.",
+   "gas_price": 3.79,
+   "language": "es",
+   "voice": "ef_dora",
+   "npc": "a vendor at the line in Nogales"
+  },
+  {
+   "id": "saguaro",
+   "name": "Saguaro National Park",
+   "kind": "park",
+   "region": "AZ",
+   "lat": 32.2967,
+   "lon": -111.1666,
+   "services": [],
+   "blurb": "A forest of giant cactus standing watch over Tucson, arms raised against the dusk.",
+   "scene": "saguaro"
+  },
+  {
+   "id": "petrified_forest",
+   "name": "Petrified Forest National Park",
+   "kind": "park",
+   "region": "AZ",
+   "lat": 34.91,
+   "lon": -109.8068,
+   "services": [],
+   "blurb": "Stone logs of a vanished jungle and the banded Painted Desert. No services, long miles.",
+   "scene": "petrified_forest"
+  },
+  {
+   "id": "monument_valley",
+   "name": "Monument Valley",
+   "kind": "park",
+   "region": "AZ",
+   "lat": 36.998,
+   "lon": -110.0985,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "The mittens and the buttes on the Navajo line, the most filmed horizon in America.",
+   "scene": "monument_valley"
+  },
+  {
+   "id": "meteor_crater",
+   "name": "Meteor Crater",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 35.0272,
+   "lon": -111.0224,
+   "services": [
+    "food"
+   ],
+   "blurb": "A 50,000-year-old hole in the desert, three-quarters of a mile across, off old 66.",
+   "scene": "meteor_crater"
+  },
+  {
+   "id": "st_george",
+   "name": "St. George",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.0965,
+   "lon": -113.5684,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The first Utah town off I-15, red rock and a tabernacle. Fill here for Zion or Bryce.",
+   "gas_price": 3.85
+  },
+  {
+   "id": "springdale",
+   "name": "Springdale (Zion gate)",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.1889,
+   "lon": -112.9983,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The little town at the mouth of Zion Canyon. Shuttle, lodges, the cliffs leaning in overhead.",
+   "gas_price": 4.49,
+   "terrain": 1.1
+  },
+  {
+   "id": "zion",
+   "name": "Zion National Park",
+   "kind": "park",
+   "region": "UT",
+   "lat": 37.2982,
+   "lon": -113.0263,
+   "services": [],
+   "blurb": "Navajo sandstone walls 2,000 feet high, the Narrows, Angels Landing. The trip everyone tries to make on a splash of gas.",
+   "terrain": 1.2,
+   "scene": "zion"
+  },
+  {
+   "id": "cedar_city",
+   "name": "Cedar City",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.6775,
+   "lon": -113.0619,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Festival town below the high plateaus, the turnoff for Bryce and Cedar Breaks.",
+   "gas_price": 3.89
+  },
+  {
+   "id": "kanab",
+   "name": "Kanab",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.0475,
+   "lon": -112.5263,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "'Little Hollywood,' the hub between Zion, Bryce, the Grand Canyon's North Rim, and the Wave.",
+   "gas_price": 4.09
+  },
+  {
+   "id": "bryce",
+   "name": "Bryce Canyon National Park",
+   "kind": "park",
+   "region": "UT",
+   "lat": 37.593,
+   "lon": -112.1871,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "An amphitheater of orange hoodoos at 8,000 feet. Cold at night, even in summer.",
+   "terrain": 1.25,
+   "scene": "bryce"
+  },
+  {
+   "id": "capitol_reef",
+   "name": "Capitol Reef National Park",
+   "kind": "park",
+   "region": "UT",
+   "lat": 38.2972,
+   "lon": -111.2615,
+   "services": [
+    "food"
+   ],
+   "blurb": "A hundred-mile wrinkle in the earth, orchards in the desert, petroglyphs on the cliffs.",
+   "terrain": 1.15,
+   "scene": "capitol_reef"
+  },
+  {
+   "id": "goblin_valley",
+   "name": "Goblin Valley State Park",
+   "kind": "park",
+   "region": "UT",
+   "lat": 38.5733,
+   "lon": -110.708,
+   "services": [],
+   "blurb": "A valley of mushroom-shaped hoodoos you can walk among, like a planet left unfinished.",
+   "scene": "goblin_valley"
+  },
+  {
+   "id": "moab",
+   "name": "Moab",
+   "kind": "city",
+   "region": "UT",
+   "lat": 38.5733,
+   "lon": -109.5498,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Slickrock and the Colorado, mountain bikes and 4x4s, the base for two national parks.",
+   "gas_price": 4.19
+  },
+  {
+   "id": "arches",
+   "name": "Arches National Park",
+   "kind": "park",
+   "region": "UT",
+   "lat": 38.7331,
+   "lon": -109.5925,
+   "services": [],
+   "blurb": "Over 2,000 stone arches, Delicate Arch alone on the rim against the La Sals.",
+   "scene": "arches"
+  },
+  {
+   "id": "canyonlands",
+   "name": "Canyonlands National Park",
+   "kind": "park",
+   "region": "UT",
+   "lat": 38.3269,
+   "lon": -109.8783,
+   "services": [],
+   "blurb": "Where the Green and the Colorado carve the earth into Islands in the Sky. No gas, no water.",
+   "scene": "canyonlands"
+  },
+  {
+   "id": "salt_lake_city",
+   "name": "Salt Lake City",
+   "kind": "city",
+   "region": "UT",
+   "lat": 40.7608,
+   "lon": -111.891,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The grid laid out from a temple, the Wasatch hard against the eastern edge.",
+   "gas_price": 3.79,
+   "terrain": 1.05,
+   "scene": "salt_lake"
+  },
+  {
+   "id": "lagoon",
+   "name": "Lagoon Amusement Park (Farmington)",
+   "kind": "amusement",
+   "region": "UT",
+   "lat": 40.9858,
+   "lon": -111.899,
+   "services": [
+    "food"
+   ],
+   "blurb": "Utah's own park since 1886: a wooden coaster from 1921 still rattling north of Salt Lake.",
+   "scene": "amusement"
+  },
+  {
+   "id": "park_city",
+   "name": "Park City",
+   "kind": "city",
+   "region": "UT",
+   "lat": 40.6461,
+   "lon": -111.498,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Old silver mines turned ski resort, Main Street steep with money and snow.",
+   "gas_price": 3.95,
+   "terrain": 1.15
+  },
+  {
+   "id": "bonneville",
+   "name": "Bonneville Salt Flats",
+   "kind": "track",
+   "region": "UT",
+   "lat": 40.7639,
+   "lon": -113.8932,
+   "services": [],
+   "blurb": "Thirty thousand acres of dead-flat salt where land-speed records are made. The horizon curves.",
+   "scene": "bonneville"
+  },
+  {
+   "id": "fallon",
+   "name": "Fallon / NAS Fallon",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 39.4735,
+   "lon": -118.7774,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "gas_price": 4.39,
+   "scene": "fallon",
+   "blurb": "Naval Air Station Fallon — TOPGUN moved here. Hornets tear the desert sky open low and loud."
+  },
+  {
+   "id": "sphere",
+   "name": "The Sphere, Las Vegas",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 36.1212,
+   "lon": -115.162,
+   "services": [
+    "food"
+   ],
+   "scene": "sphere",
+   "heat_zone": true,
+   "blurb": "A 366-foot eyeball made of LEDs, blinking at the freeway. It is looking at you. It is always looking."
+  },
+  {
+   "id": "fremont",
+   "name": "Fremont Street, Las Vegas",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 36.1699,
+   "lon": -115.1428,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "scene": "vegas_strip",
+   "heat_zone": true,
+   "gas_price": 4.39,
+   "blurb": "Old downtown under a canopy of a billion bulbs, a zipline screaming overhead, a cowboy made of neon."
+  },
+  {
+   "id": "seven_magic",
+   "name": "Seven Magic Mountains",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 35.8108,
+   "lon": -115.2658,
+   "services": [],
+   "blurb": "Stacks of fluorescent boulders rising out of the Jean dry lake, somebody's idea south of Vegas."
+  },
+  {
+   "id": "golden_gate",
+   "name": "Golden Gate Bridge",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 37.8199,
+   "lon": -122.4783,
+   "services": [],
+   "scene": "golden_gate",
+   "blurb": "International orange swallowed by fog. The towers come and go like a rumor."
+  },
+  {
+   "id": "racetrack_playa",
+   "name": "Racetrack Playa (Death Valley)",
+   "kind": "park",
+   "region": "CA",
+   "lat": 36.6814,
+   "lon": -117.563,
+   "services": [],
+   "scene": "death_valley",
+   "terrain": 1.2,
+   "blurb": "The sailing stones. Rocks that move themselves across the mud and leave trails, and no one watching."
+  },
+  {
+   "id": "salvation_mountain",
+   "name": "Salvation Mountain",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 33.2543,
+   "lon": -115.4725,
+   "services": [],
+   "blurb": "A hand-painted adobe hill of love and scripture out by the Salton Sea, next to a town with no laws."
+  },
+  {
+   "id": "amargosa",
+   "name": "Amargosa Opera House (Death Valley Junction)",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 36.3083,
+   "lon": -116.4108,
+   "services": [
+    "lodging"
+   ],
+   "scene": "death_valley",
+   "blurb": "A lone opera house in the empty desert where a dancer painted herself an audience on the walls."
+  },
+  {
+   "id": "goldfield",
+   "name": "Goldfield ghost town",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 37.7086,
+   "lon": -117.2357,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "gas_price": 4.59,
+   "scene": "great_basin",
+   "blurb": "Once the biggest city in Nevada, now a few hundred souls, a haunted hotel, and a yard of welded art cars."
+  },
+  {
+   "id": "integratron",
+   "name": "The Integratron",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 34.2961,
+   "lon": -116.4044,
+   "services": [],
+   "scene": "joshua_tree",
+   "blurb": "A white dome built from alien instructions for rejuvenation and time travel. Sound baths now. Sure."
+  },
+  {
+   "id": "madonna_inn",
+   "name": "Madonna Inn, San Luis Obispo",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 35.2533,
+   "lon": -120.6707,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "scene": "motel",
+   "blurb": "110 rooms, no two alike, pink as a wound, a urinal that's a waterfall. You have to stay somewhere."
+  },
+  {
+   "id": "willow_creek",
+   "name": "Bigfoot country (Willow Creek)",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 40.941,
+   "lon": -123.632,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Self-proclaimed Bigfoot capital. A giant carved sasquatch by the road, and the trees lean in close."
+  },
+  {
+   "id": "area51_gate",
+   "name": "Area 51 back gate",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 37.235,
+   "lon": -115.8111,
+   "services": [],
+   "scene": "area51",
+   "blurb": "A cattle guard, a white truck on a hill, cameras on poles, and a sign that promises deadly force."
+  },
+  {
+   "id": "richmond_koinoya",
+   "name": "koiNOya — Richmond",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 37.9358,
+   "lon": -122.3477,
+   "services": [
+    "food"
+   ],
+   "scene": "koinoya",
+   "language": "ja",
+   "voice": "jf_alpha",
+   "npc": "the old dealer at koiNOya",
+   "blurb": "A cluttered Edo-era relic shop in Richmond: naginata and ceremonial blades racked like umbrellas, each one carved with a card suit. Where Ace was born.",
+   "origin": "born"
+  },
+  {
+   "id": "oakland_aisha",
+   "name": "AiSha Garage — Downtown Oakland",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 37.8044,
+   "lon": -122.2711,
+   "services": [
+    "food"
+   ],
+   "scene": "oakland_aisha",
+   "blurb": "A 1926 red-brick garage downtown, AiSHALLC hand-painted across the roofline, a kanji on the roll-up door, the skyline rising behind. Where Ace grew up.",
+   "origin": "grew"
+  },
+  {
+   "id": "petersen",
+   "name": "Petersen Automotive Museum, LA",
+   "kind": "museum",
+   "region": "CA",
+   "lat": 34.0619,
+   "lon": -118.3614,
+   "services": [
+    "food"
+   ],
+   "scene": "museum",
+   "blurb": "A red ribbon of steel wrapped around four floors of cars. She asks to idle out front a while."
+  },
+  {
+   "id": "neon_museum",
+   "name": "The Neon Museum, Las Vegas",
+   "kind": "museum",
+   "region": "NV",
+   "lat": 36.1771,
+   "lon": -115.139,
+   "services": [
+    "food"
+   ],
+   "scene": "museum",
+   "heat_zone": true,
+   "blurb": "The Boneyard: dead casino signs laid out under the desert sky, still glowing if you squint."
+  },
+  {
+   "id": "getty",
+   "name": "The Getty Center, LA",
+   "kind": "museum",
+   "region": "CA",
+   "lat": 34.078,
+   "lon": -118.4741,
+   "services": [
+    "food"
+   ],
+   "scene": "museum",
+   "blurb": "Travertine and a tram up the hill — art, gardens, and the whole basin laid out below."
+  },
+  {
+   "id": "heard",
+   "name": "Heard Museum, Phoenix",
+   "kind": "museum",
+   "region": "AZ",
+   "lat": 33.4717,
+   "lon": -112.0728,
+   "services": [
+    "food"
+   ],
+   "scene": "museum",
+   "blurb": "The finest collection of Native American art in the Southwest, in a quiet Spanish-revival courtyard."
+  },
+  {
+   "id": "nhmu",
+   "name": "Natural History Museum of Utah, SLC",
+   "kind": "museum",
+   "region": "UT",
+   "lat": 40.764,
+   "lon": -111.824,
+   "services": [
+    "food"
+   ],
+   "scene": "museum",
+   "blurb": "A copper-skinned ark built into the Wasatch foothills, full of dinosaurs and deep time."
+  },
+  {
+   "id": "pinball",
+   "name": "Pinball Hall of Fame, Las Vegas",
+   "kind": "museum",
+   "region": "NV",
+   "lat": 36.0639,
+   "lon": -115.173,
+   "services": [
+    "food"
+   ],
+   "scene": "museum",
+   "heat_zone": true,
+   "blurb": "A warehouse of playable machines back to the 1950s. Bring quarters; leave the heat outside."
+  },
+  {
+   "id": "monterey",
+   "name": "Monterey",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 36.6002,
+   "lon": -121.8947,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Cannery Row, the kelp tanks, 17-Mile Drive. The cypress lean into the fog like they're listening.",
+   "scene": "aquarium",
+   "story": true
+  },
+  {
+   "id": "long_beach",
+   "name": "Long Beach",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.7701,
+   "lon": -118.1937,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The Queen Mary at anchor, the port cranes like grazing dinosaurs, the salvage yards inland.",
+   "scene": "drive_city",
+   "heat_zone": true,
+   "story": true
+  },
+  {
+   "id": "livermore",
+   "name": "Livermore",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 37.6819,
+   "lon": -121.768,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Wine country gone to office parks and self-storage. A row of roll-up doors keeps more secrets than any vault.",
+   "scene": "storage",
+   "story": true
+  },
+  {
+   "id": "san_jose",
+   "name": "San Jose",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.3382,
+   "lon": -121.8863,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The capital of Silicon Valley, flat and warm and endless.",
+   "heat_zone": true
+  },
+  {
+   "id": "berkeley",
+   "name": "Berkeley",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.8715,
+   "lon": -122.273,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The university, the hills, the smell of eucalyptus and protest."
+  },
+  {
+   "id": "sacramento",
+   "name": "Sacramento",
+   "kind": "city",
+   "region": "CA",
+   "lat": 38.5816,
+   "lon": -121.4944,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The state capital under the delta breeze, old gold-rush bones downtown."
+  },
+  {
+   "id": "stockton",
+   "name": "Stockton",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.9577,
+   "lon": -121.2908,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "A deep-water port ninety miles from the sea, asphalt shimmering in the valley heat."
+  },
+  {
+   "id": "santa_barbara",
+   "name": "Santa Barbara",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.4208,
+   "lon": -119.6982,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Red-tile roofs, the Riviera of the West, the 101 running right along the surf."
+  },
+  {
+   "id": "ventura",
+   "name": "Ventura",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.2746,
+   "lon": -119.229,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "A pier, a point break, and the Channel Islands floating offshore."
+  },
+  {
+   "id": "oceanside",
+   "name": "Oceanside",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.1959,
+   "lon": -117.3795,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Marine town, longboards, the smell of diesel and sunscreen."
+  },
+  {
+   "id": "riverside",
+   "name": "Riverside",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.9806,
+   "lon": -117.3755,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "The Mission Inn and the orange groves that built it, inland and bright.",
+   "heat_zone": true
+  },
+  {
+   "id": "pasadena",
+   "name": "Pasadena",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.1478,
+   "lon": -118.1445,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Craftsman bungalows, the Rose Bowl, the Colorado Street bridge over the arroyo.",
+   "heat_zone": true
+  },
+  {
+   "id": "palm_desert",
+   "name": "Palm Desert",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.7222,
+   "lon": -116.3744,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Golf and glass under the Santa Rosas, El Paseo for the snowbirds."
+  },
+  {
+   "id": "gilroy",
+   "name": "Gilroy",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.0058,
+   "lon": -121.5683,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Garlic capital of the world; you smell it before the off-ramp."
+  },
+  {
+   "id": "napa",
+   "name": "Napa",
+   "kind": "city",
+   "region": "CA",
+   "lat": 38.2975,
+   "lon": -122.2869,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Vines in tidy rows, tasting rooms, the wine train rattling north."
+  },
+  {
+   "id": "half_moon_bay",
+   "name": "Half Moon Bay",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.4636,
+   "lon": -122.4286,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Pumpkins, Mavericks' big surf, Highway 1 hugging the cliff edge."
+  },
+  {
+   "id": "redding",
+   "name": "Redding",
+   "kind": "city",
+   "region": "CA",
+   "lat": 40.5865,
+   "lon": -122.3917,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Top of the valley under Mount Shasta, the Sundial Bridge over the Sacramento."
+  },
+  {
+   "id": "berlin_nv",
+   "name": "Berlin–Ichthyosaur State Park",
+   "kind": "park",
+   "region": "NV",
+   "lat": 38.8665,
+   "lon": -117.5957,
+   "services": [],
+   "terrain": 1.05,
+   "blurb": "A silver-rush ghost town nobody bothered to tear down — and behind it, under a shed, the bones of fifty-foot sea monsters that died here when Nevada was an ocean.",
+   "scene": "berlin_nv"
+  }
+ ]
 }

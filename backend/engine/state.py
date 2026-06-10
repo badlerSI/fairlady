@@ -69,8 +69,11 @@ class GameState:
     heat: float = HEAT_START
     last_sleep_poi: Optional[str] = None  # for linger detection
 
+    # --- riz (the style ledger; survives rewinds — only you two remember) ---
+    riz: float = 0.0
+
     # --- bookkeeping ---
-    status: str = "playing"             # playing | stranded | busted | impounded
+    status: str = "playing"             # playing | stranded | busted | taken
     ending: Optional[str] = None
     seed: int = 73111737                # deterministic per game (overridden at new-game)
     turn: int = 0

@@ -80,6 +80,7 @@ const FONT = (() => {
   def("★",["  #  ","  #  ","#####"," ### ","## ##","#   #","     "]); // ★
   def("♠",["  #  "," ### ","#####","#####","## ##","  #  "," ### "]); // ♠
   def("♥",[" # # ","#####","#####","#####"," ### ","  #  ","     "]); // ♥
+  def("♣",[" ### "," ### ","## ##","#####","## ##","  #  "," ### "]); // ♣
   return G;
 })();
 
@@ -193,7 +194,7 @@ class RetroScene {
     this.color(c); str = (str || "").toUpperCase();
     let cx = x | 0;
     for (const ch of str) {
-      const g = FONT[ch] || FONT["?"];
+      const g = FONT[ch] || FONT[" "];   // unsupported glyphs (CJK etc.) render blank, not "?"
       for (let r = 0; r < 7; r++)
         for (let col = 0; col < 5; col++)
           if (g[r][col] === "#")

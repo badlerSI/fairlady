@@ -900,9 +900,57 @@ const SCENES = {
     drawAce(s, t);
   },
   encounter(s, t) {                             // generic encounter (non-JP)
-    bgNight(s, t, 74, 0, 70);
-    SPR.city(s, t);
-    s.textC("HOLA  你好  BONJOUR", 14, s.blink(1.2)?I.hot:I.d2, 1);
+    SCENES.city(s, t);                          // (was SPR.city — which never existed)
+    s.textC("HOLA  NI HAO  BONJOUR", 14, s.blink(1.2)?I.hot:I.d2, 1);
+  },
+
+  sema_hall(s, t) {                             // the North Hall — where the favor gets asked
+    // rafters + trusses
+    for (let y = 8; y <= 32; y += 12) { s.hline(0, s.W, y, I.d1);
+      for (let x = (y/12|0)*4; x < s.W; x += 22) s.line(x, y, x + 11, y + 12, I.d1); }
+    s.textC("SEMA · NORTH HALL", 14, I.f, 1);
+    s.textC("FINAL DAY · HALL CLOSES 5:37", 26, s.blink(1.6) ? I.d3 : I.d2, 1);
+    // pennant string
+    for (let x = 8; x < s.W; x += 16) s.poly([[x,38],[x+8,38],[x+4,46]], (x/16|0)%2 ? I.d2 : I.d3);
+    // spotlight cone onto the turntable
+    s.dither(120, 46, 80, GROUND - 46, 2, I.d1);
+    s.dither(140, 46, 40, GROUND - 46, 4, I.d2);
+    // crowd silhouettes thinning out at the edges
+    const r = s.rng(11);
+    for (let i = 0; i < 7; i++) { const x = i < 4 ? 6 + i*16 : 250 + (i-4)*20, h = 26 + r()*8;
+      s.rect(x, GROUND - h, 7, h, I.d1); s.disc(x + 3, GROUND - h - 3, 3, I.d1); }
+    // the turntable + the car, white under the lights
+    s.disc(160, GROUND + 18, 92, I.d1); s.disc(160, GROUND + 16, 86, I.d2);
+    SPR.ground(s, GROUND + 30, I.d3);
+    drawAce(s, t, { moving: false });
+  },
+
+  berlin_nv(s, t) {                             // Berlin–Ichthyosaur: ghost town + sea monsters
+    bgNight(s, t, 21);
+    SPR.moon(s, 272, 26, 11);
+    SPR.mountains(s, 112, 3, 36, I.d1, 1.1); SPR.mountains(s, 126, 8, 22, I.d2);
+    SPR.ground(s, GROUND, I.d3);
+    // leaning ghost-town shacks
+    const shack = (x, w, h, lean) => {
+      s.poly([[x, GROUND], [x + lean, GROUND - h], [x + w + lean, GROUND - h - 3], [x + w, GROUND]], I.d1);
+      s.poly([[x + lean - 3, GROUND - h], [x + w + lean + 3, GROUND - h - 3],
+              [x + w/2 + lean, GROUND - h - 12]], I.d2);
+      s.rect(x + w/2 - 2, GROUND - h/2, 4, 5, I.bg);   // a dark window, nobody home
+    };
+    shack(18, 34, 30, 2); shack(64, 26, 24, -3); shack(252, 38, 34, 4);
+    // the fossil shed: open front, ichthyosaur ribs inside
+    s.rect(122, GROUND - 44, 86, 44, I.d1);
+    s.poly([[116, GROUND - 44], [214, GROUND - 44], [165, GROUND - 58]], I.d2);
+    s.rect(130, GROUND - 36, 70, 36, I.bg);            // the dark open bay
+    for (let i = 0; i < 6; i++) {                      // ribs of a fifty-foot sea monster
+      const x = 138 + i * 11, h = 26 - Math.abs(i - 2.5) * 5;
+      s.line(x, GROUND - 2, x - 3, GROUND - h, I.d3); s.plot(x - 3, GROUND - h, I.f);
+    }
+    s.line(134, GROUND - 28, 152, GROUND - 31, I.d3);  // the long jaw
+    s.textC("BERLIN · POP 0", 20, I.f, 1);
+    s.textC("NEVADA WAS AN OCEAN", 32, I.d2, 1);
+    if (s.blink(2.4)) s.plot(206, GROUND - 50, I.hot); // one star over the shed
+    drawAce(s, t, { moving: false });
   },
 };
 

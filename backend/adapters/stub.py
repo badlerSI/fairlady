@@ -4,6 +4,7 @@ from __future__ import annotations
 import random
 
 from adapters.base import Narrator, voice_for, LANG_NAMES
+from engine.commands import is_spec_question
 
 PHRASEBOOK = {
     "ja": ("ようこそ、旅の人。何かお探し？", "Welcome, traveler. Looking for something?"),
@@ -101,6 +102,13 @@ class StubNarrator(Narrator):
         return self._idle(rng, s, player_text)
 
     def _idle(self, rng, s, player_text):
+        if is_spec_question(player_text):       # the build sheet, recited with pride
+            return _pick(rng, [
+                "Two hundred and fifty foot-pounds at the wheels, thank you very much. Most "
+                "people photograph the paint. You asked the right question.",
+                "250 lb-ft, a fifty-three-year-old chassis, and opinions. The placard undersells "
+                "two of the three.",
+            ])
         r = s.get("range_mi", 0)
         heat = s.get("heat", 0)
         if r < 20:

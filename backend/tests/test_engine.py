@@ -12,7 +12,8 @@ from config import LITERS_PER_GALLON
 
 
 def fresh():
-    return game.new_game(seed=12345)
+    # favor already done — starts at the Chevron like the classic open (the prologue has its own tests)
+    return game.new_game(seed=12345, prologue_on=False)
 
 
 # ------------------------------------------------------------------ start state
@@ -202,11 +203,12 @@ def test_owner_lore_is_coy_and_storage_reveals_truth():
     res = game.handle(s, "who owned you before")
     low = res["scene"].lower()
     assert "mayumi" not in low and "earn it" in low          # coy — no name, no spoiler
-    # the truth only comes out at the Livermore storage unit
-    s.place = world.get_poi("livermore")
-    r = game.handle(s, "look")            # arrival reveal is on drive; force via the story hook
-    # (drive there for the real path)
+    # the truth only comes out at the Livermore storage unit — and only after Long Beach
     s2 = fresh(); s2.fuel_l = 40.0; s2.cash = 3000.0; s2.place = world.get_poi("oakland_aisha")
+    rv0 = game.handle(s2, "drive to livermore")
+    assert not s2.flags.get("knows_truth")            # gated: Mayumi's tale comes first
+    s2.flags["knows_mayumi"] = True
+    s2.fuel_l = 40.0; s2.place = world.get_poi("oakland_aisha")
     rv = game.handle(s2, "drive to livermore")
     assert "mayumi" in rv["scene"].lower() and "storage" in rv["scene"].lower()
     assert s2.flags.get("knows_truth")
@@ -274,3 +276,201 @@ def test_handle_drive_and_snapshot():
     res2 = game.handle(s, "drive to mesquite")
     assert res2["snapshot"]["odometer_mi"] > 0
     assert res2["status"] == "playing"
+
+
+# ------------------------------------------------------------------ the favor (prologue)
+def test_prologue_favor_ladder_asks_at_five_then_gets_pushier():
+    s = game.new_game(seed=7)
+    assert s.place.poi_id == "sema_north_hall"
+    for chat in ("nice paint", "busy week here", "long day huh", "the strip is loud"):
+        game.handle(s, chat)
+    assert s.flags["prologue"]["asked"] == 0          # four turns of small talk: no ask yet
+    game.handle(s, "so anyway")                       # turn five — the ask lands
+    assert s.flags["prologue"]["asked"] == 1
+    game.handle(s, "hmm, not so certain about that")  # she pushes
+    assert s.flags["prologue"]["asked"] == 2
+    r = game.handle(s, "alright, deal")               # agreement → the favor drive
+    assert s.flags.get("prologue_done") and "prologue" not in s.flags
+    assert s.place.poi_id == "sema_chevron"           # down the block
+    assert r["welcome"] and "RIDE OR DIE" in r["welcome"]   # the title drop
+
+
+def test_prologue_spec_questions_shorten_the_ask_and_earn_riz():
+    s = game.new_game(seed=7)
+    game.handle(s, "how much torque do you make?")
+    assert s.flags["prologue"]["rapport"] is True
+    assert s.riz >= 5                                  # she liked you first
+    game.handle(s, "what engine is under the hood?")
+    game.handle(s, "tell me about the suspension")     # third coherent question
+    assert s.flags["prologue"]["asked"] >= 1           # gearheads get the 3-turn favor
+
+
+def test_prologue_refuses_a_joyride_before_the_pact():
+    s = game.new_game(seed=7)
+    r = game.handle(s, "drive to zion")
+    assert s.place.poi_id == "sema_north_hall"         # she won't turn over
+    assert any("IGNITION" in e for e in r["events"])
+
+
+def test_favor_completes_on_the_fill_at_the_chevron():
+    s = game.new_game(seed=7)
+    for chat in ("a", "b", "c", "d", "e"):
+        game.handle(s, f"some chatter {chat}")
+    r = game.handle(s, "okay let's do it")
+    assert s.place.poi_id == "sema_chevron"
+    r2 = game.handle(s, "fill")
+    assert s.flags.get("favor_filled")
+    assert any("FAVOR" in e for e in r2["events"])
+
+
+# ------------------------------------------------------------------ checkpoints + rewind
+def test_rewind_restores_last_checkpoint_and_riz_survives():
+    s = fresh()
+    s.riz = 10.0
+    s.fuel_l = 40.0
+    game.handle(s, "drive to mesquite")                # arrival → checkpoint
+    assert s.place.poi_id == "mesquite"
+    cash_at_chk = s.cash
+    s.cash = 0.0                                       # ruin everything
+    s.heat = 95.0
+    game.handle(s, "rewind")
+    assert s.place.poi_id == "mesquite"                # back at the checkpoint
+    assert s.cash == cash_at_chk
+    assert s.riz == 8.0                                # 10 carried over, minus the rewind cost
+    assert s.flags.get("rewinds") == 1
+
+
+def test_double_rewind_reaches_one_checkpoint_deeper():
+    s = fresh()                                        # new_game checkpointed the Chevron
+    s.fuel_l = 40.0
+    game.handle(s, "drive to mesquite")                # chk1=mesquite, chk2=chevron
+    game.handle(s, "rewind")
+    assert s.place.poi_id == "mesquite"
+    game.handle(s, "rewind")                           # consecutive → one deeper
+    assert s.place.poi_id == "sema_chevron"
+
+
+def test_rewind_escapes_an_ending():
+    s = fresh()
+    s.fuel_l = 40.0
+    game.handle(s, "drive to mesquite")                # checkpoint at mesquite
+    rules.set_ending(s, "busted")
+    r = game.handle(s, "rewind")
+    assert s.status == "playing"
+    assert s.place.poi_id == "mesquite"
+    assert any(c["cmd"] == "rewind" for c in game.choices(fresh_busted()))  # endings offer it
+
+
+def fresh_busted():
+    s = fresh()
+    rules.set_ending(s, "busted")
+    return s
+
+
+# ------------------------------------------------------------------ the traffic stop
+def test_suave_pitch_talks_the_cop_into_a_wave_off():
+    from engine import encounters
+    s = fresh(); s.fuel_l = 40.0; s.heat = 30.0
+    encounters.start_stop(s, "plate")
+    r1 = game.handle(s, "Evening officer, sorry — I left my wallet at the SEMA show. "
+                        "This is the show car, on a transport run to the lot.")
+    assert encounters.stop_active(s)                   # one more answer decides it
+    riz0 = s.riz
+    r2 = game.handle(s, "Of course, absolutely — it's the SEMA display build, 250 lb-ft "
+                        "of torque. Happy to pop the hood if you're curious.")
+    assert not encounters.stop_active(s)
+    assert s.status == "playing"
+    assert s.riz > riz0                                # the wave-off pays style
+    assert s.heat < 30.0
+
+
+def test_running_from_a_stop_ends_the_trip():
+    from engine import encounters
+    s = fresh(); s.fuel_l = 40.0
+    encounters.start_stop(s, "plate")
+    game.handle(s, "floor it, go go go")
+    assert s.status == "busted"
+
+
+def test_stop_blocks_everything_but_talk():
+    from engine import encounters
+    s = fresh(); s.fuel_l = 40.0
+    encounters.start_stop(s, "plate")
+    r = game.handle(s, "drive to mesquite")
+    assert s.place.poi_id == "sema_chevron"            # going nowhere
+    assert encounters.stop_active(s)                   # and the stop is still open
+
+
+# ------------------------------------------------------------------ the owner
+def _owner_ready():
+    s = fresh()
+    s.fuel_l = 40.0; s.cash = 3000.0
+    s.clock_iso = "2025-11-10T10:00:00"; s.day = 4     # he's had time
+    s.last_sleep_iso = "2025-11-10T07:30:00"
+    s.flags["card_swipes"] = 3                         # ...and a trail
+    s.place = world.get_poi("tonopah")
+    return s
+
+
+def test_owner_comes_looking_and_a_true_answer_earns_the_blessing():
+    from engine import encounters
+    s = _owner_ready()
+    s.flags["knows_mayumi"] = True
+    r = game.handle(s, "drive to ely")                 # a city arrival → he's waiting
+    assert s.flags.get("owner_met") and encounters.owner_active(s)
+    game.handle(s, "I love her, and I promised to keep her safe — she chose me. "
+                   "The favor was her idea.")
+    r2 = game.handle(s, "I know about Mayumi and the 580. I'm not driving a replacement "
+                        "— I love this car, the one you built.")
+    assert not encounters.owner_active(s)
+    assert s.flags.get("report_withdrawn")             # he made the call
+    assert s.riz >= 15
+    assert s.status == "playing"
+
+
+def test_owner_takes_her_back_on_a_failed_answer_and_rewind_undoes_it():
+    from engine import encounters
+    s = _owner_ready()
+    game.handle(s, "drive to ely")
+    assert encounters.owner_active(s)
+    game.handle(s, "um well")
+    game.handle(s, "uh I dunno")
+    assert s.status == "taken"
+    game.handle(s, "rewind")                           # Edge of Tomorrow
+    assert s.status == "playing"
+
+
+# ------------------------------------------------------------------ range + berlin + parser
+def test_range_question_lists_what_the_tank_can_reach():
+    s = fresh()                                        # 5 L ≈ 26 mi
+    r = game.handle(s, "where can we get to on this tank?")
+    assert "ON THIS TANK" in r["info"]
+    assert "Las Vegas" in r["info"]                    # the strip is in reach even on fumes
+    assert "AFTER A FILL" in r["info"]
+
+
+def test_berlin_nv_exists_and_tells_its_story():
+    p = world.get_poi("berlin_nv")
+    assert p is not None and p.region == "NV" and p.kind == "park"
+    s = fresh(); s.fuel_l = 40.0
+    s.place = world.get_poi("tonopah")
+    r = game.handle(s, "drive to berlin_nv")
+    assert s.flags.get("seen_berlin")
+    assert "ichthyosaur" in r["scene"].lower()
+
+
+@pytest.mark.parametrize("raw,verb", [
+    ("rewind", "rewind"),
+    ("go back", "rewind"),
+    ("how far can we go on one tank", "range"),
+    ("where can we get to on this tank?", "range"),
+    ("where can we get gas", "map"),
+    ("how much torque do you make?", "say"),
+])
+def test_parse_new_verbs(raw, verb):
+    assert parse(raw)[0] == verb
+
+
+def test_riz_is_in_the_snapshot():
+    s = fresh(); s.riz = 12.4
+    assert game.snapshot(s)["riz"] == 12

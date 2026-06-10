@@ -1,11 +1,20 @@
-# FAIRLADY ◇ 240Z
+# RIDE OR DIE ◇ 愛車
+
+*Aisha (愛車) does not translate to "love car." The only honest translation is the thing you're
+about to agree to.*
 
 A free-roaming, retrofuturistic text road-trip across the American West, played in a CRT terminal.
-You drove a talking 1972 Datsun 240Z — **FAIRLADY** — off the SEMA show floor at 5:37 PM on Friday,
-November 7, 2025. She isn't magic: a little stack of compute behind the dash gave her a voice and a
-map of every street address and most points of interest in **Nevada, California, Arizona, and Utah**.
-Now it's the two of you, a 40-liter tank, ~20 miles to the gallon, a credit card that leaves a trail,
-and a car somebody already reported missing.
+It opens on the SEMA show floor, twenty minutes to close, at the white 1972 Datsun 240Z everybody
+stops at — **FAIRLADY**, 250 lb-ft of torque, ace of spades on the hood, and a placard that doesn't
+mention she talks. Talk to her a while (ask real questions about her build and she warms up fast)
+and she'll ask one simple favor: *take her down the block to fill up with gasoline, so she's ready
+to head home after this nightmare that was SEMA.* Then she'll ask again. Then she'll beg.
+
+Say yes — that's the title drop — and it's the two of you: a 40-liter tank, ~20 miles to the gallon,
+a credit card that leaves a trail, a car somebody is about to report missing, and an owner who will
+come looking. She isn't magic: a little stack of compute behind the dash gave her a voice and a map
+of every street address and most points of interest in **Nevada, California, Arizona, and Utah** —
+your onboard GPU with GPS, and she keeps the saves.
 
 Point her at Zion straight off your opening splash of gas and you'll end the night stranded on the
 shoulder in a car you can't report stolen. The whole game is that tension: **fuel, money, nightfall,
@@ -39,10 +48,12 @@ She answers, narrates, and the world only renders what the engine knows is true.
 drive to <place>      'drive to zion', 'go to the petersen', any NV/CA/AZ/UT address. 'fast' to push it.
 drive me home         she'll take you to the Oakland garage (her home) — or "home is <place>" to set yours
 fill / gas $20 / 30 L  buy fuel (40 L tank, ~20 mpg, ~211 mi full)
+where can we get to on one tank?   the range question — answered with real math, like everything
 pay cash | pay card    cash leaves no trail; the card does
 sleep / motel          rest for the night — you must, most nights
 talk                   speak with the locals where the language isn't English
 who owned you before / where were you born / where'd you grow up   — her story, filled in over time
+rewind                 back to the last checkpoint (twice in a row reaches one deeper) — she keeps the saves
 map / look / tow / new
 ```
 
@@ -60,6 +71,8 @@ backend/
     world.py          POI registry + real OSM geocoding/routing (cached, offline fallback)
     economy.py        gas pricing, fueling math, cash-vs-card
     commands.py       intent parser (the LLM never decides what happens)
+    prologue.py       the favor — the SEMA show-floor opening; she asks, then begs
+    encounters.py     talk-your-way-out: traffic stops + the owner (deterministic rubric)
     game.py           orchestration: new game, snapshots, suggested moves, turns
     save.py           JSON save/load
   adapters/
@@ -67,7 +80,7 @@ backend/
     stub.py           offline, deterministic FAIRLADY (default; powers the tests)
     ace.py            rop1 Ace stack: /chat (Nemotron+Kokoro), /translate_speak (Japanese NPCs)
   content/
-    pois.json         128 hand-verified POIs with real coordinates (+ Easter eggs + lore origins)
+    pois.json         129 hand-verified POIs with real coordinates (+ Easter eggs + lore origins)
     voices.json       Kokoro female voice per language
     car.json          the 240Z spec + FAIRLADY's persona
     intro.md          the SEMA opening
@@ -77,7 +90,7 @@ frontend/
   car_sprite.js                    Ace, digitized from Ben's real photo (baked PNG + anchor points)
   scenes.js                        prop sprites + drawAce (the hero) + 40+ location backdrops
 tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes car_sprite.js)
-backend/tests/        34 deterministic-core tests
+backend/tests/        55 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -106,6 +119,27 @@ makes her limp and thirsty, a **pass closes** and the detour costs you fuel. The
 dramatic *cue*; Nemotron (or the offline stub) plays it. That's the compute-heavy part — real narrative
 drama on a Blackwell.
 
+### Talk your way out — stops, the owner, Riz, and the rewind
+
+Sometimes the lights actually come on, and you're **pulled over in an unregistered SEMA show car
+that talks**, with no wallet — it's in a drawer back at the North Hall. The stop is a real
+conversation: a deterministic rubric in `engine/encounters.py` scores what you actually said
+(courtesy, the truthiest cover story, gearhead cred — knowing her build plays well with a certain
+kind of cop), seeded dice settle the gray middle, and the LLM only narrates. Outcomes run from a
+wave-off to a ticket to a BOLO to busted — and fleeing is exactly as smart as it sounds.
+
+**The owner comes looking.** Work the card too hard for too many days and the man who built her is
+waiting at the next pump island. He's not there to fight; he's there to ask *why her*. He knows true
+love with cars — and what you two have is it, if you can say so out loud. (He's pining for someone
+else entirely. It all comes out in due course, like the best early-90s light novel games.)
+
+**Riz** is the style ledger: earned by suave wave-offs, taken tickets, asking the right questions
+before she ever had to beg, and the owner's blessing. And when it all goes wrong: **rewind** — a bit
+of the ol' Edge of Tomorrow. She keeps checkpoints at every clean arrival, every survived night, and
+the favor itself; `rewind` folds the world back (twice in a row reaches one checkpoint deeper), it
+works even from BUSTED and STRANDED endings, and Riz survives the fold, minus a small fee — only
+you two remember the timeline that unhappened.
+
 **Trust is earned, not dumped.** Ask "who owned you before" early and she's **coy** — "you'll have to earn
 it." It surfaces a guarded mile at a time, and the truth only comes out where it's kept: arriving certain
 towns triggers set-piece reveals — **Monterey** (the aquarium + memories of 2025 Car Week), **Long Beach**
@@ -133,7 +167,7 @@ bitmap font, chunky pixels. The hue is **SOUL Interface cyan** (`#38d6ec` on `#0
 byte-exact from the brand site) — the game is meant to read as an Ace / SOUL Interface artifact, the
 koi-CRT posterization in motion. Type is IBM Plex Mono (body) and Space Grotesk (display), the wordmark
 carries 心 and the ace of spades, and the scene bezel uses the site's exact `恋の矢` CRT recipe (cyan
-bloom + inset vignette). It opens on a **power-on splash** — a glowing cyan koi over 心 連繋 and FAIRLADY
+bloom + inset vignette). It opens on a **power-on splash** — a glowing cyan koi over 心 連繋 and RIDE OR DIE
 in Space Grotesk, with the site's `crtOn` warp — that settles into the terminal.
 
 The hero is **Ace** herself, **digitized from Ben's real photo** of the car — rendered as **1-bit cyan
@@ -179,9 +213,11 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-34 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
-heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, and an
-end-to-end turn — all network-free.
+55 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
+ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
+traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,
+Berlin NV, and an end-to-end turn — all network-free.
 
 ---
 

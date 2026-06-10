@@ -85,6 +85,29 @@ AWAKE_START_ISO = "2025-11-07T07:30:00"   # you were up all day working the show
 AWAKE_WARN_HOURS = 16.0
 AWAKE_FORCE_HOURS = 20.0
 
+# --- The favor (the Ride or Die prologue) ---------------------------------------
+PROLOGUE_ASK_TURNS = 5        # she asks for the favor after this many turns of small talk
+PROLOGUE_RAPPORT_TURNS = 3    # ...or this many, if you ask real questions about her build
+
+# --- Riz (the style ledger — how suavely you talk your way through) --------------
+RIZ_RAPPORT = 5.0             # asking the right questions before she even had to ask you
+RIZ_REWIND_COST = 2.0         # smooth operators don't need do-overs
+RIZ_STOP_WAVE = 8.0           # talked the fuzz into a wave-off
+RIZ_STOP_TICKET = 3.0         # took the ticket like a gentleman
+RIZ_OWNER_BLESSING = 15.0     # the owner saw what you two have
+
+# --- Traffic stops (talk your way out) -------------------------------------------
+STOP_FINE = 80.0              # the "broken taillight" ticket
+STOP_HEAT_WAVE = -8.0         # a cop who waved you off stops being a threat
+STOP_HEAT_TICKET = 10.0       # a written ticket is a record with your face on it
+STOP_HEAT_BAD = 15.0          # he didn't buy it — expect a BOLO
+
+# --- The owner (he will come looking) --------------------------------------------
+OWNER_MIN_DAY = 3             # he needs time to work the card trail
+OWNER_MIN_SWIPES = 3          # ...and a trail to work
+OWNER_DEADLINE_DAYS = 7       # the mid outcome: "one week — bring her home whole"
+OWNER_DEADLINE_HEAT = 40.0    # blow the deadline and he calls it in
+
 # --- Clock ---------------------------------------------------------------------
 # Pacific Standard Time (Nov 7 2025 is after DST end). Stored as naive local.
 START_ISO = "2025-11-07T17:37:00"

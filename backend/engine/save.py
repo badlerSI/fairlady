@@ -26,3 +26,9 @@ def load(name: str = "autosave") -> GameState | None:
 
 def exists(name: str = "autosave") -> bool:
     return (SAVE_DIR / f"{_safe(name)}.json").exists()
+
+
+def delete(name: str) -> None:
+    path = SAVE_DIR / f"{_safe(name)}.json"
+    if path.exists():
+        path.unlink()

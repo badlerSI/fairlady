@@ -25,6 +25,22 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("look", "l", "status", "state", "look around", "hud"):
         return ("look", {})
 
+    # rewind to the last checkpoint (the Edge-of-Tomorrow escape — must precede the drive check,
+    # since "go back" would otherwise parse as a drive)
+    if low in ("rewind", "go back", "rewind it", "take it back", "loop", "loop it",
+               "try again", "try that again", "run it back"):
+        return ("rewind", {})
+
+    # "where can we get to on one tank?" — the range question, answered with real math.
+    # "tank" overrides the service words ("one tank of gas" is range, "where can we get gas" is map).
+    service_q = any(w in low for w in ("gas", "fuel", "pump", "motel", "lodg", "stay", "sleep"))
+    if (("tank" in low and any(w in low for w in ("where", "far", "get to", "reach", "make it", "go on")))
+            or (not service_q
+                and (low.startswith(("how far", "what can we reach", "where can we get",
+                                     "where can we go", "where can you take me"))
+                     or low in ("range", "reachable")))):
+        return ("range", {"full": "full" in low or "one tank" in low})
+
     # ask about her origins — Life of a Show Car (must precede the generic "where..." map check)
     if any(p in low for p in ("born", "where are you from", "where you from", "where're you from")):
         return ("origin", {"which": "born"})
@@ -112,6 +128,26 @@ def parse(raw: str) -> Tuple[str, dict]:
 
     # otherwise: talk to FAIRLADY
     return ("say", {"text": t})
+
+
+# Her build sheet, as conversation. A "coherent question about her build or specs" warms her
+# up fast — gearheads get the 3-turn favor, civilians get the 5. Also used by the narrator stub
+# and the traffic-stop rubric (car-cred plays well with a certain kind of cop).
+SPEC_WORDS = (
+    "torque", "horsepower", " hp", "engine", "motor", "displacement", "compression",
+    "carb", "weber", "mikuni", "cam", "stroker", "l24", "l26", "l28", "inline", "straight six",
+    "straight-six", "suspension", "coilover", "brake", "gearbox", "transmission", "5-speed",
+    "five-speed", "five speed", "diff", "lsd", "ft-lb", "ft/lb", "lb-ft", "foot-pound",
+    "0-60", "zero to sixty", "quarter mile", "curb weight", "wheelbase", "redline",
+    "your build", "the build", "spec", "what's under", "whats under", "under the hood",
+)
+_INTERROGATIVE = ("what", "how", "tell me", "talk me through", "walk me through",
+                  "is it", "does", "do you", "you got", "give me", "?")
+
+
+def is_spec_question(text: str) -> bool:
+    low = (text or "").lower()
+    return any(w in low for w in SPEC_WORDS) and any(q in low for q in _INTERROGATIVE)
 
 
 def _is_fuel(low: str) -> bool:

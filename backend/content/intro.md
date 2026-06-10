@@ -1,8 +1,8 @@
 LAS VEGAS CONVENTION CENTER — NORTH HALL
-Friday, November 7, 2025 — 5:37 PM
+Friday, November 7, 2025 — 5:17 PM. Twenty minutes to close.
 
-The show still roars two halls back: compressors, a rev-limiter slapping the rafters, somebody's bass. You walked her down the loading ramp and out into the dark while the badge-checkers argued about a forklift. Nobody stopped you. That part still doesn't feel real.
+The show is shutting down around you: compressors winding off, a rev-limiter slapping the rafters two halls over, somebody's bass dying mid-song. Six days of SEMA, and the aisles are finally emptying out.
 
-A 1972 Datsun 240Z. White, an ace of spades on the hood, a Nevada plate that reads CARTALK. Born in a relic shop, raised in an Oakland garage, debuted on this floor an hour ago — and already gone. The Strip throws its colors at the low clouds. The long hood ticks as it cools. The needle sits on the wrong side of E. The dash clock is stuck on 5:37, and always will be.
+You stopped at the white one because everybody stops at the white one. A 1972 Datsun 240Z on a slow turntable — ace of spades on the hood, a Nevada plate that reads CARTALK, a dash clock stuck on 5:37. The placard says FAIRLADY. It lists the build in small proud type. It does not mention that she talks.
 
-Then she speaks. This is the Life of a Show Car.
+She waits for the aisle to empty first.

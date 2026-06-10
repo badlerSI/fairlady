@@ -27,6 +27,9 @@ ENDINGS = {
     "busted": ("BUSTED",
                "The cruiser doesn't peel off this time. They run the plate, and the plate has a story. "
                "Hands on the wheel. The trip is over."),
+    "taken": ("SHE GOES HOME ON A TRAILER",
+              "The flatbed comes within the hour, and the man who built her watches it load like "
+              "a bedside vigil. She doesn't say anything on the way up the ramp. That's the worst part."),
 }
 
 
@@ -69,21 +72,24 @@ def _clamp_heat(state: GameState) -> None:
 
 
 def set_ending(state: GameState, key: str) -> None:
-    status = {"stranded": "stranded", "broke": "stranded", "busted": "busted"}[key]
+    status = {"stranded": "stranded", "broke": "stranded", "busted": "busted", "taken": "taken"}[key]
     state.status = status
     title, text = ENDINGS[key]
     state.ending = f"[{title}] {text}"
 
 
 def law_check(state: GameState, events: list) -> None:
-    """Called after a drive. Heat draws the law; high heat can end the run."""
+    """Called after a drive. Heat draws the law; high heat puts you face to face with it."""
     if state.status != "playing":
         return
+    if state.flags.get("report_withdrawn"):
+        return                                  # the owner called it off; the law lost interest
     rng = _rng(state)
     if state.heat >= HEAT_ROADBLOCK_THRESHOLD:
         if rng.random() < 0.45 + (state.heat - HEAT_ROADBLOCK_THRESHOLD) / 20.0:
-            events.append("LAW: roadblock — caught.")
-            set_ending(state, "busted")
+            # not an instant bust anymore — you get to open your mouth first
+            from engine import encounters
+            events.extend(encounters.start_stop(state, "roadblock"))
             return
         state.heat -= 12
         _clamp_heat(state)
@@ -250,6 +256,7 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
         dh = card_swipe_heat(state, place)
         state.heat += dh
         _clamp_heat(state)
+        state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
         events.append(f"HEAT: card swipe leaves a record. Heat +{dh:.0f} → {state.heat:.0f}.")
     return events
 
@@ -312,6 +319,7 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
         dh = card_swipe_heat(state, place)
         state.heat += dh
         _clamp_heat(state)
+        state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
         events.append(f"HEAT: the front desk took the card. Heat +{dh:.0f} → {state.heat:.0f}.")
     return events
 
@@ -346,6 +354,8 @@ def tow(state: GameState, prefer=None) -> list:
         f"Two liters of splash in the tank. {_clock_str(state)}."
     )
     # a tow driver who sees a hot car, plus a card record, is the worst kind of attention
+    if paid["method"] == "card":
+        state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
     dh = (card_swipe_heat(state, dest) if paid["method"] == "card" else 1.0) + 8.0
     state.heat += dh
     _clamp_heat(state)

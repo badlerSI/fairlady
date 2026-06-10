@@ -1,4 +1,4 @@
-"""FAIRLADY web server: serves the CRT terminal and the game API."""
+"""RIDE OR DIE (愛車) web server: serves the CRT terminal and the game API."""
 from __future__ import annotations
 from typing import Optional
 
@@ -11,7 +11,7 @@ from config import FRONTEND_DIR, TTS_DIR, ADAPTER, ROUTING
 from engine import game, save
 from engine.state import GameState
 
-app = FastAPI(title="FAIRLADY", version="1.0")
+app = FastAPI(title="RIDE OR DIE", version="1.1")
 
 # the current game lives in memory and is autosaved every turn
 CURRENT: Optional[GameState] = None

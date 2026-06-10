@@ -1,4 +1,4 @@
-# FAIRLADY ◇ 240Z — Transfer / Handoff Document
+# RIDE OR DIE ◇ 愛車 (FAIRLADY ♠ 240Z) — Transfer / Handoff Document
 
 > A complete brief for a fresh session to **improve** this game without re-discovering anything.
 > Repo: <https://github.com/badlerSI/fairlady> (public, © Benjamin J. Adler, all rights reserved).
@@ -28,8 +28,58 @@ Design pillars (do not break these):
    revealed at the **storage unit in Livermore**. Never let her volunteer it.
 5. **Her map is NV / CA / AZ / UT only.** Everything outside those four states is off her maps by design.
 
-**Status:** fully playable end-to-end, 34 passing tests, 128 POIs, 53 scenes. The narrative prose for
-Mayumi/Livermore/Monterey is a strong *draft* — Ben fills the details.
+**Status:** fully playable end-to-end, 55 passing tests, 129 POIs, 55 scenes. The narrative prose for
+Mayumi/Livermore/Monterey/prologue/owner is a strong *draft* — Ben fills the details.
+
+---
+
+## 0.5 The RIDE OR DIE re-frame (2026-06-10, second session)
+
+The app is now **RIDE OR DIE** — Ben's translation of 愛車 *aisha* ("certainly not 'Love Car'").
+The theft is re-framed as **the favor**: the game opens ON the show floor (`sema_north_hall`, new
+start POI; the Chevron moved into `pois[]`), where she makes conversation and then asks one simple
+favor — two blocks, one tank, so she can head home after the nightmare that was SEMA. New systems,
+all engine-owned (the LLM still only narrates):
+
+- **`engine/prologue.py`** — the favor ladder. Counts conversation turns; asks at
+  `PROLOGUE_ASK_TURNS` (5), or `PROLOGUE_RAPPORT_TURNS` (3) if the player asks coherent build/spec
+  questions (`commands.is_spec_question`; she has **250 lb-ft** — it's in `car.json` and she'll say
+  so). Escalates ask→plead→beg→desperate. Agreement = auto-drive to the Chevron + **TITLE_DROP**
+  banner. The first full tank there completes the favor and SHE floats the whim ("…or we could just
+  not load out"). She won't start for a joyride pre-pact.
+- **`engine/encounters.py`** — talk-your-way-out. Traffic stops (`pulled_over` drama event at
+  heat≥25; roadblock `law_check` now opens a stop instead of insta-busting): 2 exchanges, a
+  deterministic keyword rubric (`score_pitch`) — calm/cover-story(SEMA!)/spec-cred/honest-about-the-
+  wallet vs aggro/confession — seeded dice only in the gray middle; outcomes wave-off (+Riz) /
+  ticket ($80 or heat) / BOLO (heat+15) / busted. Flee tokens = instant bust. **The owner**: tracked
+  via `flags.card_swipes` (counted at every card payment); appears at the next city/gas POI once
+  `day≥3` and `swipes≥3` (or `knows_mayumi`). 2 exchanges via `score_owner_pitch` (love/spec/
+  saying-Mayumi's-name; offering her back scores negative): blessing (report withdrawn → law_check
+  and plate dramas off, heat−30, +15 Riz) / one-week deadline (`owner_deadline_day`) / **taken**
+  (new ending, status `taken`).
+- **Riz** (`GameState.riz`, in snapshot + dash) — the style ledger. Earned: rapport (+5), wave-off
+  (+8), ticket (+3), blessing (+15). It **survives rewinds** minus `RIZ_REWIND_COST` (2).
+- **Checkpoints + rewind** (Edge of Tomorrow) — `game.checkpoint()` saves a 2-deep ring
+  (`chk1_<sid>`/`chk2_<sid>` save files) on every clean POI arrival, sleep, tow, resolved encounter,
+  and the favor. `rewind` (also "go back"/"run it back") restores **in-place** (`__dict__.update`),
+  works from ANY status (it's the escape from BUSTED/STRANDED/TAKEN — choices offer it), and a
+  second consecutive rewind reaches chk2 (the ring then collapses — chk2 becomes the floor).
+  Diegetically SHE keeps the saves ("I keep the saves, ace").
+- **`range` verb** — "where can we get to on one tank?" → `game._range_text`: POIs reachable on
+  current fuel + after a fill, real winding-road math.
+- **Canon revision (Ben, 2026-06-10): Mayumi is a CAR** — the maker's 1970 240Z, his first love,
+  the one that should have been at SEMA; she **burned on the I-580**. FAIRLADY was built in the
+  grief after and carries some of Mayumi's unburned parts (the Livermore unit-137 reveal — now
+  `requires: knows_mayumi`). The maker = the owner who comes looking. She has *no strong feelings
+  for her maker* — he sees a ghost when he looks at her; the player is the first to pick her first.
+- **New POI + story**: `berlin_nv` (Berlin–Ichthyosaur SP — ghost town + sea monsters, bespoke
+  scene). New scene `sema_hall`. §7 P0s all fixed (encounter SPR.city, FONT ♣ + CJK-blank,
+  livermore gate, README counts, make_car guard).
+- **Old saves**: missing fields default cleanly (`riz=0`, no prologue flags). `new_game(seed,
+  prologue_on=False)` gives the classic Chevron start (tests use it).
+
+All new prose (ladder, stop/owner lines, story beats, intro.md, OPENING, TITLE_DROP) is **draft
+for Ben's pass** — same status as the Mayumi beats before.
 
 ---
 
@@ -231,7 +281,7 @@ but **no POI uses them**, and there's no `ko` at all). Story POIs: monterey, lon
 
 ## 7. Known bugs & quick wins (from a full subsystem audit)
 
-**Bugs to fix (P0):**
+**Bugs to fix (P0):** — ✅ ALL FIVE FIXED in the Ride or Die session (2026-06-10). Kept for history:
 1. **`encounter` scene throws** — `scenes.js` (~line 905) calls `SPR.city(s,t)`, which doesn't exist (only
    `SCENES.city` and `ENV_OBJ.city` do). The RAF loop swallows it, so the generic non-JP encounter renders
    only its bg + text. Replace with the `SCENES.city` body or a skyline helper.
