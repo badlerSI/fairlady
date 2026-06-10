@@ -1,0 +1,353 @@
+"""Rules: the deterministic core. Resolves driving, fueling, sleeping, and the law.
+Produces factual `events`; never prose. The narrator turns events into FAIRLADY's voice."""
+from __future__ import annotations
+import random
+from datetime import datetime, timedelta
+from typing import Optional
+
+from config import (
+    LITERS_PER_GALLON, START_ISO, WAKE_HOUR, WAKE_MINUTE, HEAT_START,
+    HEAT_PATROL_THRESHOLD, HEAT_DECLINE_CARD_THRESHOLD, HEAT_ROADBLOCK_THRESHOLD, HEAT_SWIPE_BASE,
+    HEAT_SWIPE_HOTZONE, HEAT_SWIPE_FIRST_DAY, HEAT_DECAY_PER_HOUR,
+    HEAT_STATELINE_MULT, HEAT_PUSH_DRIVE, HEAT_SLEEP_LODGING, HEAT_LINGER,
+    FATIGUE_PER_HOUR, ROUGH_SLEEP_HEAT, AWAKE_WARN_HOURS, AWAKE_FORCE_HOURS,
+)
+from engine.state import GameState, Place
+from engine import world, economy
+
+ADVENTURE_KINDS = ("park", "track", "amusement")
+START_DT = datetime.fromisoformat(START_ISO)
+
+ENDINGS = {
+    "stranded": ("STRANDED",
+                 "The needle is flat on E and the engine won't catch. A car you can't report "
+                 "missing, dark coming down, and no pump for miles. This is where the road trip ends."),
+    "broke": ("STRANDED & BROKE",
+              "No gas, no cash, and the card's tapped out. Nobody's coming. The desert keeps its own."),
+    "busted": ("BUSTED",
+               "The cruiser doesn't peel off this time. They run the plate, and the plate has a story. "
+               "Hands on the wheel. The trip is over."),
+}
+
+
+# --------------------------- clock helpers ------------------------------------
+def _day_number(dt: datetime) -> int:
+    return (dt.date() - START_DT.date()).days + 1
+
+
+def advance_clock(state: GameState, hours: float) -> None:
+    state.clock = state.clock + timedelta(hours=hours)
+    state.day = _day_number(state.clock)
+
+
+def _rng(state: GameState) -> random.Random:
+    return random.Random(state.seed * 1000003 + state.turn)
+
+
+def _hours_since_start(state: GameState) -> float:
+    return (state.clock - START_DT).total_seconds() / 3600.0
+
+
+def hours_awake(state: GameState) -> float:
+    return (state.clock - datetime.fromisoformat(state.last_sleep_iso)).total_seconds() / 3600.0
+
+
+def liters_per_mile(state: GameState) -> float:
+    return (LITERS_PER_GALLON / state.mpg)
+
+
+# --------------------------- heat ---------------------------------------------
+def card_swipe_heat(state: GameState, place: Place) -> float:
+    base = HEAT_SWIPE_HOTZONE if place.heat_zone else HEAT_SWIPE_BASE
+    if _hours_since_start(state) < 24.0:
+        base += HEAT_SWIPE_FIRST_DAY
+    return base
+
+
+def _clamp_heat(state: GameState) -> None:
+    state.heat = round(max(0.0, min(100.0, state.heat)), 1)
+
+
+def set_ending(state: GameState, key: str) -> None:
+    status = {"stranded": "stranded", "broke": "stranded", "busted": "busted"}[key]
+    state.status = status
+    title, text = ENDINGS[key]
+    state.ending = f"[{title}] {text}"
+
+
+def law_check(state: GameState, events: list) -> None:
+    """Called after a drive. Heat draws the law; high heat can end the run."""
+    if state.status != "playing":
+        return
+    rng = _rng(state)
+    if state.heat >= HEAT_ROADBLOCK_THRESHOLD:
+        if rng.random() < 0.45 + (state.heat - HEAT_ROADBLOCK_THRESHOLD) / 20.0:
+            events.append("LAW: roadblock — caught.")
+            set_ending(state, "busted")
+            return
+        state.heat -= 12
+        _clamp_heat(state)
+        events.append("LAW: spotted a roadblock and slipped onto a frontage road. Too close. Heat down to "
+                      f"{state.heat:.0f}.")
+    elif state.heat >= HEAT_PATROL_THRESHOLD:
+        if rng.random() < (state.heat - HEAT_PATROL_THRESHOLD) / 90.0:
+            state.heat += 3
+            _clamp_heat(state)
+            events.append(f"LAW: a county cruiser tailed you a mile, then waved off. Heat {state.heat:.0f}.")
+
+
+# --------------------------- arrival ------------------------------------------
+def _register_arrival(state: GameState, place: Place, events: list) -> None:
+    state.place = place
+    if place.poi_id and place.poi_id not in state.visited:
+        state.visited.append(place.poi_id)
+    if place.kind in ADVENTURE_KINDS and place.name not in state.adventures:
+        state.adventures.append(place.name)
+        events.append(f"ADVENTURE: reached {place.name} ({place.kind}). Adventures: {len(state.adventures)}.")
+
+
+# --------------------------- driving ------------------------------------------
+def drive(state: GameState, dest: Place, push: bool = False) -> list:
+    """Resolve a drive to `dest`. Consumes fuel and time; may strand you mid-route."""
+    events: list = []
+    if state.status != "playing":
+        events.append("STATE: the trip is already over.")
+        return events
+
+    if hours_awake(state) >= AWAKE_FORCE_HOURS:
+        events.append("FATIGUE: you can't keep your eyes open — you have to stop for the night before "
+                      "driving on. Try 'sleep' where there are rooms, or 'pull over' to sleep rough.")
+        return events
+
+    origin = state.place
+    rt = world.route(origin, dest)
+    dist = rt["distance_mi"]
+    dur = rt["duration_h"]
+    if dist < 0.05:
+        events.append(f"NAV: you're already at {dest.name}.")
+        return events
+
+    push_fuel = 1.15 if push else 1.0
+    push_time = 0.85 if push else 1.0
+    terrain = max(1.0, dest.terrain)
+    limp = 1.25 if state.flags.get("limp") else 1.0      # a gremlin makes her thirsty
+    lpm = liters_per_mile(state) * terrain * push_fuel * limp
+    need_l = dist * lpm
+
+    if need_l <= state.fuel_l + 1e-9:
+        # made it
+        state.fuel_l = round(state.fuel_l - need_l, 3)
+        drive_h = dur * push_time
+        advance_clock(state, drive_h)
+        state.odometer_mi = round(state.odometer_mi + dist, 1)
+        state.fatigue = min(140.0, state.fatigue + drive_h * FATIGUE_PER_HOUR)
+
+        # heat: state line muddies the trail; distance cools you; pushing heats you
+        crossed = bool(origin.region and dest.region and origin.region != dest.region)
+        if crossed:
+            state.heat *= HEAT_STATELINE_MULT
+        if not dest.heat_zone:
+            state.heat -= HEAT_DECAY_PER_HOUR * drive_h
+        if push:
+            state.heat += HEAT_PUSH_DRIVE
+        _clamp_heat(state)
+
+        _register_arrival(state, dest, events)
+        events.append(
+            f"DRIVE: {dist:.1f} mi to {dest.name} in {_fmt_dur(drive_h)} "
+            f"({rt['source']}). Burned {need_l:.1f} L. Tank {state.fuel_l:.1f}/{state.tank_l:.0f} L "
+            f"(~{state.range_mi:.0f} mi left). {_clock_str(state)}."
+        )
+        if push:
+            events.append("DRIVE: you pushed hard. Faster, thirstier, and more eyes on you.")
+        if crossed:
+            events.append(f"DRIVE: crossed into {dest.region}. New jurisdiction; heat eased to {state.heat:.0f}.")
+        if state.fatigue >= 100:
+            events.append("FATIGUE: you're nodding off at the wheel. You need to stop for the night.")
+        elif state.fatigue >= 70:
+            events.append("FATIGUE: eyes heavy. Find a place to stay soon.")
+        law_check(state, events)
+        return events
+
+    # --- didn't make it: run dry on the shoulder ---
+    reach_mi = state.fuel_l / lpm
+    frac = max(0.0, min(1.0, reach_mi / dist))
+    advance_clock(state, dur * frac * push_time)
+    state.odometer_mi = round(state.odometer_mi + reach_mi, 1)
+    state.fatigue = min(140.0, state.fatigue + dur * frac * FATIGUE_PER_HOUR)
+    state.fuel_l = 0.0
+    lat = origin.lat + (dest.lat - origin.lat) * frac
+    lon = origin.lon + (dest.lon - origin.lon) * frac
+    shoulder = Place(
+        name=f"the shoulder, {dist - reach_mi:.0f} mi short of {dest.name}",
+        lat=lat, lon=lon, region=dest.region or origin.region, kind="spot", services=[],
+        blurb="Gravel, a guardrail, and the tick of a cooling engine.",
+    )
+    state.place = shoulder
+    events.append(
+        f"DRIVE: made {reach_mi:.1f} of {dist:.1f} mi before the tank went dry. "
+        f"Stranded {dist - reach_mi:.0f} mi short of {dest.name}. {_clock_str(state)}."
+    )
+    set_ending(state, "stranded")
+    return events
+
+
+def _fmt_dur(hours: float) -> str:
+    m = int(round(hours * 60))
+    h, m = divmod(m, 60)
+    if h and m:
+        return f"{h}h{m:02d}m"
+    if h:
+        return f"{h}h"
+    return f"{m}m"
+
+
+def _clock_str(state: GameState) -> str:
+    dt = state.clock
+    return f"Day {state.day}, {dt.strftime('%a %-I:%M %p')}"
+
+
+# --------------------------- fueling ------------------------------------------
+def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
+         fill=False, prefer=None) -> list:
+    events: list = []
+    place = state.place
+    if not place.has("gas"):
+        events.append("FUEL: no pump here. You can't fill up at "
+                      f"{place.name}.")
+        return events
+    if state.fuel_l >= state.tank_l - 0.05:
+        events.append("FUEL: the tank's already full.")
+        return events
+
+    q = economy.quote_fuel(state, place, dollars=dollars, liters=liters,
+                           gallons=gallons, fill=fill, prefer=prefer)
+    if q["liters"] <= 0.01:
+        if q["capped_by"] == "money":
+            events.append("FUEL: declined — no cash and the card won't cover a drop.")
+        else:
+            events.append("FUEL: nothing to add.")
+        return events
+
+    paid = economy.pay(state, q["cost"], prefer=prefer)
+    if not paid["ok"]:
+        events.append("FUEL: " + paid["message"])
+        return events
+
+    state.fuel_l = round(min(state.tank_l, state.fuel_l + q["liters"]), 3)
+    if state.flags.pop("limp", None):                    # a town pump = a mechanic; the gremlin's gone
+        events.append("FUEL: the station's mechanic sorted the miss while you fueled — she runs clean again.")
+    events.append(
+        f"FUEL: pumped {q['liters']:.1f} L ({q['gallons']:.1f} gal) at ${q['price']:.2f}/gal "
+        f"for ${q['cost']:.2f} ({paid['method']}). Tank {state.fuel_l:.1f}/{state.tank_l:.0f} L "
+        f"(~{state.range_mi:.0f} mi)."
+    )
+    if q["capped_by"] == "tank":
+        events.append("FUEL: tank topped out before you spent it all — 40 L is all she holds.")
+    elif q["capped_by"] == "money":
+        events.append("FUEL: that's all the money would buy.")
+    if paid["method"] == "card":
+        dh = card_swipe_heat(state, place)
+        state.heat += dh
+        _clamp_heat(state)
+        events.append(f"HEAT: card swipe leaves a record. Heat +{dh:.0f} → {state.heat:.0f}.")
+    return events
+
+
+# --------------------------- sleeping -----------------------------------------
+def _sleep_until_morning(state: GameState) -> float:
+    dt = state.clock
+    date = dt.date()
+    if dt.hour >= WAKE_HOUR:
+        date = date + timedelta(days=1)
+    target = datetime(date.year, date.month, date.day, WAKE_HOUR, WAKE_MINUTE)
+    hours = (target - dt).total_seconds() / 3600.0
+    state.clock = target
+    state.day = _day_number(target)
+    state.last_sleep_iso = target.isoformat()   # the awake-clock resets on sleep
+    return hours
+
+
+def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool = False) -> list:
+    events: list = []
+    place = state.place
+
+    if rough or not place.has("lodging"):
+        if not rough and not place.has("lodging"):
+            events.append(f"SLEEP: no rooms at {place.name}. You pull over and sleep rough.")
+        _sleep_until_morning(state)
+        state.fatigue = 20.0
+        state.heat += ROUGH_SLEEP_HEAT
+        _clamp_heat(state)
+        events.append(f"SLEEP: a rough night in the seats. Half-rested, fatigue {state.fatigue:.0f}, "
+                      f"heat {state.heat:.0f}. {_clock_str(state)}.")
+        return events
+
+    options = dict(economy.lodging_options(place))
+    if kind and kind not in options:
+        kind = None
+    if not kind:
+        kind = "camp" if "camp" in options else next(iter(options))
+    price = options[kind]
+
+    paid = economy.pay(state, price, prefer=prefer)
+    if not paid["ok"]:
+        events.append(f"SLEEP: a {kind} is ${price:.0f} and you can't cover it. "
+                      "Pull over and sleep rough instead, or move on.")
+        return events
+
+    _sleep_until_morning(state)
+    state.fatigue = 0.0
+    state.heat += HEAT_SLEEP_LODGING
+    if state.last_sleep_poi and state.last_sleep_poi == place.poi_id:
+        state.heat += HEAT_LINGER
+        events.append("HEAT: second night in the same town — you start to get noticed.")
+    state.last_sleep_poi = place.poi_id
+    _clamp_heat(state)
+    events.append(
+        f"SLEEP: a {kind} at {place.name}, ${price:.0f} ({paid['method']}). Rested. "
+        f"Heat {state.heat:.0f}. {_clock_str(state)}."
+    )
+    if paid["method"] == "card":
+        dh = card_swipe_heat(state, place)
+        state.heat += dh
+        _clamp_heat(state)
+        events.append(f"HEAT: the front desk took the card. Heat +{dh:.0f} → {state.heat:.0f}.")
+    return events
+
+
+# --------------------------- tow rescue ---------------------------------------
+def tow(state: GameState, prefer=None) -> list:
+    """The one way off the shoulder — and a tow + a stolen car is exactly how you get caught."""
+    events: list = []
+    if state.status != "stranded":
+        events.append("TOW: nothing to tow. You're not stranded.")
+        return events
+    gas = world.nearest_with_service(state.place, "gas", limit=1)
+    if not gas:
+        set_ending(state, "broke")
+        events.append("TOW: nothing reachable out here.")
+        return events
+    dist, dest = gas[0]
+    cost = round(175.0 + 4.0 * dist, 2)
+    if economy.max_affordable(state, prefer) + 1e-9 < cost:
+        events.append(f"TOW: the nearest tow to {dest.name} runs ${cost:.0f}. You can't cover it.")
+        set_ending(state, "broke")
+        return events
+    paid = economy.pay(state, cost, prefer=prefer)
+    advance_clock(state, max(1.0, dist / 35.0) + 0.75)
+    state.fuel_l = 2.0
+    state.status = "playing"
+    state.ending = None
+    state.fatigue = min(140.0, state.fatigue + 10.0)
+    _register_arrival(state, dest, events)
+    events.append(
+        f"TOW: a flatbed hauls you {dist:.0f} mi to {dest.name} for ${cost:.0f} ({paid['method']}). "
+        f"Two liters of splash in the tank. {_clock_str(state)}."
+    )
+    # a tow driver who sees a hot car, plus a card record, is the worst kind of attention
+    dh = (card_swipe_heat(state, dest) if paid["method"] == "card" else 1.0) + 8.0
+    state.heat += dh
+    _clamp_heat(state)
+    events.append(f"HEAT: a tow driver got a long look at the car and the card. Heat +{dh:.0f} → {state.heat:.0f}.")
+    return events

@@ -1,0 +1,11 @@
+{
+  "_note": "Kokoro-82M female voice ids per language. FAIRLADY herself speaks en/af_heart. Foreign NPCs are voiced in-language via Ace /translate_speak; this map documents the intended voice and is sent as a hint.",
+  "en": { "voice": "af_heart", "label": "English" },
+  "ja": { "voice": "jf_alpha", "label": "日本語 (Japanese)", "where": "SF Japantown, Little Tokyo LA" },
+  "zh": { "voice": "zf_xiaoxiao", "label": "中文 (Mandarin)", "where": "SF Chinatown, San Gabriel Valley" },
+  "es": { "voice": "ef_dora", "label": "Español (Spanish)", "where": "East LA, the Mission, border towns, Nogales" },
+  "fr": { "voice": "ff_siwis", "label": "Français (French)", "where": "stray travelers, a Quebecoise at a Bryce overlook" },
+  "it": { "voice": "if_sara", "label": "Italiano (Italian)", "where": "North Beach, SF" },
+  "hi": { "voice": "hf_alpha", "label": "हिन्दी (Hindi)", "where": "Artesia's Little India" },
+  "pt": { "voice": "pf_dora", "label": "Português (BR Portuguese)", "where": "a rally crew out of Vegas" }
+}
