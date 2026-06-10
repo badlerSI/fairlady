@@ -1,0 +1,333 @@
+# FAIRLADY ◇ 240Z — Transfer / Handoff Document
+
+> A complete brief for a fresh session to **improve** this game without re-discovering anything.
+> Repo: <https://github.com/badlerSI/fairlady> (public, © Benjamin J. Adler, all rights reserved).
+> Local: `~/Projects/fairlady`. Last updated by the build session on 2026‑06‑10.
+
+---
+
+## 0. What it is (the north star)
+
+A **voice-first, compute-heavy, retrofuturistic terminal road-trip** across the American West. You drove a
+talking 1972 Datsun 240Z — **FAIRLADY** ("Ace") — off the SEMA show floor at **5:37 PM, Fri Nov 7 2025**,
+on a romantic whim. Now it's the two of you on a 40 L tank (~20 mpg, ~211 mi full), a credit card that
+leaves a trail, and a car somebody already reported missing.
+
+Design pillars (do not break these):
+
+1. **The deterministic engine owns ALL state** (fuel/money/time/heat/routing). The LLM **only narrates** a
+   snapshot + situational cues. She can recite the true range when asked but can **never** invent a full
+   tank or move the car somewhere it didn't go. *The dashboard is always real.*
+2. **Voice-first.** The interface is *Where in the USA is Carmen Sandiego?* — a location chip, a day/time
+   chip, a framed dithered graphic, a compact dash, a text panel, and a mic. **No button grid.** You talk
+   to her; typing is the backup.
+3. **Retro graphics + futuristic LLM.** Apple II / C64-class 1-bit cyan art (the "we only had 16 MB" look),
+   the SOUL Interface brand cyan, the car **digitized from Ben's real photo**. Drama and voice come from
+   Nemotron + Kokoro on an RTX 6000 Blackwell (rop1's "Ace" stack).
+4. **Trust is earned.** Her tragic backstory (the previous owner, **Mayumi**) is **coy** and only fully
+   revealed at the **storage unit in Livermore**. Never let her volunteer it.
+5. **Her map is NV / CA / AZ / UT only.** Everything outside those four states is off her maps by design.
+
+**Status:** fully playable end-to-end, 34 passing tests, 128 POIs, 53 scenes. The narrative prose for
+Mayumi/Livermore/Monterey is a strong *draft* — Ben fills the details.
+
+---
+
+## 1. Run it
+
+```bash
+cd ~/Projects/fairlady
+./run.sh                       # offline stub narrator + real OSM routing (default)
+FAIRLADY_ADAPTER=ace ./run.sh  # her real voice via rop1 Ace (Nemotron + Kokoro)
+```
+
+Open **<http://127.0.0.1:8739/>**. Tests: `cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q` → **34 passed**.
+
+**Env knobs** (read by `config.py`; `run.sh` exports only the first two):
+
+| Var | Default | Meaning |
+|---|---|---|
+| `FAIRLADY_ADAPTER` | `stub` | `stub` (offline deterministic) or `ace` (rop1 LLM voice) |
+| `FAIRLADY_ROUTING` | `osm` | `osm` (Nominatim+OSRM, cached) or `offline` (haversine×1.22) |
+| `FAIRLADY_ACE_URL` | `https://ace-api.badler.ai` | Ace base url (read directly by `adapters/ace.py`) |
+| `FAIRLADY_KOKORO_URL` | (unset) | optional OpenAI-compatible TTS for non-Japanese NPC voices |
+| `HOST` / `PORT` | `127.0.0.1` / `8739` | bind |
+
+**⚠ Gotcha that will waste an hour:** live OSM routing needs **OpenSSL 3.x**. macOS system/Xcode Python 3.9
+ships **LibreSSL 2.8.3** → `SSLV3_ALERT_HANDSHAKE_FAILURE` against the OSRM/Nominatim demo servers (Ace's
+TLS happens to accept it). The venv is built on **Homebrew `python@3.12`**. On Linux (rop1) the default
+Python is fine. Preview launcher: `/Applications/.claude/launch.json` (name `fairlady`).
+
+---
+
+## 2. Architecture map
+
+```
+backend/                         FastAPI + the deterministic engine (Python 3.12)
+  app.py                 5 routes; one in-memory CURRENT GameState; autosaves each turn
+  config.py              flat registry of EVERY tunable (physics/economy/heat/fatigue/env)
+  engine/
+    state.py             GameState + Place dataclasses — THE save; derived read-only props
+    rules.py             drive/fuel/sleep/tow/law — mutates state, returns factual `events`
+    economy.py           gas_price, pay(), max_affordable(), quote_fuel() (pure)
+    world.py             POI registry + OSM geocode/route (disk-cached) + offline fallback
+    commands.py          intent parser — the LLM NEVER decides what happens
+    game.py              orchestration: new_game, snapshot, choices, handle(), LORE/STORIES/STATE_INFO
+    drama.py             "nothing goes to plan" — complications on drives, seeded
+    save.py              JSON save/load by name
+  adapters/
+    base.py              Narrator interface + voices()/voice_for()
+    stub.py              offline deterministic FAIRLADY (powers tests; canned drama lines)
+    ace.py               rop1 Ace: /chat (Nemotron+Kokoro), /translate_speak (JA NPCs), /v1/audio/speech
+  content/
+    pois.json            128 POIs (NV/CA/AZ/UT), real coords, scene/story/language/lore tags
+    car.json             40L/20mpg spec + FAIRLADY persona (the LLM system prompt)
+    voices.json          language → Kokoro female voice id
+    intro.md             the SEMA cold-open
+  tests/test_engine.py   34 network-free tests
+frontend/                vanilla JS, no build step (served by FastAPI StaticFiles at /ui)
+  index.html             Carmen two-panel DOM + boot splash + Google Fonts
+  crt.css                cyan tokens, two-panel layout, chips, dash, 恋の矢 CRT bezel, boot/crtOn
+  retro.js               RetroScene: 320×200 logical canvas (SS=3 supersample), 5×7 FONT, INK palette, dither
+  car_sprite.js          baked 1-bit OPAQUE car PNG (data URL) + CAR_META anchors  [GENERATED]
+  scenes.js              SPR sprite lib + drawAce + drawHighway + 53 SCENES + sceneIdFor resolver
+  terminal.js            render pipeline, dash/chips, welcome/placeCard, voice mic, boot dismiss
+tools/make_car.py        build tool: /tmp/z_src.png → 1-bit cyan sprite → bakes car_sprite.js
+run.sh  requirements.txt  README.md  LICENSE  .gitignore
+```
+
+---
+
+## 3. Data contracts (the API between engine, narrator, and frontend)
+
+**`snapshot(s)`** (game.py) — the read-only state the narrator and UI consume. Keys:
+`location, region, kind, poi_id, scene, hour, services, blurb, fuel_l, tank_l, gallons, tank_pct,
+range_mi, mpg, cash, credit_available, card_balance, card_limit, pay_method, time, day, fatigue,
+hours_awake, must_sleep, tired, heat, heat_label, odometer_mi, adventures, status, turn, gas_price`.
+
+**`_result(...)`** dict returned to the frontend per turn:
+`ok, events[], scene, voice, npc, info, welcome, snapshot, choices[], status, ending, sid`.
+**⚠ Naming trap:** the `voice` field actually holds the **audio URL** (Ace's `audio_url`), *not* the voice
+name. The voice-name string the adapter returns is discarded. Frontend reads `res.voice` as a URL. The
+opening turn also carries `intro`.
+
+**`GameState`** (state.py) fields: `fuel_l, tank_l, mpg, cash, card_limit, card_balance, pay_method, pos
+(serialized Place), odometer_mi, visited[], adventures[], clock_iso, day, last_sleep_iso, fatigue, heat,
+last_sleep_poi, status, ending, seed, turn, log[], flags{}`. Derived props: `gallons, range_mi, tank_pct,
+credit_available, clock, place`.
+
+**`Place`** fields: `name, lat, lon, region, poi_id, kind, services[], blurb, gas_price, terrain,
+heat_zone, language, voice, npc, scene`. (**Note:** the POI `story`/`origin` JSON fields are **dropped** by
+`world._place_from_poi` — they live only in pois.json and are re-matched by `poi_id` string in game.py.)
+
+**`s.flags` catalog** (string keys, set across engine):
+`sid` (per-game id), `states_seen[]` (welcome dedupe), `revealed[]` (origin POIs offered as chips),
+`home` (poi id for "drive home"), `going_home` (**dead — set, never read**), `owner_revealed` (int, drama
+escalation), `limp` (gremlin → 1.25× fuel until next fuel-up), `homestretch` (set once near home),
+`drama_drives` (**dead counter**), `seen_monterey` / `knows_mayumi` / `knows_truth` (STORIES gates).
+
+**Narrator interface** (base.py): `narrate(persona, snapshot, events, player_text, session_id, extra=None)
+→ {text, audio_url, voice}`; `npc_speak(language, voice, npc_desc, situation, session_id) → {native,
+english, audio_url, language, voice}`. `extra` carries a drama moment: `{cue: <LLM hint>, stub: [<canned
+lines>]}` — stub plays a canned line, Ace folds the cue into the prompt as the dominant beat.
+
+**Ace API contract** (adapters/ace.py → `ace-api.badler.ai`):
+- `POST /chat` form `{text, session_id, system}` → `{reply, language, audio_url}` (Nemotron reply + one
+  Kokoro `af_heart` wav, session memory by `session_id`). **Sent form-encoded (`data=`), not JSON.**
+- `POST /translate_speak` form `{text}` → `{japanese, audio_url}`. **Japanese-ONLY** (it's the "日本語 Voice
+  Translator"; ignores any target-lang param). So JA NPCs (Japantown, Little Tokyo, koiNOya) are fully
+  voiced; other languages get native text from Nemotron, silent unless `FAIRLADY_KOKORO_URL` is set.
+- `POST /v1/audio/speech` (Kokoro, optional) for non-JA voices; `/asr` exists for voice input (**not yet
+  wired in the frontend**); `GET /audio/{name}` serves the wavs.
+
+---
+
+## 4. The numbers (exact current tunables)
+
+**Fuel/range** — tank 40 L, 20 mpg, start fuel 5 L. `L_per_mile = 3.785411784/20 = 0.18927` base, ×terrain
+(≥1.0, per-POI), ×1.15 push, ×1.25 limp. Full range ≈ **211.3 mi**; from 5 L ≈ **26.4 mi**. A drive either
+completes or runs dry mid-route → **stranded** (no partial-arrival; only `tow()` recovers, refuels a fixed
+2.0 L, costs $175 + $4/mi, +~9–14 heat).
+
+**Economy** — gas $/gal NV 4.25 / CA 4.95 / AZ 3.95 / UT 3.89 (per-POI overrides up to Death Valley 6.49);
+lodging motel 92 / lodge 165 / camp 28; START_CASH 40; CARD_LIMIT 2000. (FOOD_PRICE 16 is **unused**.)
+
+**Heat** (0–100) — start 8; patrol ≥45; card-nervous ≥70; roadblock ≥90. Card swipe +2 (base) / +4 (hot
+zone), +2 if <24 h since start. Decay 0.8/h while moving outside hot zones; ×0.82 crossing a state line;
+push +6; lodging −4; linger (2nd night same town) +5. `law_check()` rolls after each completed drive.
+
+**Fatigue / awake gate** — hard gate: can't drive past **20 h awake** (warn at 16); awake clock starts
+**07:30** and resets on sleep. The soft 0–140 `fatigue` points meter only warns (literals 70/100) and is
+**inert above 100**.
+
+**Drama chance** (drama.py `_chance`): `0.20 + heat/100·0.18 + min(0.18, odometer/2500) + (day−1)·0.015`,
+`+0.35` if within 120 mi of home, capped **0.72**. Fires **only on `drive`**.
+
+**Graphics** — canvas 320×200 logical, **SS=3** supersample (960×600 backing). INK cyan: `bg #0e0c0a,
+d1 #13262a, d2 #1f6f7d, d3 #2ba8bf, f #38d6ec, hot #b8f4ff, red #e23b2e`. Car sprite 188×135, anchors
+`mirror [0.10,0.15]`, `rearGlass [0.18,0.06,0.30,0.27]`, `ground 0.97` (**unused**). `make_car.py`
+threshold `INK_T 0.47 / HOT_T 0.80`. `drawHighway` diagonal VP `0.36·W`, near-centre `0.60·W`; `drawAce`
+`baseY 184, w 150`.
+
+---
+
+## 5. Catalogs
+
+**Intents** (commands.py `parse()` → verbs): `drive` (+`fast`/push), `home` ("drive me home" / "home is X"),
+`origin` (which ∈ born/grew/owner — "where were you born / grew up / who built you / who owned you before"),
+`fuel` ("fill / gas $20 / 10 gal / 30 L" + cash/card), `pay` (cash|card), `sleep` (motel/camp/rough),
+`talk`, `map` (+ "nearby gas"), `tow`, `look`, `help`, `save`/`new`/`load`, `say` (free conversation →
+narrator). **Order matters:** origin/home detection must precede the generic `where…`/`map` check.
+
+**Drama events** (drama.py `EVENTS`): `overheat` (mountain grade → time lost), `plate` (heat≥30 → +6 heat,
+near-miss), `owner` (coy melancholy hint, `owner_revealed`++, −3 heat), `recognized` (city/track/amusement/
+encounter/museum/park → gift $ **or** witness +heat), `gremlin` (odo>120 → pay to fix **or** `limp`),
+`detour` (closed pass → −fuel −time), `homestretch` (within 70 mi of home, weight 6 → she stalls).
+
+**Story set-pieces** (game.py `STORIES`, fired once on arrival, verbatim, pre-empts drama): `monterey`
+(aquarium + 2025 Car Week → `seen_monterey`), `long_beach` (the **Mayumi** Cherished-Salvage tale →
+`knows_mayumi`), `livermore` (the **storage unit 137** = the truth → `knows_truth`). `_story_on_arrival`
+supports a `requires` gate but **none is set** (so order isn't enforced — see quick wins).
+
+**Scenes** (53; scenes.js `SCENES`): bespoke — gas, stranded, motel, grand_canyon, zion, bryce, arches,
+canyonlands, death_valley, joshua_tree, yosemite, sequoia, great_basin, monument_valley, saguaro,
+petrified_forest, sedona, meteor_crater, goblin_valley, capitol_reef, hollywood, bay_bridge, golden_gate,
+vegas_strip, sphere, fallon, hoover_dam, bonneville, laguna_seca, disneyland, santa_monica, lake_havasu,
+sf_japantown, koinoya, oakland_aisha, museum, aquarium, storage, mojave, lone_pine, reno, salt_lake;
+driving loops — drive_desert, drive_city, drive_mountain (+ night_drive/roadside aliases); kind-fallbacks —
+park, track, amusement, city→drive_city, encounter, gas, museum. Resolver: `sceneIdFor(snap)` → stranded?
+→ explicit `snap.scene` → `KIND_SCENE[kind]` → `_driveEnv` (UT=mountain, else desert).
+
+**POIs** — 128 total (NV 26, CA 69, AZ 17, UT 16). Kinds: city 49, encounter 31, park 19, track 10,
+amusement 9, museum 6, gas 4. NPC languages present: ja, zh, es, it, hi (voices.json also declares fr/pt
+but **no POI uses them**, and there's no `ko` at all). Story POIs: monterey, long_beach, livermore.
+
+**FastAPI routes** (app.py): `GET /api/health`, `POST /api/new`, `GET /api/state`, `POST /api/command`,
+`GET /` (→ `/ui/`). Static: `/ui` (frontend), `/tts-audio` (Kokoro wavs).
+
+---
+
+## 6. How to extend (recipes)
+
+- **Add a POI:** append to `backend/content/pois.json` with `id, name, kind, region (NV/CA/AZ/UT), lat, lon,
+  services[], blurb`, optional `scene, gas_price, terrain, heat_zone, language+voice+npc, story, origin`.
+  Real coords. Restart server (it reloads pois at import).
+- **Add a scene:** add a `myscene(s, t) { … drawAce(s, t, {moving:false|true}) }` to `SCENES` in
+  `scenes.js`, reference it from a POI's `scene` field (or add to `KIND_SCENE`). Use `s.rect/line/poly/disc/
+  dither/text` + `SPR.*` helpers; colors from `I.*`. Frontend is static — just reload.
+- **Add a drama event:** add `{id, pred(s), weight(s), fire(s,rng)}` to `EVENTS` in `drama.py`; `fire`
+  mutates state and returns `{tag, id, lines:[…], cue:"…", stub:[…]}`.
+- **Add a story town/beat:** add the POI (with `story:true`), then a `STORIES["poi_id"] = {flag, beat,
+  requires?}` in `game.py`. Optionally a bespoke scene. Use `requires` to enforce order.
+- **Re-bake the car** from a new photo: convert HEIC→PNG to `/tmp/z_src.png` first (e.g.
+  `sips -s format png IMG_xxxx.heic --out /tmp/z_src.png`), then `./.venv/bin/python tools/make_car.py 188
+  --bake`. Tune `INK_T/HOT_T` in the file; re-check `anchors` (mirror/rearGlass) against the new crop.
+- **Point at rop1 Ace:** `FAIRLADY_ADAPTER=ace ./run.sh`. For non-JA NPC voices, also set
+  `FAIRLADY_KOKORO_URL` to a Kokoro `/v1/audio/speech` endpoint.
+- **Add a language/voice:** add a row to `voices.json`, give a POI `language` + matching `voice` + `npc`.
+  JA is fully voiced via `/translate_speak`; others need `FAIRLADY_KOKORO_URL`.
+
+---
+
+## 7. Known bugs & quick wins (from a full subsystem audit)
+
+**Bugs to fix (P0):**
+1. **`encounter` scene throws** — `scenes.js` (~line 905) calls `SPR.city(s,t)`, which doesn't exist (only
+   `SCENES.city` and `ENV_OBJ.city` do). The RAF loop swallows it, so the generic non-JP encounter renders
+   only its bg + text. Replace with the `SCENES.city` body or a skyline helper.
+2. **Missing FONT glyphs** — `retro.js` `FONT` lacks `♣` and CJK, so koiNOya's club blade shows `?` and the
+   encounter banner `你好` shows `??`. Add glyphs or strip unsupported chars in `s.text`.
+3. **STORIES order not enforced** — `livermore` (the truth) can fire before `long_beach` (Mayumi). Add
+   `requires: "knows_mayumi"` to the livermore entry (the gate already exists in `_story_on_arrival`).
+4. **README test-count drift** — says "33" and "28"; the real number is **34**. Fix both.
+5. **`make_car.py` runs `main()` at import** with no `if __name__` guard and crashes if `/tmp/z_src.png` is
+   absent — add the guard + a friendly error.
+
+**Quick wins / cleanups (P1):**
+- Rename the `_result['voice']` field to `audio_url` (it's the most confusing thing for a frontend dev).
+- Wire `FATIGUE_WARN/FATIGUE_FORCE` into `rules.py` (currently bare literals 70/100); delete dead constants
+  `NIGHT_START_HOUR`, `FOOD_PRICE`, the inert 140 fatigue cap, the unused `impounded` status, dead flags
+  `going_home`/`drama_drives`, dead `SPR.car`/`SPR.poles` (~80 lines) and the unused path math in
+  `laguna_seca`/`track`.
+- Promote magic numbers to `config.py` (push 1.15/0.85, limp 1.25, tow constants, law_check 0.45/12/etc.,
+  the `1.22` road-winding repeated in 3 files → use `config.ROAD_WINDING_FACTOR`).
+- Rename `crt.css --orange` (it's actually hot-cyan `#b8f4ff`) to `--hot`/`--accent`.
+- Fix the stale "amber phosphor" comments in `retro.js`/`scenes.js` (it's cyan now).
+- Honor `CAR_META.anchors.ground` in `drawAce` instead of the magic `baseY=184` (robust to re-crops).
+- Surface swallowed scene errors (throttled `console.error` in the RAF catch and the Ace fallback).
+- Add a content-validation test: every POI `scene` ∈ SCENES, every `language` ∈ voices.json, every voice
+  matches, lat/lon ∈ REGION_BBOX. (These invariants are currently clean but unenforced.)
+- `last_sleep_iso` default should be `AWAKE_START_ISO` (currently `START_ISO`, so a directly-constructed
+  GameState has a ~10 h-off awake clock unless created via `game.new_game`).
+
+---
+
+## 8. Gotchas / non-obvious things
+
+- **LibreSSL** (see §1) — the OSM-routing TLS trap on macOS system Python.
+- **`/translate_speak` is Japanese-only.** Don't expect target-language switching.
+- **Type-on race in UI test scripts:** `typing`/`busy` are module-scoped closures, *not* on `window`. A
+  `submit()` called while the opening line is still typing just fast-forwards the animation and returns
+  (swallowing the command). When scripting the UI via `preview_eval`, wait real time for the open to finish
+  before the first `submit`. The game logic is fine; this only bites test harnesses.
+- **The fender mirror is placed procedurally, not photo-aligned.** Ben's clear front-3/4 mirror photo was a
+  clipboard paste that never hit disk; the sprite is the rear-3/4 IMG_7714, so the two angles can't be
+  pixel-aligned. The mirror lives in `drawAce` at `anchors.mirror`.
+- **Voice input is browser-only today.** `webkitSpeechRecognition` (Chrome) is wired; **Ace `/asr` is not
+  yet called from the frontend** — that's the production path (and it can't be exercised in a preview
+  sandbox without a mic).
+- **Single global game state.** `app.py` keeps one `CURRENT` GameState + one autosave — single-player only.
+- **`get_narrator()` caches** the adapter at first call; changing `FAIRLADY_ADAPTER` needs a process restart.
+- **Drama only fires on `drive`** (so `homestretch` only triggers on a drive within 70 mi of home).
+
+---
+
+## 9. Open creative items (Ben's, pending)
+
+- **Finalize the Mayumi / Livermore / Monterey prose** — the current beats in `game.py STORIES` are evocative
+  *placeholders*. Canon to keep: **Mayumi = the cherished-salvage previous owner** (a Hagerty "Cherished
+  Salvage Story"); the **Oakland AiSha cats = the builders** (separate from the owner); the **truth lives in
+  the Livermore storage unit (137)**; she stays **coy** until then.
+- **Per-town metro events** — Bay Area / SoCal towns should trigger set-pieces like Monterey/Long Beach do.
+  The system (`STORIES` + `_story_on_arrival`) is built; it just needs more entries + scenes.
+- **Fill out towns** — coverage is uneven (CA 69 but whole metros are single pins; AZ/UT thin on long legs).
+  Add neighborhood encounters (LA: Hollywood/Venice/Koreatown; SF pattern already good), and intermediate
+  gas/town pins where terrain multipliers bite (I-15 Mojave, the Loneliest Road, Page↔Monument Valley).
+- **Missing-language encounters** that `voices.json` already promises: `fr` (a Québécoise at a Bryce
+  overlook), `pt` (a rally crew out of Vegas), and a new `ko` (LA Koreatown / Garden Grove).
+- **The mirror graft** — if Ben provides the front-3/4 photo *as a file*, digitize the real fender mirror.
+- **Wire Ace `/asr`** for real voice input (the headline interaction).
+
+---
+
+## 10. Reference assets & memory
+
+These live **outside the repo** (intentionally — they're personal/source material), under `~/Downloads`:
+
+- **`IMG_7714.heic`** (in `~/Library/Messages/Attachments/bc/12/…`) — the rear-3/4 photo the car sprite is
+  baked from. Convert to `/tmp/z_src.png` to re-bake.
+- **`Portfolio-15.zip`** — the live **badler.ai** website bundle = the design source of truth. `deploy/
+  index.html` has the exact cyan tokens (`#38d6ec`/`#0e0c0a`/`#f6f4eb`), fonts, and the `恋の矢` CRT recipe.
+  `media/koi-crt.webp` is the posterization reference; the SEMA "Soul 心 連繋 Interface" koi wordmark is the
+  brand mark.
+- **`koiNOya.png`** (Edo relic shop, suit-bladed naginata — the Richmond "born" look) and **`AiShaPaint.jpg`**
+  (1926 red-brick Oakland garage — the "grew up" look).
+- **`Cartesia_Application_Packet_Benjamin_Adler.pdf`** — the source for FAIRLADY's **writing voice** (terse,
+  dry, literate, romantic-not-sentimental; the "bury-the-lede pivot" + constraint-as-romance).
+- The **Ace stack** lives on **rop1** (`ace-api.badler.ai`); see the project memory note `project_ace_portfolio`
+  for its services and lore (always 5:37, Larry Chen, AiSha LLC).
+
+**Project memory:** `~/.claude/projects/-Applications/memory/project_fairlady_game.md` holds the full
+decision history (why cyan, why 1-bit, why coy, etc.). Read it for the *why* behind any choice.
+
+---
+
+## 11. Suggested first moves in the new session
+
+1. `git` is already initialized and pushed — work on a branch, PR to `main`.
+2. Knock out the §7 P0 bugs (encounter scene, FONT glyphs, STORIES `requires`, README count, make_car guard).
+3. Then pick a thread: **content** (fill towns + the missing-language encounters), **narrative** (finalize
+   Mayumi with Ben), or **voice** (wire Ace `/asr` so the mic talks to the Blackwell).
+4. Keep the **engine-owns-state / LLM-only-narrates** invariant and the **voice-first / no-buttons** rule
+   sacred. The dashboard must always be real; she must stay coy about Mayumi until Livermore.
+```

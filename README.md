@@ -77,7 +77,7 @@ frontend/
   car_sprite.js                    Ace, digitized from Ben's real photo (baked PNG + anchor points)
   scenes.js                        prop sprites + drawAce (the hero) + 40+ location backdrops
 tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes car_sprite.js)
-backend/tests/        33 deterministic-core tests
+backend/tests/        34 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -179,7 +179,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-28 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+34 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, and an
 end-to-end turn — all network-free.
 
