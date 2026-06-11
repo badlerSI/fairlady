@@ -167,8 +167,10 @@ bitmap font, chunky pixels. The hue is **SOUL Interface cyan** (`#38d6ec` on `#0
 byte-exact from the brand site) — the game is meant to read as an Ace / SOUL Interface artifact, the
 koi-CRT posterization in motion. Type is IBM Plex Mono (body) and Space Grotesk (display), the wordmark
 carries 心 and the ace of spades, and the scene bezel uses the site's exact `恋の矢` CRT recipe (cyan
-bloom + inset vignette). It opens on a **power-on splash** — a glowing cyan koi over 心 連繋 and RIDE OR DIE
-in Space Grotesk, with the site's `crtOn` warp — that settles into the terminal.
+bloom + inset vignette). It opens on a **power-on splash** — the actual **koiNOya relic-shop artwork** (the brand's
+koi-crt posterization, byte-exact from the badler.ai bundle — the shop where she was switched
+on) in a glowing CRT bezel over 心 連繋 and RIDE OR DIE in Space Grotesk, with the site's
+`crtOn` warp — then settles into the terminal on click (or after a beat).
 
 The hero is **Ace** herself, **digitized from Ben's real photo** of the car — rendered as **1-bit cyan
 ink** ("there or not there," no gradient dither, the koiNOya look; a denoise pass for the clean "we only

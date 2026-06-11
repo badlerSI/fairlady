@@ -358,7 +358,7 @@ These live **outside the repo** (intentionally — they're personal/source mater
   baked from. Convert to `/tmp/z_src.png` to re-bake.
 - **`Portfolio-15.zip`** — the live **badler.ai** website bundle = the design source of truth. `deploy/
   index.html` has the exact cyan tokens (`#38d6ec`/`#0e0c0a`/`#f6f4eb`), fonts, and the `恋の矢` CRT recipe.
-  `media/koi-crt.webp` is the posterization reference; the SEMA "Soul 心 連繋 Interface" koi wordmark is the
+  `media/koi-crt.webp` is the posterization reference — **now shipped in-repo as `frontend/koinoya-crt.webp`** (the boot-splash hero art; Ben rejected the hand-drawn SVG koi fish — there is no koi-fish brand asset, the 'koi' is the shop); the SEMA "Soul 心 連繋 Interface" koi wordmark is the
   brand mark.
 - **`koiNOya.png`** (Edo relic shop, suit-bladed naginata — the Richmond "born" look) and **`AiShaPaint.jpg`**
   (1926 red-brick Oakland garage — the "grew up" look).

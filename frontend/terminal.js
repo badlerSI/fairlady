@@ -198,7 +198,7 @@ boot();
   if (!b) return;
   let done = false;
   const go = () => { if (done) return; done = true; b.classList.add("gone"); setTimeout(() => { b.remove(); cmd.focus(); }, 600); window.removeEventListener("keydown", go); };
-  setTimeout(go, 2400);
+  setTimeout(go, 8000);                 // the koiNOya art deserves a beat — click/key skips
   b.addEventListener("click", go);
   window.addEventListener("keydown", go);
 })();
