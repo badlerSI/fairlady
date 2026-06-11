@@ -75,6 +75,12 @@ class StubNarrator(Narrator):
                 "Here it is, exactly where I said. Memorized every inch. You're welcome.",
                 "Worth the fuel, this. Look at it a minute. Then we vanish before someone looks at me.",
             ])
+        if "FACT" in kinds:
+            return _pick(rng, [
+                f"Dash has one line on this place: {kinds['FACT']} The rest you get by looking.",
+                f"{kinds['FACT']} That's what the compute knows. The rest is yours to find out.",
+                f"Story goes: {kinds['FACT']} I keep that kind of thing behind the dash.",
+            ])
         if "DRIVE" in kinds:
             r = s.get("range_mi", 0)
             base = _pick(rng, [

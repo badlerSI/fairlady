@@ -602,6 +602,45 @@ def test_cash_fallback_announces_itself():
     assert any("PAY: cash came up short" in e for e in evs)
 
 
+# ------------------------------------------------------------------ the gazetteer layer
+def test_gazetteer_towns_are_valid_and_beats_fire_once():
+    from config import REGION_BBOX
+    import json as _json
+    from config import CONTENT_DIR
+    data = _json.loads((CONTENT_DIR / "pois.json").read_text())
+    towns = [p for p in data["pois"] if p.get("beat")]
+    assert len(towns) >= 100                       # the four states are populated now
+    for p in towns:                                # every entry is sane
+        assert p["region"] in ("NV", "CA", "AZ", "UT")
+        assert REGION_BBOX["min_lat"] <= p["lat"] <= REGION_BBOX["max_lat"]
+        assert REGION_BBOX["min_lon"] <= p["lon"] <= REGION_BBOX["max_lon"]
+        assert 40 < len(p["beat"]) < 520
+    # a beat fires verbatim on first arrival, once
+    s = fresh(); s.fuel_l = 40.0
+    s.place = world.get_poi("tonopah")
+    r = game.handle(s, "drive to mina_nv")
+    assert "left a light on" in r["scene"]         # the judged Mina beat, verbatim
+    assert "mina_nv" in s.flags.get("beats_seen", [])
+    s.fuel_l = 40.0; s.place = world.get_poi("tonopah")
+    r2 = game.handle(s, "drive to mina_nv")
+    assert "left a light on" not in (r2["scene"] or "")   # told once
+
+
+def test_wm_scene_files_exist_for_scene_refs():
+    import json as _json
+    from config import CONTENT_DIR, PROJECT_DIR
+    data = _json.loads((CONTENT_DIR / "pois.json").read_text())
+    wm = [p for p in data["pois"] if (p.get("scene") or "").startswith("wm_")]
+    assert len(wm) >= 150
+    for p in wm:
+        f = PROJECT_DIR / "frontend" / "scenes_wm" / (p["scene"][3:] + ".png")
+        assert f.exists(), f"missing sketch for {p['id']}"
+
+
+def test_wiki_fact_is_silent_offline():
+    assert world.wiki_fact(36.1, -115.1) is None   # ROUTING=offline in tests
+
+
 def test_homecoming_beats_exist():
     s = fresh(); s.fuel_l = 40.0; s.cash = 500.0
     s.place = world.get_poi("livermore")

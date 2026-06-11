@@ -81,7 +81,7 @@ backend/
     stub.py           offline, deterministic FAIRLADY (default; powers the tests)
     ace.py            rop1 Ace stack: /chat (Nemotron+Kokoro), /translate_speak (Japanese NPCs)
   content/
-    pois.json         129 hand-verified POIs with real coordinates (+ Easter eggs + lore origins)
+    pois.json         251 places: 130 hand-verified POIs + the 122-town gazetteer (judged beats)
     voices.json       Kokoro female voice per language
     car.json          the 240Z spec + FAIRLADY's persona
     intro.md          the SEMA opening
@@ -91,7 +91,10 @@ frontend/
   car_sprite.js                    Ace, digitized from Ben's real photo (baked PNG + anchor points)
   scenes.js                        prop sprites + drawAce (the hero) + 40+ location backdrops
 tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes car_sprite.js)
-backend/tests/        55 deterministic-core tests
+tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
+tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
+tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
+backend/tests/        71 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -199,6 +202,21 @@ and more. Anything without a bespoke scene falls back by kind (park/track/amusem
 so coverage is total. Easter eggs are sprinkled throughout: the recurring 5:37, a license plate that
 reads 537, and a camera flash in the dark — Larry Chen, still looking for her.
 
+### The gazetteer — every town brings something up
+
+251 places now. Beyond the 130 curated POIs, a **gazetteer layer** covers ~120 more towns across
+all four states — every one grounded in a real fact from its Wikipedia article and delivered as
+her arrival beat, once per game, in her voice ("Zzyzx. The springs are gone; the name kept the
+fever."). The beats were written and refined by an evolutionary loop: three judge panels (voice /
+grounding / playability) scored every draft, the winners were distilled into house rules, and
+everything under the bar was rewritten against them until the whole set converged (122/122 ≥ 7.5,
+nothing invented — if the fact isn't in the article, she doesn't say it). Drive somewhere that
+isn't even a POI and she still pulls one true sentence from Wikipedia geosearch (online mode,
+cached). **Every gazetteer town and every POI without bespoke pixel art gets a sketch**: the
+place's Wikimedia lead image posterized into the 1-bit koiNOya cyan ink at 320×200
+(`tools/make_scene.py`, adaptive tonal bands), drawn with Ace parked in the foreground. Sources
+and licenses in [`ATTRIBUTION.md`](ATTRIBUTION.md).
+
 ### Voices
 
 FAIRLADY speaks English (`af_heart`). Drive to a place where the language isn't English and `talk`:
@@ -216,7 +234,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-55 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+71 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
 ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
 traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,

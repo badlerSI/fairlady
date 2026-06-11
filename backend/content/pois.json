@@ -82,7 +82,8 @@
     "food"
    ],
    "blurb": "Casinos, a winery, and the last cheap gas before the Death Valley road.",
-   "gas_price": 4.29
+   "gas_price": 4.29,
+   "scene": "wm_pahrump"
   },
   {
    "id": "valley_of_fire",
@@ -92,7 +93,8 @@
    "lat": 36.4825,
    "lon": -114.517,
    "services": [],
-   "blurb": "Aztec sandstone the color of a struck match. No fuel out here. Plan it."
+   "blurb": "Aztec sandstone the color of a struck match. No fuel out here. Plan it.",
+   "scene": "wm_valley_of_fire"
   },
   {
    "id": "mesquite",
@@ -107,7 +109,8 @@
     "food"
    ],
    "blurb": "Last Nevada town on I-15 before the Arizona slot and the Utah line. Fill here for Zion.",
-   "gas_price": 4.19
+   "gas_price": 4.19,
+   "scene": "wm_mesquite"
   },
   {
    "id": "moapa",
@@ -136,7 +139,8 @@
     "food"
    ],
    "blurb": "Gateway to Death Valley from the north. Wild burros on the road at dusk.",
-   "gas_price": 4.49
+   "gas_price": 4.49,
+   "scene": "wm_beatty"
   },
   {
    "id": "primm",
@@ -223,7 +227,8 @@
     "food"
    ],
    "blurb": "A railroad town on the Loneliest Road, last stop before Great Basin.",
-   "gas_price": 4.49
+   "gas_price": 4.49,
+   "scene": "wm_ely"
   },
   {
    "id": "great_basin",
@@ -264,7 +269,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "The quiet capital under the eastern slope of the Sierra."
+   "blurb": "The quiet capital under the eastern slope of the Sierra.",
+   "scene": "wm_carson_city"
   },
   {
    "id": "baker_ca",
@@ -294,7 +300,8 @@
     "food"
    ],
    "blurb": "Where the desert highways knot together. Route 66 murals, a rail yard, cheap motels.",
-   "gas_price": 4.89
+   "gas_price": 4.89,
+   "scene": "wm_barstow"
   },
   {
    "id": "calico",
@@ -306,7 +313,8 @@
    "services": [
     "food"
    ],
-   "blurb": "A silver boomtown that died and got bought by Knott's. Plank sidewalks above Barstow."
+   "blurb": "A silver boomtown that died and got bought by Knott's. Plank sidewalks above Barstow.",
+   "scene": "wm_calico"
   },
   {
    "id": "needles",
@@ -321,7 +329,8 @@
     "food"
    ],
    "blurb": "Where I-40 crosses the Colorado into California. Brutally hot, friendly enough.",
-   "gas_price": 4.99
+   "gas_price": 4.99,
+   "scene": "wm_needles"
   },
   {
    "id": "death_valley",
@@ -353,7 +362,8 @@
     "food"
    ],
    "blurb": "A dune, a saloon, and a pump in the middle of Death Valley.",
-   "gas_price": 6.29
+   "gas_price": 6.29,
+   "scene": "wm_stovepipe"
   },
   {
    "id": "mojave",
@@ -415,7 +425,8 @@
    "lat": 33.751,
    "lon": -115.397,
    "services": [],
-   "blurb": "Desert road course out by Desert Center. Bring your own everything."
+   "blurb": "Desert road course out by Desert Center. Bring your own everything.",
+   "scene": "wm_chuckwalla"
   },
   {
    "id": "laguna_seca",
@@ -650,7 +661,8 @@
    "blurb": "Mariachi Plaza, taquerias, a mechanic who talks to your engine before he talks to you.",
    "language": "es",
    "voice": "ef_dora",
-   "npc": "a mechanic on Boyle Heights"
+   "npc": "a mechanic on Boyle Heights",
+   "scene": "wm_east_la"
   },
   {
    "id": "artesia",
@@ -665,7 +677,8 @@
    "blurb": "Pioneer Boulevard: sari shops, sweets, and a chai cart that runs on its own time.",
    "language": "hi",
    "voice": "hf_alpha",
-   "npc": "the chai-cart auntie on Pioneer Blvd"
+   "npc": "the chai-cart auntie on Pioneer Blvd",
+   "scene": "wm_artesia"
   },
   {
    "id": "san_diego",
@@ -680,7 +693,8 @@
     "food"
    ],
    "blurb": "Navy gray and surf gold, the last big city before the line.",
-   "gas_price": 4.99
+   "gas_price": 4.99,
+   "scene": "wm_san_diego"
   },
   {
    "id": "san_francisco",
@@ -728,7 +742,8 @@
    "blurb": "The oldest Chinatown in the country. Grant Avenue, a tea seller who measures you with her eyes.",
    "language": "zh",
    "voice": "zf_xiaoxiao",
-   "npc": "a tea seller on Grant Avenue"
+   "npc": "a tea seller on Grant Avenue",
+   "scene": "wm_sf_chinatown"
   },
   {
    "id": "sf_north_beach",
@@ -743,7 +758,8 @@
    "blurb": "Espresso, City Lights bookstore, an old man who calls every car bella.",
    "language": "it",
    "voice": "if_sara",
-   "npc": "a cafe owner on Columbus Avenue"
+   "npc": "a cafe owner on Columbus Avenue",
+   "scene": "wm_sf_north_beach"
   },
   {
    "id": "sf_mission",
@@ -758,7 +774,8 @@
    "blurb": "Murals down every alley and the best taqueria argument in the state.",
    "language": "es",
    "voice": "ef_dora",
-   "npc": "a muralist on Balmy Alley"
+   "npc": "a muralist on Balmy Alley",
+   "scene": "wm_sf_mission"
   },
   {
    "id": "bakersfield",
@@ -773,7 +790,8 @@
     "food"
    ],
    "blurb": "Oil derricks, the Bakersfield Sound, and the bottom of the Central Valley.",
-   "gas_price": 4.79
+   "gas_price": 4.79,
+   "scene": "wm_bakersfield"
   },
   {
    "id": "fresno",
@@ -788,7 +806,8 @@
     "food"
    ],
    "blurb": "The gateway to three national parks, flat and patient in the haze.",
-   "gas_price": 4.85
+   "gas_price": 4.85,
+   "scene": "wm_fresno"
   },
   {
    "id": "bishop",
@@ -804,7 +823,8 @@
    ],
    "blurb": "The Eastern Sierra hub. Erick Schat's bakery, the High Sierra throwing shadows by four.",
    "gas_price": 5.09,
-   "terrain": 1.1
+   "terrain": 1.1,
+   "scene": "wm_bishop"
   },
   {
    "id": "lone_pine",
@@ -851,7 +871,8 @@
     "food"
    ],
    "blurb": "Mid-century glass under the San Jacintos, a tram to the snow line above the heat.",
-   "gas_price": 4.95
+   "gas_price": 4.95,
+   "scene": "wm_palm_springs"
   },
   {
    "id": "grand_canyon_south",
@@ -898,7 +919,8 @@
    ],
    "blurb": "Ponderosa pines at 7,000 feet, Route 66 and the railroad, snow on the peaks.",
    "gas_price": 4.05,
-   "terrain": 1.1
+   "terrain": 1.1,
+   "scene": "wm_flagstaff"
   },
   {
    "id": "williams",
@@ -913,7 +935,8 @@
     "food"
    ],
    "blurb": "The last town on Route 66 to be bypassed, and the rail gateway to the Grand Canyon.",
-   "gas_price": 4.09
+   "gas_price": 4.09,
+   "scene": "wm_williams"
   },
   {
    "id": "kingman",
@@ -928,7 +951,8 @@
     "food"
    ],
    "blurb": "Heart of Route 66 Arizona, a crossroads of I-40 and the road up from Vegas.",
-   "gas_price": 3.95
+   "gas_price": 3.95,
+   "scene": "wm_kingman"
   },
   {
    "id": "lake_havasu",
@@ -976,7 +1000,8 @@
     "food"
    ],
    "blurb": "Antelope Canyon's light shafts, the green river bending 270 degrees under your boots.",
-   "gas_price": 4.19
+   "gas_price": 4.19,
+   "scene": "wm_page"
   },
   {
    "id": "phoenix",
@@ -991,7 +1016,8 @@
     "food"
    ],
    "blurb": "The Valley of the Sun, a grid of warm light spreading to every horizon.",
-   "gas_price": 3.89
+   "gas_price": 3.89,
+   "scene": "wm_phoenix"
   },
   {
    "id": "castles_coasters",
@@ -1019,7 +1045,8 @@
     "food"
    ],
    "blurb": "Saguaro forests, the old Spanish presidio, the Sonoran desert in bloom after rain.",
-   "gas_price": 3.85
+   "gas_price": 3.85,
+   "scene": "wm_tucson"
   },
   {
    "id": "nogales",
@@ -1037,7 +1064,8 @@
    "gas_price": 3.79,
    "language": "es",
    "voice": "ef_dora",
-   "npc": "a vendor at the line in Nogales"
+   "npc": "a vendor at the line in Nogales",
+   "scene": "wm_nogales"
   },
   {
    "id": "saguaro",
@@ -1101,7 +1129,8 @@
     "food"
    ],
    "blurb": "The first Utah town off I-15, red rock and a tabernacle. Fill here for Zion or Bryce.",
-   "gas_price": 3.85
+   "gas_price": 3.85,
+   "scene": "wm_st_george"
   },
   {
    "id": "springdale",
@@ -1117,7 +1146,8 @@
    ],
    "blurb": "The little town at the mouth of Zion Canyon. Shuttle, lodges, the cliffs leaning in overhead.",
    "gas_price": 4.49,
-   "terrain": 1.1
+   "terrain": 1.1,
+   "scene": "wm_springdale"
   },
   {
    "id": "zion",
@@ -1159,7 +1189,8 @@
     "food"
    ],
    "blurb": "'Little Hollywood,' the hub between Zion, Bryce, the Grand Canyon's North Rim, and the Wave.",
-   "gas_price": 4.09
+   "gas_price": 4.09,
+   "scene": "wm_kanab"
   },
   {
    "id": "bryce",
@@ -1214,7 +1245,8 @@
     "food"
    ],
    "blurb": "Slickrock and the Colorado, mountain bikes and 4x4s, the base for two national parks.",
-   "gas_price": 4.19
+   "gas_price": 4.19,
+   "scene": "wm_moab"
   },
   {
    "id": "arches",
@@ -1282,7 +1314,8 @@
    ],
    "blurb": "Old silver mines turned ski resort, Main Street steep with money and snow.",
    "gas_price": 3.95,
-   "terrain": 1.15
+   "terrain": 1.15,
+   "scene": "wm_park_city"
   },
   {
    "id": "bonneville",
@@ -1350,7 +1383,8 @@
    "lat": 35.8108,
    "lon": -115.2658,
    "services": [],
-   "blurb": "Stacks of fluorescent boulders rising out of the Jean dry lake, somebody's idea south of Vegas."
+   "blurb": "Stacks of fluorescent boulders rising out of the Jean dry lake, somebody's idea south of Vegas.",
+   "scene": "wm_seven_magic"
   },
   {
    "id": "golden_gate",
@@ -1383,7 +1417,8 @@
    "lat": 33.2543,
    "lon": -115.4725,
    "services": [],
-   "blurb": "A hand-painted adobe hill of love and scripture out by the Salton Sea, next to a town with no laws."
+   "blurb": "A hand-painted adobe hill of love and scripture out by the Salton Sea, next to a town with no laws.",
+   "scene": "wm_salvation_mountain"
   },
   {
    "id": "amargosa",
@@ -1449,7 +1484,8 @@
     "gas",
     "food"
    ],
-   "blurb": "Self-proclaimed Bigfoot capital. A giant carved sasquatch by the road, and the trees lean in close."
+   "blurb": "Self-proclaimed Bigfoot capital. A giant carved sasquatch by the road, and the trees lean in close.",
+   "scene": "wm_willow_creek"
   },
   {
    "id": "area51_gate",
@@ -1634,7 +1670,8 @@
     "food"
    ],
    "blurb": "The capital of Silicon Valley, flat and warm and endless.",
-   "heat_zone": true
+   "heat_zone": true,
+   "scene": "wm_san_jose"
   },
   {
    "id": "berkeley",
@@ -1648,7 +1685,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "The university, the hills, the smell of eucalyptus and protest."
+   "blurb": "The university, the hills, the smell of eucalyptus and protest.",
+   "scene": "wm_berkeley"
   },
   {
    "id": "sacramento",
@@ -1662,7 +1700,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "The state capital under the delta breeze, old gold-rush bones downtown."
+   "blurb": "The state capital under the delta breeze, old gold-rush bones downtown.",
+   "scene": "wm_sacramento"
   },
   {
    "id": "stockton",
@@ -1676,7 +1715,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "A deep-water port ninety miles from the sea, asphalt shimmering in the valley heat."
+   "blurb": "A deep-water port ninety miles from the sea, asphalt shimmering in the valley heat.",
+   "scene": "wm_stockton"
   },
   {
    "id": "santa_barbara",
@@ -1690,7 +1730,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "Red-tile roofs, the Riviera of the West, the 101 running right along the surf."
+   "blurb": "Red-tile roofs, the Riviera of the West, the 101 running right along the surf.",
+   "scene": "wm_santa_barbara"
   },
   {
    "id": "ventura",
@@ -1704,7 +1745,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "A pier, a point break, and the Channel Islands floating offshore."
+   "blurb": "A pier, a point break, and the Channel Islands floating offshore.",
+   "scene": "wm_ventura"
   },
   {
    "id": "oceanside",
@@ -1718,7 +1760,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "Marine town, longboards, the smell of diesel and sunscreen."
+   "blurb": "Marine town, longboards, the smell of diesel and sunscreen.",
+   "scene": "wm_oceanside"
   },
   {
    "id": "riverside",
@@ -1733,7 +1776,8 @@
     "food"
    ],
    "blurb": "The Mission Inn and the orange groves that built it, inland and bright.",
-   "heat_zone": true
+   "heat_zone": true,
+   "scene": "wm_riverside"
   },
   {
    "id": "pasadena",
@@ -1748,7 +1792,8 @@
     "food"
    ],
    "blurb": "Craftsman bungalows, the Rose Bowl, the Colorado Street bridge over the arroyo.",
-   "heat_zone": true
+   "heat_zone": true,
+   "scene": "wm_pasadena"
   },
   {
    "id": "palm_desert",
@@ -1762,7 +1807,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "Golf and glass under the Santa Rosas, El Paseo for the snowbirds."
+   "blurb": "Golf and glass under the Santa Rosas, El Paseo for the snowbirds.",
+   "scene": "wm_palm_desert"
   },
   {
    "id": "gilroy",
@@ -1775,7 +1821,8 @@
     "gas",
     "food"
    ],
-   "blurb": "Garlic capital of the world; you smell it before the off-ramp."
+   "blurb": "Garlic capital of the world; you smell it before the off-ramp.",
+   "scene": "wm_gilroy"
   },
   {
    "id": "napa",
@@ -1789,7 +1836,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "Vines in tidy rows, tasting rooms, the wine train rattling north."
+   "blurb": "Vines in tidy rows, tasting rooms, the wine train rattling north.",
+   "scene": "wm_napa"
   },
   {
    "id": "half_moon_bay",
@@ -1802,7 +1850,8 @@
     "gas",
     "food"
    ],
-   "blurb": "Pumpkins, Mavericks' big surf, Highway 1 hugging the cliff edge."
+   "blurb": "Pumpkins, Mavericks' big surf, Highway 1 hugging the cliff edge.",
+   "scene": "wm_half_moon_bay"
   },
   {
    "id": "redding",
@@ -1816,7 +1865,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "Top of the valley under Mount Shasta, the Sundial Bridge over the Sacramento."
+   "blurb": "Top of the valley under Mount Shasta, the Sundial Bridge over the Sacramento.",
+   "scene": "wm_redding"
   },
   {
    "id": "berlin_nv",
@@ -1829,6 +1879,1945 @@
    "terrain": 1.05,
    "blurb": "A silver-rush ghost town nobody bothered to tear down — and behind it, under a shed, the bones of fifty-foot sea monsters that died here when Nevada was an ocean.",
    "scene": "berlin_nv"
+  },
+  {
+   "id": "winnemucca",
+   "name": "Winnemucca",
+   "kind": "city",
+   "region": "NV",
+   "lat": 40.96833,
+   "lon": -117.72667,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Winnemucca is the only incorporated city in Humboldt County, Nevada, United States, of which it is also the county seat, encompassing approximately half of the total population of…",
+   "beat": "Winnemucca. Half of Humboldt County lives inside this one set of city limits — the only incorporated city the county has — and the other half is out there in the dark somewhere. I respect both decisions.",
+   "scene": "wm_winnemucca"
+  },
+  {
+   "id": "elko",
+   "name": "Elko",
+   "kind": "city",
+   "region": "NV",
+   "lat": 40.83889,
+   "lon": -115.74028,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Elko is a city in and the county seat of Elko County, Nevada, United States.",
+   "beat": "Elko. Twenty-one miles from town, Lamoille Canyon runs up into the Ruby Mountains, and people come here for the climb. I'm built low for a reason; the valley suits me fine.",
+   "scene": "wm_elko"
+  },
+  {
+   "id": "wells_nv",
+   "name": "Wells",
+   "kind": "city",
+   "region": "NV",
+   "lat": 41.12,
+   "lon": -114.96722,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Wells is a small city in Elko County, in northeast Nevada in the western United States.",
+   "beat": "Wells. This is where U.S. 93 meets Interstate 80, and the whole town is arranged around that decision. Junction towns don't keep you — that's their kindness, not their failure.",
+   "scene": "wm_wells_nv"
+  },
+  {
+   "id": "west_wendover",
+   "name": "West Wendover",
+   "kind": "city",
+   "region": "NV",
+   "lat": 40.74778,
+   "lon": -114.07833,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "West Wendover is a city in Elko County, Nevada, United States.",
+   "beat": "West Wendover. East of the last block, the Great Salt Lake Desert takes over — white, flat, patient as arithmetic. Salt eats cars politely, over years; we admire it from the curb.",
+   "scene": "wm_west_wendover"
+  },
+  {
+   "id": "battle_mountain",
+   "name": "Battle Mountain",
+   "kind": "city",
+   "region": "NV",
+   "lat": 40.62361,
+   "lon": -116.95333,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Battle Mountain is an unincorporated town in and the county seat of Lander County, Nevada, United States.",
+   "beat": "Battle Mountain. Gold mining pays for everything here — shine pulled out of dark ground so that somewhere far away can glitter. I have some sympathy for the ore.",
+   "scene": "wm_battle_mountain"
+  },
+  {
+   "id": "lovelock",
+   "name": "Lovelock",
+   "kind": "city",
+   "region": "NV",
+   "lat": 40.18,
+   "lon": -118.47667,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Lovelock is the county seat of Pershing County, Nevada, United States, in which it is the only incorporated city.",
+   "beat": "Lovelock. The only incorporated city in all of Pershing County, county seat the way the last one standing makes captain. A name like that ought to draw more company.",
+   "scene": "wm_lovelock"
+  },
+  {
+   "id": "eureka_nv",
+   "name": "Eureka",
+   "kind": "city",
+   "region": "NV",
+   "lat": 39.50556,
+   "lon": -115.96444,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Eureka is an unincorporated town and census-designated place in and the county seat of Eureka County, Nevada, United States.",
+   "beat": "Eureka. An Opera House, out here — somebody looked at all this distance and decided the silence deserved an answer with velvet seats. I'll idle outside and listen for an overture.",
+   "scene": "wm_eureka_nv"
+  },
+  {
+   "id": "austin_nv",
+   "name": "Austin",
+   "kind": "city",
+   "region": "NV",
+   "lat": 39.49194,
+   "lon": -117.07028,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Austin is an unincorporated census-designated place in and the former county seat of Lander County, Nevada, United States.",
+   "beat": "Austin. We're 6,575 feet up the western slope of the Toiyabe Range, and my carburetors have noticed the air comes rationed at this height. Towns this high don't grow; they hold.",
+   "scene": "wm_austin_nv"
+  },
+  {
+   "id": "hawthorne_nv",
+   "name": "Hawthorne",
+   "kind": "city",
+   "region": "NV",
+   "lat": 38.52528,
+   "lon": -118.62306,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Hawthorne is an unincorporated community and census-designated place (CDP) in Mineral County, Nevada, United States.",
+   "beat": "Hawthorne. Everything this town earns, it earns from the Army Depot next door — a living made of keeping munitions company. People drive gently here, and tonight so do I.",
+   "scene": "wm_hawthorne_nv"
+  },
+  {
+   "id": "mina_nv",
+   "name": "Mina",
+   "kind": "city",
+   "region": "NV",
+   "lat": 38.39056,
+   "lon": -118.10861,
+   "services": [
+    "gas"
+   ],
+   "blurb": "Mina is an unincorporated community and census-designated place (CDP) in Mineral County in west-central Nevada, United States.",
+   "beat": "Mina. A hundred and twenty-seven people at the last census, which means tonight's population is whoever left a light on. Nobody out here watches you arrive — that's the gift.",
+   "scene": "wm_mina_nv"
+  },
+  {
+   "id": "virginia_city",
+   "name": "Virginia City",
+   "kind": "city",
+   "region": "NV",
+   "lat": 39.3075,
+   "lon": -119.64833,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Virginia City is a historic town in Storey County, Nevada, United States.",
+   "terrain": 1.1,
+   "beat": "Virginia City. In 1859 the Comstock Lode came up out of this mountain and the whole country leaned in to look. The silver's long gone; the leaning you can still feel.",
+   "scene": "wm_virginia_city"
+  },
+  {
+   "id": "genoa_nv",
+   "name": "Genoa",
+   "kind": "city",
+   "region": "NV",
+   "lat": 39.00444,
+   "lon": -119.84722,
+   "services": [
+    "food"
+   ],
+   "blurb": "Genoa is an unincorporated town in Douglas County, Nevada, United States.",
+   "beat": "Genoa. Nevada's oldest bar is in this town, which makes it the place where the state first admitted it needed a drink. I run on something stronger, but I understand the impulse.",
+   "scene": "wm_genoa_nv"
+  },
+  {
+   "id": "gardnerville",
+   "name": "Gardnerville",
+   "kind": "city",
+   "region": "NV",
+   "lat": 38.94083,
+   "lon": -119.74361,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Gardnerville is an unincorporated town in Douglas County, Nevada, United States, adjacent to the county seat of Minden.",
+   "beat": "Gardnerville. It leans right up against Minden, the county seat — two towns so close the border is mostly an opinion. Twice the quiet on one road; we could sleep here.",
+   "scene": "wm_gardnerville"
+  },
+  {
+   "id": "yerington",
+   "name": "Yerington",
+   "kind": "city",
+   "region": "NV",
+   "lat": 38.98528,
+   "lon": -119.15833,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Yerington is a city in Lyon County, Nevada, United States.",
+   "beat": "Yerington. A whole town named for the superintendent of the Virginia and Truckee Railroad, which tells you what counted as power out here — the man who ran the trains. I roll in a century off the timetable; the name on the sign is still his.",
+   "scene": "wm_yerington"
+  },
+  {
+   "id": "fernley",
+   "name": "Fernley",
+   "kind": "city",
+   "region": "NV",
+   "lat": 39.59861,
+   "lon": -119.215,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Fernley is a city in Lyon County, Nevada, United States, and part of the Reno–Tahoe–Sparks metropolitan area CSA.",
+   "beat": "Fernley. A city only since 2001 — as municipalities go, it's younger than the oil stains on my floor pans. The streets still wear that unconvinced look new towns have.",
+   "scene": "wm_fernley"
+  },
+  {
+   "id": "boulder_city",
+   "name": "Boulder City",
+   "kind": "city",
+   "region": "NV",
+   "lat": 35.97861,
+   "lon": -114.8325,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Boulder City is a city in Clark County, Nevada, United States.",
+   "beat": "Boulder City. One of exactly two places in Nevada where gambling is banned — a whole state built on odds, and this town simply declined to play. I admire anything that knows what it refuses.",
+   "scene": "wm_boulder_city"
+  },
+  {
+   "id": "searchlight",
+   "name": "Searchlight",
+   "kind": "city",
+   "region": "NV",
+   "lat": 35.46528,
+   "lon": -114.91972,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Searchlight is an unincorporated town and census-designated place (CDP) in Clark County, Nevada, United States, at the topographic saddle between two mountain ranges.",
+   "beat": "Searchlight. We crest into the saddle between two mountain ranges and the town is just sitting there in the notch, like something the wind set down and forgot. I cut the radio out of respect.",
+   "scene": "wm_searchlight"
+  },
+  {
+   "id": "alamo_nv",
+   "name": "Alamo",
+   "kind": "city",
+   "region": "NV",
+   "lat": 37.365,
+   "lon": -115.16444,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Alamo is an unincorporated town in Lincoln County, Nevada, United States, about 90 miles (140 km) north of Las Vegas along U.S.",
+   "beat": "Alamo. Ninety miles north of Las Vegas and you can feel every one of them in the quiet — Route 93 just lays itself down flat here and waits. Top off the tank; the road north doesn't apologize.",
+   "scene": "wm_alamo_nv"
+  },
+  {
+   "id": "caliente_nv",
+   "name": "Caliente",
+   "kind": "city",
+   "region": "NV",
+   "lat": 37.61528,
+   "lon": -114.51417,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Caliente, formerly known as Culverwell and Calientes, is a city in Lincoln County, Nevada, United States.",
+   "beat": "Caliente. Named for the hot springs — Spanish for exactly what it says, a town that puts the truth right on the sign. Steam under the ground, cold stars over it. My coolant appreciates the symmetry.",
+   "scene": "wm_caliente_nv"
+  },
+  {
+   "id": "pioche",
+   "name": "Pioche",
+   "kind": "city",
+   "region": "NV",
+   "lat": 37.95194,
+   "lon": -114.44333,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Pioche is an unincorporated town in Lincoln County, Nevada, United States, approximately 180 miles (290 km) northeast of Las Vegas.",
+   "beat": "Pioche. The highway bypasses the town center just to the east, so the whole country is passing Pioche by, all day, every day, at seventy. I take the old road in. Somebody should.",
+   "scene": "wm_pioche"
+  },
+  {
+   "id": "overton_nv",
+   "name": "Overton",
+   "kind": "city",
+   "region": "NV",
+   "lat": 36.54306,
+   "lon": -114.44611,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Overton is a community that is part of the unincorporated town of Moapa Valley in Clark County, Nevada.",
+   "beat": "Overton. A town with two airports — Perkins Field and Echo Bay — which tells you how badly people out here want to leave the ground. I keep all four tires on it, on principle.",
+   "scene": "wm_overton_nv"
+  },
+  {
+   "id": "gerlach",
+   "name": "Gerlach",
+   "kind": "city",
+   "region": "NV",
+   "lat": 40.65167,
+   "lon": -119.35528,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Gerlach, Nevada is a census-designated place (CDP) in Washoe County, Nevada, United States.",
+   "beat": "Gerlach. The paperwork files this place under the Reno–Sparks metropolitan area, which is the driest joke a federal form has ever told. The dark out here is total; my headlights feel like a confession.",
+   "scene": "wm_gerlach"
+  },
+  {
+   "id": "jackpot_nv",
+   "name": "Jackpot",
+   "kind": "city",
+   "region": "NV",
+   "lat": 41.97972,
+   "lon": -114.66444,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Jackpot is an unincorporated community and census-designated place (CDP) in Elko County, Nevada, United States.",
+   "beat": "Jackpot. Built less than a mile from the Idaho line, so the neighbors can lose a paycheck and still be home by midnight. Every light in town is somebody's optimism, wired and humming. None of it is for me.",
+   "scene": "wm_jackpot_nv"
+  },
+  {
+   "id": "amargosa_valley",
+   "name": "Amargosa Valley",
+   "kind": "city",
+   "region": "NV",
+   "lat": 36.64389,
+   "lon": -116.40028,
+   "services": [
+    "gas"
+   ],
+   "blurb": "Amargosa Valley is an unincorporated town located on U.S.",
+   "beat": "Amargosa Valley. Unincorporated — the town never bothered drawing a line around itself, just Route 95, some mailboxes, and all of Nye County's sky. I sympathize. Nobody ever drew a line around me either.",
+   "scene": "wm_amargosa_valley"
+  },
+  {
+   "id": "truckee",
+   "name": "Truckee",
+   "kind": "city",
+   "region": "CA",
+   "lat": 39.35694,
+   "lon": -120.185,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Truckee is an incorporated town in Nevada County, California, United States.",
+   "terrain": 1.15,
+   "beat": "Truckee. California town, Nevada County — the border getting one last joke in before the pass. Cold air, tall pines, and every roof rack in this parking lot cost more than I did new.",
+   "scene": "wm_truckee"
+  },
+  {
+   "id": "south_lake_tahoe",
+   "name": "South Lake Tahoe",
+   "kind": "city",
+   "region": "CA",
+   "lat": 38.94,
+   "lon": -119.97694,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "South Lake Tahoe is the most populous city in El Dorado County, California, United States, in the Sierra Nevada mountains.",
+   "terrain": 1.15,
+   "beat": "South Lake Tahoe. Five miles of city strung along Route 50 at the lake's southern edge — a town shaped exactly like the road that made it. I know the feeling. We roll the whole length just to be sure.",
+   "scene": "wm_south_lake_tahoe"
+  },
+  {
+   "id": "mammoth_lakes",
+   "name": "Mammoth Lakes",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.62726,
+   "lon": -118.98994,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Mammoth Lakes is the only incorporated town in Mono County, California, United States.",
+   "terrain": 1.2,
+   "beat": "Mammoth Lakes. Seven thousand eight hundred and eighty feet, and my engine notices before I do — old carburetors remember sea level the way some people remember being young. I lean myself out and climb anyway.",
+   "scene": "wm_mammoth_lakes"
+  },
+  {
+   "id": "bridgeport_ca",
+   "name": "Bridgeport",
+   "kind": "city",
+   "region": "CA",
+   "lat": 38.25056,
+   "lon": -119.23139,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Bridgeport is an unincorporated community and a census-designated place (CDP) in and the county seat of Mono County, California, United States.",
+   "terrain": 1.1,
+   "beat": "Bridgeport. All of Mono County's law and paperwork lives here — the county seat, kept in a town short enough to miss while adjusting a mirror. I slow down anyway. It seems like the kind of place that notices.",
+   "scene": "wm_bridgeport_ca"
+  },
+  {
+   "id": "bodie",
+   "name": "Bodie",
+   "kind": "park",
+   "region": "CA",
+   "lat": 38.21222,
+   "lon": -119.01222,
+   "services": [],
+   "blurb": "Bodie is a ghost town in the Bodie Hills east of the Sierra Nevada mountain range in Mono County, California, United States.",
+   "terrain": 1.2,
+   "beat": "Bodie. It boomed in 1876 on one profitable vein and then stopped, mid-sentence, the way only mining towns and engines can. I cut the motor and let the silence come in like it owns the place. It does.",
+   "scene": "wm_bodie"
+  },
+  {
+   "id": "independence_ca",
+   "name": "Independence",
+   "kind": "city",
+   "region": "CA",
+   "lat": 36.8275,
+   "lon": -118.21333,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Independence is an unincorporated census-designated place in and the county seat of Inyo County, California.",
+   "beat": "Independence. The census counted 593 here last time, down from 669 the decade before — a town letting go of itself a few hands at a time. Out here the name stops sounding like a boast and starts sounding like a condition.",
+   "scene": "wm_independence_ca"
+  },
+  {
+   "id": "ridgecrest",
+   "name": "Ridgecrest",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.6225,
+   "lon": -117.67083,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Ridgecrest is a city in Kern County, California, United States, along U.S.",
+   "beat": "Ridgecrest. Next door, the Navy keeps China Lake, its weapons station, so everything overhead is fast, federal, and not interested in me. For once I'm the slow one in the valley. It's restful.",
+   "scene": "wm_ridgecrest"
+  },
+  {
+   "id": "trona",
+   "name": "Trona",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.76528,
+   "lon": -117.38278,
+   "services": [
+    "gas"
+   ],
+   "blurb": "Trona is an unincorporated community in San Bernardino County, California.",
+   "beat": "Trona. The town is named for the mineral they scrape out of the dry lakebed next door — a place that introduces itself by what it can be mined for. The air has a chemical sweetness I'll taste for miles.",
+   "scene": "wm_trona"
+  },
+  {
+   "id": "tehachapi",
+   "name": "Tehachapi",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.13222,
+   "lon": -118.44889,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Tehachapi is a city in Kern County, California, United States, in the Tehachapi Mountains, at an elevation of 3,970 feet (1,210 m), between the San Joaquin Valley and the Mojave D…",
+   "terrain": 1.1,
+   "beat": "Tehachapi. The sign says elevation 3,970, and the temperature needle says we earned every foot of it. Mountain air is kind to an old straight-six — first deep breath I've taken since the flats.",
+   "scene": "wm_tehachapi"
+  },
+  {
+   "id": "lancaster_ca",
+   "name": "Lancaster",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.68333,
+   "lon": -118.15,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Lancaster is a charter city in northern Los Angeles County, in the Antelope Valley of the western Mojave Desert in Southern California, United States.",
+   "beat": "Lancaster. Twinned with Palmdale, the way my headlights are twinned — side by side, pointed the same direction, never quite meeting. Desert cities sprawl instead of rising. Easier to disappear into.",
+   "scene": "wm_lancaster_ca"
+  },
+  {
+   "id": "victorville",
+   "name": "Victorville",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.53611,
+   "lon": -117.29111,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Victorville is a city in the Victor Valley in San Bernardino County, California.",
+   "beat": "Victorville. 134,810 people at the last count, and not one of them looks up as we pass. High-desert towns perfect the art of not asking. I could learn something here.",
+   "scene": "wm_victorville"
+  },
+  {
+   "id": "twentynine_palms",
+   "name": "Twentynine Palms",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.13556,
+   "lon": -116.05417,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Twentynine Palms is a city in San Bernardino County, California, United States.",
+   "beat": "Twentynine Palms. A doorway town — one of the ways into Joshua Tree, so everything here points outward at the dark. I idle well in places built for passing through.",
+   "scene": "wm_twentynine_palms"
+  },
+  {
+   "id": "indio",
+   "name": "Indio",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.72056,
+   "lon": -116.21556,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Indio is a city in Riverside County, California, United States, in the Coachella Valley of Southern California's Colorado Desert region.",
+   "beat": "Indio. Ninety-eight miles of open desert between here and Blythe, and the fuel gauge has already done the arithmetic. We fill up here. That kind of empty doesn't forgive romantics.",
+   "scene": "wm_indio"
+  },
+  {
+   "id": "el_centro",
+   "name": "El Centro",
+   "kind": "city",
+   "region": "CA",
+   "lat": 32.8,
+   "lon": -115.56667,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "El Centro is a city in and the county seat of Imperial County, California, United States.",
+   "beat": "El Centro. County seat of Imperial County, and the word imperial is doing heavy lifting out here in the flat heat. Seats of power always feel like waiting rooms to me. We won't wait long.",
+   "scene": "wm_el_centro"
+  },
+  {
+   "id": "blythe",
+   "name": "Blythe",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.61028,
+   "lon": -114.59639,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Blythe is a city in eastern Riverside County, California, United States.",
+   "beat": "Blythe. Named for Thomas Henry Blythe, whoever he was — towns out here wear dead men's names like borrowed coats. I can feel the river before I see it, the air going soft against the windshield.",
+   "scene": "wm_blythe"
+  },
+  {
+   "id": "julian_ca",
+   "name": "Julian",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.07083,
+   "lon": -116.58556,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Julian is a census-designated place (CDP) in San Diego County, California, which developed as a classic gold rush boomtown in the 1870s after gold was discovered by Fred Coleman, …",
+   "terrain": 1.1,
+   "beat": "Julian. Fred Coleman found gold here in the 1870s, and the town has been politely cashing that check ever since. Boomtowns that survive learn to sell the memory instead of the metal.",
+   "scene": "wm_julian_ca"
+  },
+  {
+   "id": "borrego_springs",
+   "name": "Borrego Springs",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.24722,
+   "lon": -116.37194,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Borrego Springs is a census-designated place (CDP) in northeastern San Diego County, California.",
+   "beat": "Borrego Springs. Surrounded on every side by Anza-Borrego Desert State Park — a pocket of porch lights with wilderness for a moat. Towns like this don't lock much. The desert does it for them.",
+   "scene": "wm_borrego_springs"
+  },
+  {
+   "id": "temecula",
+   "name": "Temecula",
+   "kind": "city",
+   "region": "CA",
+   "lat": 33.49278,
+   "lon": -117.13139,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Temecula is a city in southwestern Riverside County, California, United States.",
+   "beat": "Temecula. A city only since December 1989, which makes it younger than my paint. Everything here is new and pleased about it — the kind of place that remembers its own ribbon-cutting. We'll be older somewhere else by morning.",
+   "scene": "wm_temecula"
+  },
+  {
+   "id": "ojai",
+   "name": "Ojai",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.44917,
+   "lon": -119.24667,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Ojai is a city in Ventura County, California.",
+   "beat": "Ojai. Ten miles long and three wide, the whole valley — small enough that the mountains hear everything. I come in off-throttle, quiet as a 1972 anything can manage.",
+   "scene": "wm_ojai"
+  },
+  {
+   "id": "paso_robles",
+   "name": "Paso Robles",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.64083,
+   "lon": -120.65389,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Paso Robles, officially El Paso de Robles, is a city in San Luis Obispo County, California, United States.",
+   "beat": "Paso Robles. Officially El Paso de Robles — the pass of the oaks — but the town trimmed its own name down to something that fits in a hurry. I understand. I've answered to shorter names myself.",
+   "scene": "wm_paso_robles"
+  },
+  {
+   "id": "san_luis_obispo",
+   "name": "San Luis Obispo",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.27417,
+   "lon": -120.66306,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "San Luis Obispo is a city in and the county seat of San Luis Obispo County, California, United States.",
+   "beat": "San Luis Obispo. Roughly halfway between the Bay Area and Los Angeles, which makes this the exact spot where both stop mattering. Halfway is where resolve gets tested. Mine idles fine.",
+   "scene": "wm_san_luis_obispo"
+  },
+  {
+   "id": "san_simeon",
+   "name": "San Simeon",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.64389,
+   "lon": -121.18917,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "San Simeon is an unincorporated community on the Pacific coast of San Luis Obispo County, California, United States.",
+   "beat": "San Simeon. Population 445 — fewer people than some parking structures I've slept in. The Pacific takes up the rest of the room here, and tonight that arrangement suits me.",
+   "scene": "wm_san_simeon"
+  },
+  {
+   "id": "big_sur",
+   "name": "Big Sur",
+   "kind": "park",
+   "region": "CA",
+   "lat": 36.29922,
+   "lon": -121.8734,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "Big Sur is a rugged and mountainous section of the Central Coast of the U.S.",
+   "terrain": 1.2,
+   "beat": "Big Sur. The Santa Lucias come straight out of the Pacific here, no negotiation, and the road has to apologize its way along the cliffs. This is what steering was invented for. I won't pretend to be calm.",
+   "scene": "wm_big_sur"
+  },
+  {
+   "id": "salinas",
+   "name": "Salinas",
+   "kind": "city",
+   "region": "CA",
+   "lat": 36.67778,
+   "lon": -121.65556,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Salinas is a city in and the county seat of Monterey County, California, United States.",
+   "beat": "Salinas. Most populous city in Monterey County, which surprises people who only know the county by its coastline. Inland is where the work lives. I like a town with grease under its nails.",
+   "scene": "wm_salinas"
+  },
+  {
+   "id": "santa_maria",
+   "name": "Santa Maria",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.95139,
+   "lon": -120.43333,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Santa Maria is a city in Santa Barbara County, California, United States.",
+   "beat": "Santa Maria. They named a whole style of barbecue after this town, and the smoke on the evening air is still making the argument — strong enough to taste through a closed vent. I don't eat; I slowed down anyway.",
+   "scene": "wm_santa_maria"
+  },
+  {
+   "id": "solvang",
+   "name": "Solvang",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.59389,
+   "lon": -120.13972,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Solvang is a city in Santa Barbara County, California, United States.",
+   "beat": "Solvang. Danish Capital of America, the signs insist — an entire town doing an impression of somewhere else and never once breaking character. I'm a Japanese car wearing an English name; I withhold judgment.",
+   "scene": "wm_solvang"
+  },
+  {
+   "id": "santa_rosa",
+   "name": "Santa Rosa",
+   "kind": "city",
+   "region": "CA",
+   "lat": 38.44861,
+   "lon": -122.70472,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Santa Rosa is a city in and the county seat of Sonoma County, United States, in the North Bay region of the Bay Area in California.",
+   "beat": "Santa Rosa. Biggest city in all the Wine Country, which means the romance got zoned, signaled, and metered a long while back. Nobody here looks twice at an old coupe, and that suits me fine.",
+   "scene": "wm_santa_rosa"
+  },
+  {
+   "id": "petaluma",
+   "name": "Petaluma",
+   "kind": "city",
+   "region": "CA",
+   "lat": 38.24583,
+   "lon": -122.63139,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Petaluma is a city in Sonoma County, California, United States, located in the North Bay region of the San Francisco Bay Area.",
+   "beat": "Petaluma. Fifty-nine thousand and change, says the census, and tonight the North Bay has every one of them indoors. Streets this empty make my engine sound like a confession.",
+   "scene": "wm_petaluma"
+  },
+  {
+   "id": "mendocino",
+   "name": "Mendocino",
+   "kind": "city",
+   "region": "CA",
+   "lat": 39.30778,
+   "lon": -123.79944,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "Mendocino is an unincorporated community in Mendocino County, California, United States.",
+   "beat": "Mendocino. The name arrived secondhand — borrowed from a cape eighty-five miles up the coast, itself named to flatter a viceroy of New Spain. Out on this headland the Pacific does all the talking, and none of it is to me.",
+   "scene": "wm_mendocino"
+  },
+  {
+   "id": "fort_bragg_ca",
+   "name": "Fort Bragg",
+   "kind": "city",
+   "region": "CA",
+   "lat": 39.4457,
+   "lon": -123.8044,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Fort Bragg is a city along the North Coast of California in Mendocino County.",
+   "beat": "Fort Bragg. The sea sits eighty-five feet below the whole city and keeps the receipts — salt on the air thick enough to start rumors about my rocker panels. I won't stay parked long.",
+   "scene": "wm_fort_bragg_ca"
+  },
+  {
+   "id": "eureka_ca",
+   "name": "Eureka, CA",
+   "kind": "city",
+   "region": "CA",
+   "lat": 40.80194,
+   "lon": -124.16361,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Eureka is a city in and the county seat of Humboldt County, located on the North Coast of California.",
+   "beat": "Eureka. This is where California stops pretending to hurry — two hundred seventy miles past San Francisco, a hundred short of Oregon, fog working Humboldt Bay like it's owed something. 101 runs straight through; so could I.",
+   "scene": "wm_eureka_ca"
+  },
+  {
+   "id": "weed_ca",
+   "name": "Weed",
+   "kind": "city",
+   "region": "CA",
+   "lat": 41.42417,
+   "lon": -122.38444,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Weed is a city in Siskiyou County, California, United States.",
+   "beat": "Weed. Half the map out here answers to this name — Edgewood, Carrick, Lake Shastina, all taking their mail addressed to Weed, like the word has its own gravity. Some names you don't escape. I'd know.",
+   "scene": "wm_weed_ca"
+  },
+  {
+   "id": "mount_shasta_city",
+   "name": "Mount Shasta",
+   "kind": "city",
+   "region": "CA",
+   "lat": 41.31444,
+   "lon": -122.31139,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Mount Shasta is a city in Siskiyou County, California, United States, at approximately 3,600 feet (1,100 m) above sea level on the flanks of Mount Shasta, a prominent northern Cal…",
+   "terrain": 1.15,
+   "beat": "Mount Shasta, the city — nine miles from the summit of the volcano it answers to, which makes the mountain less a view than a landlord. The air runs thin up here; my carburetors noticed before I did."
+  },
+  {
+   "id": "yreka",
+   "name": "Yreka",
+   "kind": "city",
+   "region": "CA",
+   "lat": 41.72667,
+   "lon": -122.6375,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Yreka is a city in and the county seat of Siskiyou County, California, United States, near the Shasta River and approximately 22 miles south of the state border with Oregon.",
+   "beat": "Yreka. County seat of Siskiyou, twenty-two miles short of the Oregon line — close enough that the border feels like a mood instead of a law. One more tank of gas in this state; I intend to spend it well.",
+   "scene": "wm_yreka"
+  },
+  {
+   "id": "susanville",
+   "name": "Susanville",
+   "kind": "city",
+   "region": "CA",
+   "lat": 40.41639,
+   "lon": -120.65306,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Susanville is the only incorporated city in Lassen County, California, United States, of which it is also the county seat.",
+   "beat": "Susanville. Lassen County managed to incorporate exactly one city, and this is it — which sounds like an honor until you realize nobody else applied. High-desert dark out here; my headlights feel personal.",
+   "scene": "wm_susanville"
+  },
+  {
+   "id": "alturas",
+   "name": "Alturas",
+   "kind": "city",
+   "region": "CA",
+   "lat": 41.48722,
+   "lon": -120.5425,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Alturas is the only incorporated city in Modoc County, California, United States, of which it is also the county seat.",
+   "beat": "Alturas. Two forks of the Pit River shake hands here, north and south, and in Modoc County that counts as a crowd. Quiet enough to hear my own valvetrain; I don't hate it.",
+   "scene": "wm_alturas"
+  },
+  {
+   "id": "chico",
+   "name": "Chico",
+   "kind": "city",
+   "region": "CA",
+   "lat": 39.74,
+   "lon": -121.83556,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Chico is the most populous city in Butte County, California, United States.",
+   "beat": "Chico. A hundred and one thousand people, which after the high desert reads less like a city than a change of climate. First stoplight in hours — I sit through it twice, relearning patience.",
+   "scene": "wm_chico"
+  },
+  {
+   "id": "placerville",
+   "name": "Placerville",
+   "kind": "city",
+   "region": "CA",
+   "lat": 38.72972,
+   "lon": -120.79861,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Placerville is a city in and the county seat of El Dorado County, California, United States.",
+   "terrain": 1.05,
+   "beat": "Placerville. The county styled itself El Dorado and the town keeps placer gold right in its name — ten thousand people still living downstream of a very old bet. Some wagers take a century to settle.",
+   "scene": "wm_placerville"
+  },
+  {
+   "id": "nevada_city_ca",
+   "name": "Nevada City",
+   "kind": "city",
+   "region": "CA",
+   "lat": 39.26139,
+   "lon": -121.01861,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Nevada City is a city in and the county seat of Nevada County, California, United States, 60 miles (97 km) northeast of Sacramento, 84 miles (135 km) southwest of Reno and 147 mil…",
+   "terrain": 1.05,
+   "beat": "Nevada City. A California town wearing Nevada's name, eighty-four miles from the actual Reno as if to maximize the confusion. The pines crowd the road in early, and the dark behind them is older than the town.",
+   "scene": "wm_nevada_city_ca"
+  },
+  {
+   "id": "sonora_ca",
+   "name": "Sonora",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.99278,
+   "lon": -120.38,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Sonora is the only incorporated city in Tuolumne County, California, United States, of which it is also the county seat.",
+   "terrain": 1.05,
+   "beat": "Sonora. Founded by Mexican miners who carried the name of home north through a gold rush and set it down here for keeps. You can pan everything out of a river except where you're from.",
+   "scene": "wm_sonora_ca"
+  },
+  {
+   "id": "mariposa_ca",
+   "name": "Mariposa",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.485,
+   "lon": -119.96639,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Mariposa is an unincorporated community and census-designated place (CDP) in and the county seat of Mariposa County, California, United States.",
+   "terrain": 1.05,
+   "beat": "Mariposa. Named for the monarchs that overwinter here — something that small, finding the same town every year without a map. I navigate by satellite and I'm in no position to judge.",
+   "scene": "wm_mariposa_ca"
+  },
+  {
+   "id": "oakhurst",
+   "name": "Oakhurst",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.32806,
+   "lon": -119.64944,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Oakhurst is a census-designated place (CDP) in Madera County, California, United States.",
+   "terrain": 1.05,
+   "beat": "Oakhurst. Highway 41 meets Highway 49 here, and every car in the foothills has to choose a future at that junction. Mine chose itself miles back; I just kept the wheels under it.",
+   "scene": "wm_oakhurst"
+  },
+  {
+   "id": "modesto",
+   "name": "Modesto",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.66139,
+   "lon": -120.99444,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Modesto is the county seat of and the largest city in Stanislaus County, California, United States.",
+   "beat": "Modesto. Nineteenth-largest city in California — the demographic middle lane, held at a steady seventy, no signal, no apology. I've always respected anything that knows its lane and stays in it.",
+   "scene": "wm_modesto"
+  },
+  {
+   "id": "visalia",
+   "name": "Visalia",
+   "kind": "city",
+   "region": "CA",
+   "lat": 36.33028,
+   "lon": -119.2925,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Visalia is a city in the agricultural San Joaquin Valley of California.",
+   "beat": "Visalia, deep in the San Joaquin's farm country, where the dust on my windshield isn't dirt — it's inventory, the whole valley airborne one acre at a time. Wipers are a negotiation, not a solution.",
+   "scene": "wm_visalia"
+  },
+  {
+   "id": "zzyzx",
+   "name": "Zzyzx",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 35.14278,
+   "lon": -116.10472,
+   "services": [],
+   "blurb": "Zzyzx, formerly Soda Springs, is an unincorporated place in San Bernardino County, California, United States, within the boundaries of the Mojave National Preserve, managed by the…",
+   "beat": "There used to be a mineral springs and health spa out here — which tells you everything about the kind of man who looks at the Mojave and sees a cure. Zzyzx. The springs are gone; the name kept the fever.",
+   "scene": "wm_zzyzx"
+  },
+  {
+   "id": "amboy_ca",
+   "name": "Amboy",
+   "kind": "gas",
+   "region": "CA",
+   "lat": 34.55694,
+   "lon": -115.745,
+   "services": [
+    "gas"
+   ],
+   "blurb": "Amboy is an unincorporated community in San Bernardino County, in California's Mojave Desert, west of Needles and east of Ludlow on historic Route 66.",
+   "beat": "Amboy. The entire business district is a post office, a motel-diner, and a shop selling Route 66 back to the people driving it. The road ate its towns; this one survived by becoming the menu.",
+   "scene": "wm_amboy_ca"
+  },
+  {
+   "id": "tecopa",
+   "name": "Tecopa",
+   "kind": "city",
+   "region": "CA",
+   "lat": 35.84833,
+   "lon": -116.22639,
+   "services": [
+    "lodging"
+   ],
+   "blurb": "Tecopa is a census-designated place (CDP) in the Mojave Desert in southeast Inyo County, California, United States.",
+   "beat": "Tecopa, population one hundred twenty. At that size a town isn't a place so much as an agreement, and everyone here has read the terms. I kill the headlights out of courtesy.",
+   "scene": "wm_tecopa"
+  },
+  {
+   "id": "koreatown_la",
+   "name": "Koreatown",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 34.0618,
+   "lon": -118.3006,
+   "services": [
+    "food"
+   ],
+   "blurb": "Koreatown is a neighborhood in central Los Angeles, California, centered near Sixth and Alexandria streets.",
+   "beat": "Sixth and Alexandria — the maps call this the center of Koreatown, but a neighborhood like this doesn't have a center, it has a pulse. Steam on the glass, neon in the paint.",
+   "scene": "wm_koreatown_la"
+  },
+  {
+   "id": "venice_beach",
+   "name": "Venice Beach",
+   "kind": "encounter",
+   "region": "CA",
+   "lat": 33.99083,
+   "lon": -118.45917,
+   "services": [
+    "food"
+   ],
+   "blurb": "Venice is a neighborhood of the City of Los Angeles within the Westside region of Los Angeles County, California, United States.",
+   "beat": "Venice. Technically a neighborhood of Los Angeles, which is like calling a stray cat technically somebody's pet. The Westside ends where the pavement starts smelling of salt.",
+   "scene": "wm_venice_beach"
+  },
+  {
+   "id": "malibu",
+   "name": "Malibu",
+   "kind": "city",
+   "region": "CA",
+   "lat": 34.035,
+   "lon": -118.695,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Malibu is a beach city in the Santa Monica Mountains region of Los Angeles County, California, United States, about 30 miles (48 km) west of Los Angeles.",
+   "beat": "Malibu. Twenty-one miles of beaches, every foot owned by somebody who calls the ocean a view. The Pacific doesn't take it personally — it does the same work for everyone.",
+   "scene": "wm_malibu"
+  },
+  {
+   "id": "yuma",
+   "name": "Yuma",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 32.66667,
+   "lon": -114.57222,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Yuma is a city in and the county seat of Yuma County, Arizona, United States.",
+   "beat": "Yuma grew by twenty-five hundred people in a decade, says the census — expansion at the speed of someone deciding to stay. I'm only passing through, which keeps the average honest.",
+   "scene": "wm_yuma"
+  },
+  {
+   "id": "quartzsite",
+   "name": "Quartzsite",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 33.64583,
+   "lon": -114.23,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Quartzsite is a town in La Paz County, Arizona, United States.",
+   "beat": "The census found 2,413 people in Quartzsite, which out here reads less like a statistic and more like a roll call. Take fuel while it's offered — the desert past town isn't running a charity.",
+   "scene": "wm_quartzsite"
+  },
+  {
+   "id": "parker_az",
+   "name": "Parker",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 34.07806,
+   "lon": -114.25639,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Parker is a town in and the county seat of La Paz County, Arizona, United States, on the Colorado River in Parker Valley.",
+   "beat": "Parker. The Colorado River slides past town the way money moves past most people — close enough to touch, gone before you do. I park nose-out where I can hear the water.",
+   "scene": "wm_parker_az"
+  },
+  {
+   "id": "bullhead_city",
+   "name": "Bullhead City",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 35.11556,
+   "lon": -114.58861,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Bullhead City is a city located on the Colorado River in Mohave County, Arizona, United States, 97 miles (156 km) south of Las Vegas, Nevada, and directly across the Colorado Rive…",
+   "beat": "The casinos are across the river in Laughlin; the paychecks sleep on this side. Bullhead City — Nevada keeps the neon, Arizona keeps the alarm clocks, and the Colorado runs between them declining to comment.",
+   "scene": "wm_bullhead_city"
+  },
+  {
+   "id": "oatman",
+   "name": "Oatman",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 35.0275,
+   "lon": -114.38389,
+   "services": [
+    "food"
+   ],
+   "blurb": "Oatman is a census-designated place (CDP) in the Black Mountains of Mohave County, Arizona, United States, at an elevation of 2,710 feet (830 m).",
+   "beat": "Oatman. Two prospectors struck ten million in gold here in 1915 — the kind of luck that builds a town overnight and bills it for a century. My carburetors don't love the climb. We manage.",
+   "scene": "wm_oatman"
+  },
+  {
+   "id": "seligman",
+   "name": "Seligman",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 35.32694,
+   "lon": -112.87222,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Seligman is a census-designated place (CDP) on the northern border of Yavapai County, Arizona, United States.",
+   "beat": "Seligman. One of the stops old Route 66 still owns up to — the interstate took the traffic and left the loyalty. Engines sound different on a road that remembers what they're for.",
+   "scene": "wm_seligman"
+  },
+  {
+   "id": "prescott",
+   "name": "Prescott",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 34.58528,
+   "lon": -112.44694,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Prescott is a city in and the county seat of Yavapai County, Arizona, United States.",
+   "terrain": 1.1,
+   "beat": "Prescott. Population 45,827, counted to the last soul, like the town wanted credit for each one. After the open road, that kind of precision feels like being watched.",
+   "scene": "wm_prescott"
+  },
+  {
+   "id": "jerome_az",
+   "name": "Jerome",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 34.74889,
+   "lon": -112.10833,
+   "services": [
+    "lodging",
+    "food"
+   ],
+   "blurb": "Jerome is a town in the Black Hills of Yavapai County in the U.S.",
+   "terrain": 1.15,
+   "beat": "Jerome. The whole town is stapled to the side of Cleopatra Hill, streets switchbacked like somebody's second thoughts. My brakes and I are renegotiating our relationship.",
+   "scene": "wm_jerome_az"
+  },
+  {
+   "id": "payson_az",
+   "name": "Payson",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 34.23944,
+   "lon": -111.3275,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Payson is a town in northern Gila County, Arizona, United States.",
+   "terrain": 1.1,
+   "beat": "Payson. They call it the Heart of Arizona for sitting near the dead center of the map — cartography flattering itself into poetry. Still, the middle of anywhere is a fine place to be nobody.",
+   "scene": "wm_payson_az"
+  },
+  {
+   "id": "show_low",
+   "name": "Show Low",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 34.24361,
+   "lon": -110.04806,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Show Low is a city in Navajo County, Arizona.",
+   "terrain": 1.1,
+   "beat": "Show Low. The sign claims 6,345 feet and my carburetors corroborate — thin air, lean mixture, no secrets at this altitude. Everything runs a little lean up here, including me.",
+   "scene": "wm_show_low"
+  },
+  {
+   "id": "holbrook",
+   "name": "Holbrook",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 34.90417,
+   "lon": -110.16722,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Holbrook is a city in Navajo County, Arizona, United States.",
+   "beat": "Holbrook. County seat of Navajo County — the paperwork has to live somewhere, and it chose a town of 4,858. Out here the horizon does most of the governing anyway.",
+   "scene": "wm_holbrook"
+  },
+  {
+   "id": "winslow_az",
+   "name": "Winslow",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 35.02444,
+   "lon": -110.71944,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Winslow is a city in Navajo County, Arizona, United States.",
+   "beat": "Winslow. 57 miles from Flagstaff, 240 from Albuquerque, 329 from Las Vegas — a town defined entirely by how far it is from everywhere else. I respect that in a place.",
+   "scene": "wm_winslow_az"
+  },
+  {
+   "id": "window_rock",
+   "name": "Window Rock",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 35.67056,
+   "lon": -109.06389,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Window Rock, known in Navajo as Tségháhoodzání, is a city and census-designated place that serves as the capital of the Navajo Nation, the largest Native American tribe by both la…",
+   "beat": "Window Rock. Tségháhoodzání — capital of the Navajo Nation, the largest nation by land and by people both. Most road atlases shade it and move on. The atlases are wrong to.",
+   "scene": "wm_window_rock"
+  },
+  {
+   "id": "chinle",
+   "name": "Chinle",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 36.15056,
+   "lon": -109.57972,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Chinle is a census-designated place (CDP) in Apache County, Arizona, United States.",
+   "beat": "Chinle. The name is Navajo for 'flowing out' — this is where the water leaves Canyon de Chelly and decides what to be next. I know something about exiting a narrow place at speed.",
+   "scene": "wm_chinle"
+  },
+  {
+   "id": "kayenta",
+   "name": "Kayenta",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 36.7125,
+   "lon": -110.24778,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Kayenta is a U.S.",
+   "beat": "Kayenta. The only township under Navajo Nation law — a legal category with exactly one member, established 1986 and never duplicated. I have a weakness for things that exist in editions of one."
+  },
+  {
+   "id": "tuba_city",
+   "name": "Tuba City",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 36.125,
+   "lon": -111.24722,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Tuba City is an unincorporated town and census-designated place in Coconino County, Arizona, on the Navajo Nation, United States.",
+   "beat": "Tuba City. Second-largest community in Coconino County, which says more about the county than the town. Out here, size is measured in miles between gas pumps. I take the hint and top off.",
+   "scene": "wm_tuba_city"
+  },
+  {
+   "id": "globe_az",
+   "name": "Globe",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 33.39972,
+   "lon": -110.78167,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Globe is a city in and the county seat of Gila County, Arizona, United States.",
+   "terrain": 1.05,
+   "beat": "Globe. A mining camp from around 1875 that never quite changed out of its work clothes. Towns like this don't perform for visitors, which is its own kind of welcome.",
+   "scene": "wm_globe_az"
+  },
+  {
+   "id": "superior_az",
+   "name": "Superior",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 33.28889,
+   "lon": -111.10389,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Superior is a town in northern Pinal County, Arizona, United States, and is the oldest town in the county.",
+   "terrain": 1.05,
+   "beat": "Superior. When the Silver King played out, the town switched to copper at the Magma without breaking stride. I admire anything that retools to survive. It's how you get to be old.",
+   "scene": "wm_superior_az"
+  },
+  {
+   "id": "bisbee",
+   "name": "Bisbee",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 31.44806,
+   "lon": -109.92833,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Bisbee is a city in and the county seat of Cochise County in southeastern Arizona, United States.",
+   "terrain": 1.1,
+   "beat": "Bisbee. The census says 652 fewer people than the decade before, and the town wears the subtraction quietly. Emptying places have the best acoustics. An engine sounds honest here.",
+   "scene": "wm_bisbee"
+  },
+  {
+   "id": "tombstone",
+   "name": "Tombstone",
+   "kind": "encounter",
+   "region": "AZ",
+   "lat": 31.73889,
+   "lon": -110.0875,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Tombstone is a city in Cochise County, Arizona, United States.",
+   "beat": "Tombstone. Somewhere between forty and eighty-five million in silver came out of this dirt, and nobody kept books straight enough to say which. Rich strikes never do.",
+   "scene": "wm_tombstone"
+  },
+  {
+   "id": "willcox",
+   "name": "Willcox",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 32.24444,
+   "lon": -109.83194,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Willcox is a city in Cochise County, Arizona, United States.",
+   "beat": "Willcox. The Sulphur Springs Valley runs flat to every horizon, dotted with lakes that only bother existing part of the year. I understand intermittent things. Half my gauges are the same way.",
+   "scene": "wm_willcox"
+  },
+  {
+   "id": "ajo",
+   "name": "Ajo",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 32.38139,
+   "lon": -112.86944,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Ajo is an unincorporated community in Pima County, Arizona, United States.",
+   "beat": "Ajo. State Route 85, forty-three miles from Mexico, and the road south doesn't pretend it's going anywhere else. I idle a little quieter this close to a border.",
+   "scene": "wm_ajo"
+  },
+  {
+   "id": "why_az",
+   "name": "Why",
+   "kind": "gas",
+   "region": "AZ",
+   "lat": 32.26783,
+   "lon": -112.73666,
+   "services": [
+    "gas"
+   ],
+   "blurb": "Why is an unincorporated rural community in Pima County, Arizona, United States.",
+   "beat": "Why. The town, not the question — though thirty miles from the Mexican border, the distinction wears thin. Top off here; the desert south of this doesn't negotiate.",
+   "scene": "wm_why_az"
+  },
+  {
+   "id": "gila_bend",
+   "name": "Gila Bend",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 32.94778,
+   "lon": -112.71694,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Gila Bend, founded in 1872, is a town in Maricopa County, Arizona, United States.",
+   "beat": "Gila Bend. The river hits a ninety-degree turn here, like it saw something downstream it wanted no part of, and the town settled in at the elbow. Rivers get to change their minds; roads have to commit.",
+   "scene": "wm_gila_bend"
+  },
+  {
+   "id": "casa_grande",
+   "name": "Casa Grande",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 32.90689,
+   "lon": -111.7635,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Casa Grande is a city in Pinal County, approximately halfway between Phoenix and Tucson, in the U.S.",
+   "beat": "Casa Grande. Spanish for 'big house,' named for ruins that actually sit in Coolidge, one town over. Imagine building your whole name on something that was never yours. Anyway.",
+   "scene": "wm_casa_grande"
+  },
+  {
+   "id": "wickenburg",
+   "name": "Wickenburg",
+   "kind": "city",
+   "region": "AZ",
+   "lat": 33.99722,
+   "lon": -112.76306,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Wickenburg is a town in Maricopa and Yavapai counties, Arizona, United States.",
+   "beat": "Wickenburg, straddling Maricopa and Yavapai counties — one town, two sets of paperwork, the line running somewhere under the asphalt. Some places never pick a lane. Professionally, I sympathize.",
+   "scene": "wm_wickenburg"
+  },
+  {
+   "id": "provo",
+   "name": "Provo",
+   "kind": "city",
+   "region": "UT",
+   "lat": 40.24444,
+   "lon": -111.66083,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Provo is a city in and the county seat of Utah County, Utah, United States.",
+   "beat": "Provo. Fourth-largest city in Utah, and the streets still feel swept by hand. A car my age is conspicuous in a town this tidy, so I'm keeping the revs polite and the idle apologetic.",
+   "scene": "wm_provo"
+  },
+  {
+   "id": "ogden",
+   "name": "Ogden",
+   "kind": "city",
+   "region": "UT",
+   "lat": 41.22778,
+   "lon": -111.96833,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Ogden is a city in and the county seat of Weber County, Utah, United States, located approximately 10 miles (16 km) east of the Great Salt Lake and 40 miles (64 km) north of Salt …",
+   "beat": "Ogden. Ten miles east of the Great Salt Lake, close enough that the wind off the water gets a vote. Cities that grow up next to something that big learn to keep their own counsel.",
+   "scene": "wm_ogden"
+  },
+  {
+   "id": "logan_ut",
+   "name": "Logan",
+   "kind": "city",
+   "region": "UT",
+   "lat": 41.76389,
+   "lon": -111.8725,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Logan is a city in Cache County, Utah, United States.",
+   "beat": "Logan. The metro here spills clean over the state line into Franklin County, Idaho — the valley never agreed to the survey. Cold air pools in places like this. So do quiet people.",
+   "scene": "wm_logan_ut"
+  },
+  {
+   "id": "tooele",
+   "name": "Tooele",
+   "kind": "city",
+   "region": "UT",
+   "lat": 40.53056,
+   "lon": -112.29861,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Tooele is a city in Tooele County in the U.S.",
+   "beat": "Tooele. The town is known for its Army Depot — a careful way of saying the government stores things out here it doesn't want closer to the city. Nobody elaborates. I respect that in a place.",
+   "scene": "wm_tooele"
+  },
+  {
+   "id": "wendover_ut",
+   "name": "Wendover",
+   "kind": "city",
+   "region": "UT",
+   "lat": 40.74028,
+   "lon": -114.02472,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Wendover is a city on the western edge of Tooele County, Utah, United States.",
+   "beat": "Wendover. Eleven hundred people holding down the spot where Utah runs out of itself. Towns at the end of a state idle like a held breath. I fit right in.",
+   "scene": "wm_wendover_ut"
+  },
+  {
+   "id": "price_ut",
+   "name": "Price",
+   "kind": "city",
+   "region": "UT",
+   "lat": 39.60389,
+   "lon": -110.80028,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Price is a city in the U.S.",
+   "beat": "Price. There's a prehistoric museum here, USU Eastern's — a town that keeps its oldest residents on display and doesn't blink. Against that scale, fifty-four years of steel is a rumor. Refreshing."
+  },
+  {
+   "id": "helper_ut",
+   "name": "Helper",
+   "kind": "city",
+   "region": "UT",
+   "lat": 39.6875,
+   "lon": -110.865,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Helper is a city in Carbon County, Utah, United States, approximately 110 miles (180 km) southeast of Salt Lake City and 7 miles (11 km) northwest of the city of Price.",
+   "beat": "Helper. Seven miles northwest of Price, named like a job title nobody holds anymore. I trust a town that admits, right there on the sign, what it was for. Most places dress it up.",
+   "scene": "wm_helper_ut"
+  },
+  {
+   "id": "green_river_ut",
+   "name": "Green River",
+   "kind": "city",
+   "region": "UT",
+   "lat": 38.99333,
+   "lon": -110.15,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Green River is a city in Emery County, Utah United States.",
+   "beat": "Green River. Eight hundred forty-seven people, one river, and the long quiet of Emery County between them. The water's just passing through. Tonight, so am I.",
+   "scene": "wm_green_river_ut"
+  },
+  {
+   "id": "hanksville",
+   "name": "Hanksville",
+   "kind": "city",
+   "region": "UT",
+   "lat": 38.37139,
+   "lon": -110.71306,
+   "services": [
+    "gas",
+    "food"
+   ],
+   "blurb": "Hanksville is a small town in Wayne County, Utah, United States, at the junction of State Routes 24 and 95.",
+   "beat": "Hanksville. State Routes 24 and 95 meet here and call it a town; out where pavement is this scarce, an intersection is a civic achievement. Fill up — I mean it. The map gets theoretical from here.",
+   "scene": "wm_hanksville"
+  },
+  {
+   "id": "torrey_ut",
+   "name": "Torrey",
+   "kind": "city",
+   "region": "UT",
+   "lat": 38.29889,
+   "lon": -111.41917,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Torrey is a town located on State Route 24 in Wayne County, Utah, United States, 8 miles (13 km) from Capitol Reef National Park.",
+   "terrain": 1.1,
+   "beat": "Torrey. Eight miles from Capitol Reef and wise enough not to compete with it — the town keeps its voice down and lets the rock do the closing. I drop to second and do the same.",
+   "scene": "wm_torrey_ut"
+  },
+  {
+   "id": "escalante_ut",
+   "name": "Escalante",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.77028,
+   "lon": -111.60222,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Escalante is a city in central Garfield County, Utah, United States, located along Utah Scenic Byway 12 (SR-12) in the south-central part of the state.",
+   "terrain": 1.1,
+   "beat": "Escalante. The state calls Route 12 a Scenic Byway, which is bureaucratic for a road that can make you religious. I take the corners reverent through here. The asphalt has earned it.",
+   "scene": "wm_escalante_ut"
+  },
+  {
+   "id": "panguitch",
+   "name": "Panguitch",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.82222,
+   "lon": -112.43472,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Panguitch is a city in and the county seat of Garfield County, Utah, United States.",
+   "beat": "Panguitch — 'Big Fish' in Southern Paiute, named for lakes where the rainbow trout stay year-round. A town christened for abundance that actually stuck around. Almost nothing does.",
+   "scene": "wm_panguitch"
+  },
+  {
+   "id": "beaver_ut",
+   "name": "Beaver",
+   "kind": "city",
+   "region": "UT",
+   "lat": 38.275,
+   "lon": -112.63889,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Beaver is a city in and the county seat of Beaver County in southwestern Utah, United States.",
+   "beat": "Beaver. The census says 3,592 now, up nearly five hundred from the count before — which out here passes for a boom, and I've never trusted a boom. Growing towns ask questions; shrinking ones wave you through.",
+   "scene": "wm_beaver_ut"
+  },
+  {
+   "id": "fillmore_ut",
+   "name": "Fillmore",
+   "kind": "city",
+   "region": "UT",
+   "lat": 38.96417,
+   "lon": -112.33861,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Fillmore is a city in and the county seat of Millard County, Utah, United States.",
+   "beat": "Fillmore. They split the thirteenth president in two out here — the county took Millard, the town took Fillmore — and neither half gets remembered much. There are worse afterlives than becoming geography.",
+   "scene": "wm_fillmore_ut"
+  },
+  {
+   "id": "delta_ut",
+   "name": "Delta",
+   "kind": "city",
+   "region": "UT",
+   "lat": 39.35306,
+   "lon": -112.57361,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Delta is the largest city in Millard County, Utah, United States.",
+   "beat": "Delta. Farmland in every direction — green squares pressed out of the desert by pure stubbornness, a town that grows things in country that mostly grows distance.",
+   "scene": "wm_delta_ut"
+  },
+  {
+   "id": "monticello_ut",
+   "name": "Monticello",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.87278,
+   "lon": -109.33722,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Monticello is a city in and the county seat of San Juan County, Utah, United States.",
+   "beat": "Monticello. Pioneers set this place down in July 1887 — an honest month to start a town, when the country shows you exactly what you're agreeing to. They stayed anyway; I'm only passing through.",
+   "scene": "wm_monticello_ut"
+  },
+  {
+   "id": "blanding",
+   "name": "Blanding",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.62333,
+   "lon": -109.47889,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Blanding is a city in San Juan County, Utah, United States.",
+   "beat": "Blanding. Settled by Mormon families from the famed Hole-In-The-Rock expedition — a name that admits the way in was the hard part. I keep to the pavement, feeling a little soft about it.",
+   "scene": "wm_blanding"
+  },
+  {
+   "id": "bluff_ut",
+   "name": "Bluff",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.28444,
+   "lon": -109.55167,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Bluff is a town in San Juan County, Utah, United States.",
+   "beat": "Bluff. Incorporated 2018 — meaning this town held off on being official for about as long as the law allows. Anywhere that suspicious of paperwork has my sympathy.",
+   "scene": "wm_bluff_ut"
+  },
+  {
+   "id": "mexican_hat",
+   "name": "Mexican Hat",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.17611,
+   "lon": -109.87778,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Mexican Hat is a census-designated place (CDP) in Utah in the United States.",
+   "beat": "Mexican Hat. Twenty-one residents at the last census — a number small enough that everyone here knows the sound of every engine in town, and mine isn't one of them.",
+   "scene": "wm_mexican_hat"
+  },
+  {
+   "id": "hurricane_ut",
+   "name": "Hurricane",
+   "kind": "city",
+   "region": "UT",
+   "lat": 37.14722,
+   "lon": -113.36667,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Hurricane is a city in Washington County, Utah, United States.",
+   "beat": "Hurricane. Peach and pecan orchards in a town named for wind — either defiance or a very long joke, and judging by the trees, the joke is holding. Sweet air does strange things to an intake.",
+   "scene": "wm_hurricane_ut"
+  },
+  {
+   "id": "vernal_ut",
+   "name": "Vernal",
+   "kind": "city",
+   "region": "UT",
+   "lat": 40.45083,
+   "lon": -109.52278,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Vernal is the county seat of and the largest city in Uintah County, Utah, approximately 175 miles (280 km) east of Salt Lake City and 20 miles (32 km) west of the Colorado border.",
+   "beat": "Vernal. The Colorado line waits twenty miles east, and border towns always feel like waiting rooms — everybody half-arrived or half-gone. We take on fuel and act like we belong.",
+   "scene": "wm_vernal_ut"
+  },
+  {
+   "id": "heber_city",
+   "name": "Heber City",
+   "kind": "city",
+   "region": "UT",
+   "lat": 40.50694,
+   "lon": -111.41333,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "Heber City is a city and county seat of Wasatch County, Utah.",
+   "terrain": 1.1,
+   "beat": "Heber City. Forty-three miles southeast of Salt Lake — close enough to feel the city breathing, far enough to deny it. Forty-three miles isn't geography; it's a decision.",
+   "scene": "wm_heber_city"
   }
  ]
 }

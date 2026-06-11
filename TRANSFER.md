@@ -120,6 +120,31 @@ Known-and-accepted: DRIVE event lines show pre-drama fuel/time when a drama muta
 
 ---
 
+## 0.7 The gazetteer + sketch pipeline (2026-06-10, same session)
+
+"Any town or POI in those 4 states should bring something up, and each one should get a sketch."
+- **122 new town POIs** (NV 24 / CA 50 / AZ 26 / UT 22) in pois.json, each with: real coords +
+  blurb from its Wikipedia extract, a judged arrival **beat** in her voice, services/terrain
+  overrides, and a `wm_<id>` scene. Beats fire ONCE per game via `_story_on_arrival` →
+  `world.beat_for` (flags `beats_seen`); STORIES still take precedence.
+- **Beat evolution loop** (`gazetteer-beat-evolution` workflow): 8 writers grounded in
+  data/gazetteer/source.json extracts → 3 judge lenses (voice/truth/play) → style memo distilled
+  from winners → rewrite failures → re-judge. Converged: 122/122 mean ≥7.5, 88 ≥8.5. The learned
+  house rules are in the workflow output; the big ones: one fact per beat, never let a fact sit
+  raw (cash it into present-tense meaning), history pivots to now, the narrator reacts through
+  hardware, closers land (image / small decision / two-part aphorism).
+- **Sketch pipeline**: `tools/gazetteer_fetch.py` (Wikipedia REST summary → facts + coords + lead
+  image, polite + resumable; thumbs use the 500px bucket — arbitrary widths 400) →
+  `tools/make_scene.py` (adaptive-percentile 4-tone posterize to the INK ramp, 320×200, Bayer
+  seam) → frontend/scenes_wm/*.png (~180 sketches, ~2.4 MB) → `wmScene()` in scenes.js (drawImage
+  backdrop + ground band + parked Ace at y196/w138). `sceneIdFor` passes `wm_*` ids through;
+  missing file → kind/drive fallback. ATTRIBUTION.md lists author+license per source (CC/PD).
+- **Runtime fallback**: arrivals at NON-curated geocoded spots call `world.wiki_fact(lat,lon)`
+  (geosearch + summary, disk-cached, `ROUTING=osm` only → offline tests unaffected) → `FACT:`
+  event → narrator voices it (stub has a FACT branch).
+- `tools/gazetteer_merge.py` is idempotent: rerun after editing beats.json or rebaking scenes.
+- Eureka exists twice (NV + CA) — CA displays as "Eureka, CA" so name matching stays unambiguous.
+
 ## 1. Run it
 
 ```bash

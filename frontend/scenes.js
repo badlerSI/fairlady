@@ -965,12 +965,44 @@ function _driveEnv(snap) {
   return "drive_desert";                                 // NV/AZ/CA basin & range
 }
 
+// ---- Wikimedia sketches: photos of the real places, posterized to koiNOya cyan ink
+// by tools/make_scene.py. A scene id "wm_<poi>" loads frontend/scenes_wm/<poi>.png and
+// draws it as the backdrop with Ace in the foreground — every town gets a sketch.
+const _WM = {};
+function _wmImage(id) {
+  let img = _WM[id];
+  if (img === undefined) {
+    img = new Image();
+    img.onerror = () => { _WM[id] = null; };              // missing file → kind fallback
+    img.src = "scenes_wm/" + id.slice(3) + ".png";
+    _WM[id] = img;
+  }
+  return img;
+}
+function wmScene(id, snap) {
+  return function (s, t) {
+    const img = _wmImage(id);
+    if (!img || !(img.complete && img.naturalWidth)) {    // not loaded (yet) → drive skin
+      SCENES[_driveEnv(snap || {})](s, t);
+      return;
+    }
+    s.ctx.imageSmoothingEnabled = false;
+    s.ctx.drawImage(img, 0, 0, s.W, s.H);
+    SPR.ground(s, GROUND + 30, I.d3);                     // a road band for her to sit on
+    drawAce(s, t, { moving: false, y: 196, w: 138 });     // tires in the band, not in the air
+  };
+}
+
 function sceneIdFor(snap) {
   if (!snap) return "drive_desert";
   if (snap.status === "stranded") return "stranded";
-  if (snap.scene && SCENES[snap.scene]) return snap.scene;
+  if (snap.scene && (SCENES[snap.scene] || snap.scene.startsWith("wm_"))) return snap.scene;
   const k = KIND_SCENE[snap.kind];
   if (k && SCENES[k]) return k;
   return _driveEnv(snap);                                 // generic spots → the world goes by
 }
-function sceneFor(snap) { return SCENES[sceneIdFor(snap)] || SCENES.drive_desert; }
+function sceneFor(snap) {
+  const id = sceneIdFor(snap);
+  if (id.startsWith("wm_") && _wmImage(id) !== null) return wmScene(id, snap);
+  return SCENES[id] || SCENES.drive_desert;
+}

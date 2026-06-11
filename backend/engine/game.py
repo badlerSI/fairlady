@@ -131,12 +131,19 @@ STORIES = {
 
 def _story_on_arrival(s: GameState):
     st = STORIES.get(s.place.poi_id)
-    if not st or s.flags.get(st["flag"]):
+    if st and not s.flags.get(st["flag"]):
+        if not st.get("requires") or s.flags.get(st["requires"]):
+            s.flags[st["flag"]] = True
+            return st["beat"]
         return None
-    if st.get("requires") and not s.flags.get(st["requires"]):
-        return None
-    s.flags[st["flag"]] = True
-    return st["beat"]
+    # the gazetteer layer: every town has her arrival line, told once per game
+    beat = world.beat_for(s.place.poi_id)
+    if beat:
+        seen = s.flags.setdefault("beats_seen", [])
+        if s.place.poi_id not in seen:
+            seen.append(s.place.poi_id)
+            return beat
+    return None
 
 # Carmen-style state welcomes — her maps only cover these four
 STATE_NAME = {"NV": "Nevada", "CA": "California", "AZ": "Arizona", "UT": "Utah"}
@@ -513,6 +520,10 @@ def handle(s: GameState, raw: str) -> dict:
                     events.append(f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
                                   "not switching to English.")
                 story_beat = _story_on_arrival(s)    # a set-piece reveal takes the moment
+                if not story_beat and not s.place.poi_id:
+                    fact = world.wiki_fact(s.place.lat, s.place.lon)   # ANY town brings something up
+                    if fact:
+                        events.append(f"FACT: {fact}")
                 if not story_beat:
                     if _owner_should_appear(s):  # the man who built her finds you before the dice do
                         events += encounters.start_owner(s)
