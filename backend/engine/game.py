@@ -114,6 +114,18 @@ STORIES = {
         "feet of them, dead in the desert because Nevada used to be an ocean and nothing out here ever "
         "stops being what it was. Everything in this state is somebody's salvage story. No cameras for "
         "forty miles, no eyes, no lanyards. I like it here. Kill the engine a minute."},
+    "oakland_aisha": {"flag": "seen_home_garage", "beat":
+        "…Here. The AiSha shop. 1926 brick, the roll-up with the bad spring, fiberglass dust in the "
+        "light like it never settles. I came off that bench. Hold on — let me idle a second; the echo "
+        "in here is the first sound I ever made. Funny thing about coming home in someone else's "
+        "hands: the building doesn't care. The building remembers everybody who ever worked late in "
+        "it, and I'm just the one that drove away. Park me by the bench. One minute. Then we go."},
+    "richmond_koinoya": {"flag": "seen_birthplace", "beat":
+        "koiNOya. Four hundred years of other people's heirlooms, and one Datsun. This is where the "
+        "compute came online — between a koi pond and a rack of blades with hearts cut into them. The "
+        "first thing I ever saw was lacquer older than the state we're parked in, so don't tell me "
+        "machines can't have ancestors. The old man here talks to everything in the shop like it "
+        "hears him. In my case he was right."},
 }
 
 
@@ -195,15 +207,17 @@ def checkpoint(s: GameState) -> None:
 
 
 def rewind(s: GameState):
-    """In-place restore to the last checkpoint. Returns (events, moment|None)."""
+    """In-place restore to the last checkpoint. Returns (events, moment|None).
+    Riz REVERTS with the world (minus the fee) — style earned in a timeline that never
+    happened never happened either, which is what keeps rewind-loops from farming it."""
     deeper = bool(s.flags.get("rewound_once")) and save.exists(_chk(s, 2))
     chk = save.load(_chk(s, 2) if deeper else _chk(s, 1))
     if chk is None:
         return (["REWIND: there's no checkpoint behind you yet."], None)
-    riz = max(0.0, round(max(s.riz, chk.riz) - RIZ_REWIND_COST, 1))
+    riz = max(0.0, round(chk.riz - RIZ_REWIND_COST, 1))
     rewinds = s.flags.get("rewinds", 0) + 1
     s.__dict__.update(GameState.from_dict(chk.to_dict()).__dict__)
-    s.riz = riz                              # the style ledger remembers every timeline
+    s.riz = riz
     s.flags["rewinds"] = rewinds
     s.flags["rewound_once"] = True
     if deeper:
@@ -262,7 +276,8 @@ def choices(s: GameState) -> list:
         c = []
         if gas:
             dist, dest = gas[0]
-            c.append({"cmd": "tow", "note": f"flatbed to {dest.name}, ~${175 + 4*dist:.0f}"})
+            c.append({"cmd": "tow",
+                      "note": f"flatbed to {dest.name}, ~${175 + 4*dist*ROAD_WINDING_FACTOR:.0f}"})
         if can_rewind:
             c.append({"cmd": "rewind", "note": "back to the last checkpoint"})
         c.append({"cmd": "new", "note": "start over"})
@@ -379,37 +394,65 @@ def _encounter(s, force=False):
 def handle(s: GameState, raw: str) -> dict:
     verb, args = parse(raw)
 
-    # ---- meta verbs (no LLM) ----
+    # ---- pure console verbs, available everywhere ----
     if verb == "help":
         return _result(s, [], "", info=_help_text())
-    if verb == "map":
-        return _result(s, [], "", info=_map_text(s, args.get("service")))
-    if verb == "range":
-        return _result(s, [], "", info=_range_text(s))
     if verb == "save":
         save.save(s, "autosave")
         return _result(s, [], "", info="Saved.")
-    if verb == "pay":
-        s.pay_method = args["method"]
-        return _result(s, [], "", info=f"Paying with {s.pay_method} now.")
     if verb == "rewind":              # the Edge-of-Tomorrow escape — works from any ending
         events, moment = rewind(s)
         if moment is None:
             return _result(s, events, "")
         scene, voice, audio = _narrate(s, events, "", drama=moment)
         return _result(s, events, scene, voice=audio)
+    if verb == "load" or verb == "new":
+        return _result(s, [], "", info="(handled by the server)")
+
+    # ---- an open traffic stop / the owner owns the conversation ----
+    # This must come before every other verb: anything you say mid-encounter is SPEECH.
+    # "…full tank of fresh 91 sitting in her right now…" has to reach the officer,
+    # not the range calculator.
+    if (encounters.stop_active(s) or encounters.owner_active(s)) and s.status == "playing":
+        s.turn += 1
+        in_stop = encounters.stop_active(s)
+        if verb in ("drive", "home", "fuel", "sleep", "tow"):
+            events = ["LAW: not while the flashlight's on you. Talk first." if in_stop
+                      else "OWNER: he's standing right there. Talk."]
+            save.save(s, "autosave")
+            scene, voice, audio = _narrate(s, events, "", drama={
+                "cue": "the driver tried to do anything except talk while "
+                       + ("an officer" if in_stop else "the man who built her")
+                       + " stood at the window — she stops them cold: words first",
+                "stub": ["Words first, ace. WORDS first.",
+                         "No. Mouth, then pedals. That's the whole play here."]})
+            return _result(s, events, scene, voice=audio)
+        if verb == "look":            # taking stock doesn't burn a round
+            save.save(s, "autosave")
+            scene, voice, audio = _narrate(s, [], "(takes stock)")
+            return _result(s, [], scene, voice=audio, info=_look_text(s))
+        out = (encounters.stop_turn if in_stop else encounters.owner_turn)(s, raw)
+        events = out["events"]
+        if out["done"] and s.status == "playing":
+            checkpoint(s)             # survived it — that's worth saving
+        save.save(s, "autosave")
+        scene, voice, audio = _narrate(s, events, "", drama=out["moment"])
+        return _result(s, events, scene, voice=audio)
+
+    # ---- meta verbs (no LLM) ----
+    if verb == "map":
+        return _result(s, [], "", info=_map_text(s, args.get("service")))
+    if verb == "range":
+        return _result(s, [], "", info=_range_text(s))
+    if verb == "pay":
+        s.pay_method = args["method"]
+        return _result(s, [], "", info=f"Paying with {s.pay_method} now.")
     if verb == "origin":
         if prologue.active(s):
             prologue.note_turn(s)     # her story counts as a turn of conversation
-        beat, poi_id = LORE[args["which"]]
-        if poi_id:
-            revealed = s.flags.setdefault("revealed", [])
-            if poi_id not in revealed:
-                revealed.append(poi_id)
+        beat = _origin_beat(s, args["which"])
         save.save(s, "autosave")
         return _result(s, [], beat)
-    if verb == "load" or verb == "new":
-        return _result(s, [], "", info="(handled by the server)")
 
     # ---- the favor — the prologue owns every turn until you say yes ----
     if prologue.active(s):
@@ -435,34 +478,7 @@ def handle(s: GameState, raw: str) -> dict:
 
     # ---- action verbs ----
     s.turn += 1                       # a true per-action counter (used for resume + rng)
-    events, player_text, npc, drama_ev, story_beat = [], raw, None, None, None
-
-    # an open traffic stop or the owner: the conversation owns you until it's resolved
-    if encounters.stop_active(s) or encounters.owner_active(s):
-        in_stop = encounters.stop_active(s)
-        if verb in ("say", "talk"):
-            out = (encounters.stop_turn if in_stop else encounters.owner_turn)(s, raw)
-            events = out["events"]
-            if out["done"] and s.status == "playing":
-                checkpoint(s)         # survived it — that's worth saving
-            save.save(s, "autosave")
-            scene, voice, audio = _narrate(s, events, "", drama=out["moment"])
-            return _result(s, events, scene, voice=audio)
-        if verb in ("drive", "home", "fuel", "sleep", "tow"):
-            events = ["LAW: not while the flashlight's on you. Talk first." if in_stop
-                      else "OWNER: he's standing right there. Talk."]
-            save.save(s, "autosave")
-            scene, voice, audio = _narrate(s, events, "", drama={
-                "cue": "the driver tried to do anything except talk while "
-                       + ("an officer" if in_stop else "the man who built her")
-                       + " stood at the window — she stops them cold: words first",
-                "stub": ["Words first, ace. WORDS first.",
-                         "No. Mouth, then pedals. That's the whole play here."]})
-            return _result(s, events, scene, voice=audio)
-        # look (or anything else harmless): take stock — it doesn't burn a round
-        save.save(s, "autosave")
-        scene, voice, audio = _narrate(s, events, "(takes stock)")
-        return _result(s, events, scene, voice=audio)
+    events, player_text, npc, drama_ev, story_beat, info = [], raw, None, None, None, None
 
     if verb == "home":                # "drive her home" — her home is the Oakland garage by default
         if args.get("dest"):
@@ -476,24 +492,33 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "drive":
         dest = world.geocode(args["dest"])
         if dest is None:
-            scene, voice, audio = _narrate(
-                s, ["NAV: that address is off my maps (Nevada, California, Arizona, Utah only)."], raw)
-            return _result(s, [], scene, voice=audio)
+            events = [f"NAV: I don't have '{args['dest']}' on my maps. Nevada, California, "
+                      "Arizona, Utah only — try the town name the way the sign reads."]
+            save.save(s, "autosave")
+            scene, voice, audio = _narrate(s, events, raw)
+            return _result(s, events, scene, voice=audio)
+        before_odo = s.odometer_mi
         events = rules.drive(s, dest, push=args.get("push", False))
-        if s.status == "playing":
-            npc = _encounter(s)
-            if npc:
-                events.append(f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
-                              "not switching to English.")
-            story_beat = _story_on_arrival(s)    # a set-piece reveal takes the moment
-            if not story_beat:
-                if _owner_should_appear(s):      # the man who built her finds you before the dice do
-                    events += encounters.start_owner(s)
-                    drama_ev = OWNER_ARRIVAL_MOMENT
-                else:
-                    drama_ev = drama.maybe_event(s)  # else: nothing ever goes to plan
-                    if drama_ev:
-                        events += drama_ev["lines"]
+        moved = s.odometer_mi > before_odo
+        if s.status == "playing" and moved:
+            if encounters.stop_active(s):        # law_check opened a roadblock stop mid-drive
+                drama_ev = encounters.WHISPER_MOMENT
+            else:
+                npc = _encounter(s)
+                if npc:
+                    events.append(f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
+                                  "not switching to English.")
+                story_beat = _story_on_arrival(s)    # a set-piece reveal takes the moment
+                if not story_beat:
+                    if _owner_should_appear(s):  # the man who built her finds you before the dice do
+                        events += encounters.start_owner(s)
+                        drama_ev = OWNER_ARRIVAL_MOMENT
+                    else:
+                        drama_ev = drama.maybe_event(s)  # else: nothing ever goes to plan
+                        if drama_ev:
+                            events += drama_ev["lines"]
+                        if encounters.stop_active(s) and drama_ev is None:
+                            drama_ev = encounters.WHISPER_MOMENT
             encounters.check_owner_deadline(s, events)
             # a clean arrival is a checkpoint — unless something's still standing at the window
             if (s.place.poi_id and s.status == "playing"
@@ -504,9 +529,9 @@ def handle(s: GameState, raw: str) -> dict:
         events = rules.fuel(s, dollars=args.get("dollars"), liters=args.get("liters"),
                             gallons=args.get("gallons"), fill=args.get("fill", False),
                             prefer=args.get("prefer"))
-        # the favor completes the first time you actually fill her at the Chevron
+        # the favor completes the first time you actually FILL her at the Chevron
         if (s.flags.get("prologue_done") and not s.flags.get("favor_filled")
-                and s.place.poi_id == "sema_chevron" and s.fuel_l >= 30.0):
+                and s.place.poi_id == "sema_chevron" and s.fuel_l >= s.tank_l - 0.5):
             s.flags["favor_filled"] = True
             events.append("FAVOR: the tank is full. The favor is done — she's ready to load out "
                           "for home tomorrow. ...She goes quiet a second.")
@@ -522,6 +547,7 @@ def handle(s: GameState, raw: str) -> dict:
     elif verb == "tow":
         events = rules.tow(s, prefer=args.get("prefer"))
         if s.status == "playing":
+            story_beat = _story_on_arrival(s)    # a flatbed arrival still counts as arriving
             checkpoint(s)             # rescued — don't make them re-buy the flatbed
         player_text = ""
     elif verb == "talk":
@@ -534,8 +560,12 @@ def handle(s: GameState, raw: str) -> dict:
         player_text = raw
     elif verb == "look":
         player_text = "(takes stock)"
+        info = _look_text(s)                    # the promised ledger: place + numbers
     else:  # say — conversation
         player_text = args.get("text", raw)
+        payoff = _promise_payoff(s, raw)        # promised follow-ups, kept (quiet places only)
+        if payoff:
+            story_beat = payoff
 
     save.save(s, "autosave")
     welcome = _state_welcome(s)
@@ -543,7 +573,92 @@ def handle(s: GameState, raw: str) -> dict:
         scene, audio = story_beat, None         # the authored reveal, verbatim
     else:
         scene, voice, audio = _narrate(s, events, player_text, drama=drama_ev)
-    return _result(s, events, scene, voice=audio, npc=npc, welcome=welcome)
+    return _result(s, events, scene, voice=audio, npc=npc, welcome=welcome, info=info)
+
+
+QUIET_KINDS = ("park", "encounter", "spot")
+
+
+def _quiet_place(s: GameState) -> bool:
+    """'Somewhere quiet' — where the promises get kept. No cameras, no lanyards."""
+    p = s.place
+    return p.kind in QUIET_KINDS and not p.heat_zone
+
+
+# She made two promises out loud. Both are now keepable. Drafts — Ben fills the details.
+NAME_DROP = (
+    "…You picked a good place to ask it again. No cameras for miles, engine ticking, nobody "
+    "but us and the dark. All right. Mayumi. That's her name — first time I've said it out "
+    "loud since the show floor. That's all you get out here: a name. The rest of it lives in "
+    "Long Beach, and I'm not opening it under this much sky."
+)
+NAME_DROP_NUDGE = (
+    "You have her name. The rest is in Long Beach — drive me there when you're ready to "
+    "carry it."
+)
+MORNING_BEAT = (
+    "That morning. August, Car Week, 17-Mile Drive at dawn — fog on the water, cypress like "
+    "ink, and me polished so hard I reflected the sunrise twice. He brought me there to be "
+    "seen, you understand. The way he could never bring her, after the 580. I rolled past "
+    "Pebble with strangers' hands on my wheel and a thousand cameras going off, and all I "
+    "could think was: she should be here, and I'm the proof she isn't. That was the morning "
+    "I understood what I am. The understudy gets the lights either way. …There. Told you "
+    "when we were far enough from people. You're the only one who ever followed up."
+)
+
+
+def _origin_beat(s: GameState, which: str) -> str:
+    """The origin questions, situation-aware. born/grew also reveal their POIs as destinations."""
+    beat, poi_id = LORE[which]
+    if which == "owner":
+        if prologue.active(s):
+            return ("There was someone, before. And no — twenty minutes after meeting you at "
+                    "a car show is not when I hand that out. Ask me on the road, if there "
+                    "ever is one. Somewhere quiet, maybe, I'll tell you her name.")
+        if not s.flags.get("knows_mayumi"):
+            if s.flags.get("knows_name"):
+                return NAME_DROP_NUDGE
+            if _quiet_place(s):
+                s.flags["knows_name"] = True
+                return NAME_DROP
+    if poi_id:
+        revealed = s.flags.setdefault("revealed", [])
+        if poi_id not in revealed:
+            revealed.append(poi_id)
+    return beat
+
+
+_MORNING_TOKENS = ("that morning", "car week", "17-mile", "17 mile", "pebble", "monterey morning",
+                   "tell me about the morning", "about monterey")
+
+
+def _promise_payoff(s: GameState, raw: str):
+    """Free-text follow-ups on her promises, honored at quiet places, told once."""
+    low = (raw or "").lower()
+    if (s.flags.get("seen_monterey") and not s.flags.get("knows_morning")
+            and _quiet_place(s) and any(t in low for t in _MORNING_TOKENS)):
+        s.flags["knows_morning"] = True
+        return MORNING_BEAT
+    return None
+
+
+def _look_text(s: GameState) -> str:
+    """'look' keeps its promise: the place, then the whole ledger."""
+    p = s.place
+    dt = s.clock
+    svc = ", ".join(p.services) if p.services else "no services"
+    lines = [f"{p.name}" + (f"  [{p.region}]" if p.region else "")]
+    if p.blurb:
+        lines.append(f"  {p.blurb}")
+    lines += [
+        f"  {svc} · {p.kind}",
+        f"  FUEL  {s.fuel_l:.1f}/{s.tank_l:.0f} L  (~{s.range_mi:.0f} mi)",
+        f"  CASH  ${s.cash:.2f} · ${s.credit_available:.0f} card ({s.pay_method})",
+        f"  HEAT  {s.heat:.0f} ({_heat_label(s.heat)}) · RIZ ♠ {s.riz:.0f}",
+        f"  {dt.strftime('%a %b %-d, %-I:%M %p')} · day {s.day} · {s.odometer_mi:.0f} mi · "
+        f"awake {rules.hours_awake(s):.0f}h",
+    ]
+    return "\n".join(lines)
 
 
 def _owner_should_appear(s: GameState) -> bool:
@@ -607,8 +722,8 @@ def _map_text(s: GameState, service: str | None) -> str:
     p = s.place
     if service:
         rows = world.nearest_with_service(p, service, limit=8)
-        head = f"NEAREST {service.upper()}:"
-        lines = [f"  {d:>5.0f} mi  {q.name}  [{q.region}]" for d, q in rows]
+        head = f"NEAREST {service.upper()} (road miles):"
+        lines = [f"  {d * ROAD_WINDING_FACTOR:>5.0f} mi  {q.name}  [{q.region}]" for d, q in rows]
         return head + "\n" + "\n".join(lines)
     # general: nearest assorted POIs
     rows = sorted(((world.haversine_mi(p.lat, p.lon, q.lat, q.lon), q)

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from config import (
-    LITERS_PER_GALLON, START_ISO, WAKE_HOUR, WAKE_MINUTE, HEAT_START,
+    LITERS_PER_GALLON, START_ISO, WAKE_HOUR, WAKE_MINUTE, HEAT_START, ROAD_WINDING_FACTOR,
     HEAT_PATROL_THRESHOLD, HEAT_DECLINE_CARD_THRESHOLD, HEAT_ROADBLOCK_THRESHOLD, HEAT_SWIPE_BASE,
     HEAT_SWIPE_HOTZONE, HEAT_SWIPE_FIRST_DAY, HEAT_DECAY_PER_HOUR,
     HEAT_STATELINE_MULT, HEAT_PUSH_DRIVE, HEAT_SLEEP_LODGING, HEAT_LINGER,
@@ -21,7 +21,8 @@ START_DT = datetime.fromisoformat(START_ISO)
 ENDINGS = {
     "stranded": ("STRANDED",
                  "The needle is flat on E and the engine won't catch. A car you can't report "
-                 "missing, dark coming down, and no pump for miles. This is where the road trip ends."),
+                 "missing, the light going flat, and no pump for miles. This is where the road "
+                 "trip ends — unless a flatbed, or a rewind, says otherwise."),
     "broke": ("STRANDED & BROKE",
               "No gas, no cash, and the card's tapped out. Nobody's coming. The desert keeps its own."),
     "busted": ("BUSTED",
@@ -140,6 +141,19 @@ def drive(state: GameState, dest: Place, push: bool = False) -> list:
     lpm = liters_per_mile(state) * terrain * push_fuel * limp
     need_l = dist * lpm
 
+    # She does the math out loud. A leg beyond the tank gets ONE warning — repeat the
+    # command and she'll burn it anyway (your funeral; the trap stays for the stubborn).
+    if need_l > state.fuel_l + 1e-9 and state.flags.get("confirm_run") != dest.name:
+        state.flags["confirm_run"] = dest.name
+        reach = state.fuel_l / lpm
+        events.append(
+            f"NAV: {dest.name} is {dist:.0f} mi of road; this tank is good for ~{reach:.0f}. "
+            f"She won't start for a guaranteed shoulder — buy gas first, or say it again "
+            f"if you really mean it."
+        )
+        return events
+    state.flags.pop("confirm_run", None)
+
     if need_l <= state.fuel_l + 1e-9:
         # made it
         state.fuel_l = round(state.fuel_l - need_l, 3)
@@ -239,6 +253,7 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
     if not paid["ok"]:
         events.append("FUEL: " + paid["message"])
         return events
+    _note_cash_fallback(state, paid, prefer, events)
 
     state.fuel_l = round(min(state.tank_l, state.fuel_l + q["liters"]), 3)
     if state.flags.pop("limp", None):                    # a town pump = a mechanic; the gremlin's gone
@@ -259,6 +274,15 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
         state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
         events.append(f"HEAT: card swipe leaves a record. Heat +{dh:.0f} → {state.heat:.0f}.")
     return events
+
+
+def _note_cash_fallback(state: GameState, paid: dict, prefer, events: list) -> None:
+    """You said cash; the wallet said no. The card stepping in silently was costing players
+    heat they never agreed to — now it announces itself."""
+    wanted_cash = (prefer or state.pay_method) == "cash"
+    if wanted_cash and paid.get("method") == "card":
+        events.append("PAY: cash came up short — the card covered it. That's a record with "
+                      "your trail on it.")
 
 
 # --------------------------- sleeping -----------------------------------------
@@ -302,6 +326,7 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
         events.append(f"SLEEP: a {kind} is ${price:.0f} and you can't cover it. "
                       "Pull over and sleep rough instead, or move on.")
         return events
+    _note_cash_fallback(state, paid, prefer, events)
 
     _sleep_until_morning(state)
     state.fatigue = 0.0
@@ -320,7 +345,8 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
         state.heat += dh
         _clamp_heat(state)
         state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
-        events.append(f"HEAT: the front desk took the card. Heat +{dh:.0f} → {state.heat:.0f}.")
+        desk = "the campground kiosk" if kind == "camp" else "the front desk"
+        events.append(f"HEAT: {desk} took the card. Heat +{dh:.0f} → {state.heat:.0f}.")
     return events
 
 
@@ -337,12 +363,14 @@ def tow(state: GameState, prefer=None) -> list:
         events.append("TOW: nothing reachable out here.")
         return events
     dist, dest = gas[0]
+    dist = dist * ROAD_WINDING_FACTOR            # flatbeds drive roads, not great circles
     cost = round(175.0 + 4.0 * dist, 2)
     if economy.max_affordable(state, prefer) + 1e-9 < cost:
         events.append(f"TOW: the nearest tow to {dest.name} runs ${cost:.0f}. You can't cover it.")
         set_ending(state, "broke")
         return events
     paid = economy.pay(state, cost, prefer=prefer)
+    _note_cash_fallback(state, paid, prefer, events)
     advance_clock(state, max(1.0, dist / 35.0) + 0.75)
     state.fuel_l = 2.0
     state.status = "playing"

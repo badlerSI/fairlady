@@ -59,7 +59,9 @@ all engine-owned (the LLM still only narrates):
   and plate dramas off, heat−30, +15 Riz) / one-week deadline (`owner_deadline_day`) / **taken**
   (new ending, status `taken`).
 - **Riz** (`GameState.riz`, in snapshot + dash) — the style ledger. Earned: rapport (+5), wave-off
-  (+8), ticket (+3), blessing (+15). It **survives rewinds** minus `RIZ_REWIND_COST` (2).
+  (+8 diminishing −2 per prior survived stop, floor 2), ticket (+3), blessing (+15). On rewind it
+  **reverts to the checkpoint's value** minus `RIZ_REWIND_COST` (2) — undone timelines can't pay
+  (closes the owner-blessing rewind farm found in playtesting).
 - **Checkpoints + rewind** (Edge of Tomorrow) — `game.checkpoint()` saves a 2-deep ring
   (`chk1_<sid>`/`chk2_<sid>` save files) on every clean POI arrival, sleep, tow, resolved encounter,
   and the favor. `rewind` (also "go back"/"run it back") restores **in-place** (`__dict__.update`),
@@ -81,6 +83,40 @@ all engine-owned (the LLM still only narrates):
 
 All new prose (ladder, stop/owner lines, story beats, intro.md, OPENING, TITLE_DROP) is **draft
 for Ben's pass** — same status as the Mayumi beats before.
+
+### 0.6 The 8-persona playtest wave (2026-06-10, same session)
+
+Eight parallel LLM agents played full runs through `tools/play_cli.py` (seeds 101–108: gearhead
+speedrun, cautious cash tourist, reckless joyrider, chatty wanderer, homebound romantic, QA
+edge-breaker, riz-farmer exploit hunt, owner trailer-loop). 25+ consensus findings, all fixed and
+regression-tested (68 tests now):
+
+- `drive me home` / `drive me to X` parser holes; unknown/off-map destinations now answer via NAV.
+- **Over-range legs warn once and refuse** (`confirm_run` flag) — repeat the command to strand
+  yourself on purpose. The Zion trap survives for the stubborn.
+- **Encounter-first routing in `handle()`**: anything said during a stop/owner scene is SPEECH —
+  meta verbs can no longer hijack a confession ("…full tank…where she was born" used to print the
+  range table mid-climax). Only help/save/rewind/load stay console.
+- Rubric word boundaries: "she's **spec**ial", "re**spec**t", "**cam**era" no longer score; owner
+  middle tier (one-week deadline) is reachable; `knows_name` also unlocks the Mayumi deep-cut.
+- Stop escalation: each survived stop −1 to future verdicts + diminishing wave-off riz (the county
+  radio compares notes) — bounds the riz farm; riz reverts across rewinds (see above).
+- One crisis at a time: drama can't fire over an open stop/owner; same drama can't repeat
+  back-to-back; roadblock-opened stops get her whisper cue (WHISPER_MOMENT).
+- `look` prints a real ledger; map/tow distances use ROAD_WINDING_FACTOR consistently; cash→card
+  fallback announces itself; camp kiosks aren't "front desks"; gremlin card fixes count as swipes.
+- Homestretch works without the home flag (defaults to oakland_aisha); story beats fire on tow
+  arrivals; homecoming beats added for oakland_aisha + richmond_koinoya.
+- **Promises are now keepable**: "who owned you before" at a QUIET place (park/encounter/spot,
+  no heat_zone) name-drops Mayumi once (`knows_name`); asking about "that morning"/Car Week at a
+  quiet place after Monterey pays off the hook (`knows_morning`, MORNING_BEAT). Long Beach still
+  gates the full story.
+- Favor completes only on a genuine FILL (tank−0.5 L); prologue ladder gained a 5th "resigned"
+  rung; soft consent ("i guess", "twist my arm") counts as yes.
+
+Tuning: `pulled_over` threshold heat ≥20 (was 25 — low-heat players never met the law).
+Known-and-accepted: DRIVE event lines show pre-drama fuel/time when a drama mutates state after
+(cosmetic); stub NPC phrasebook is static by design (Ace gives real dialogue in prod).
 
 ---
 

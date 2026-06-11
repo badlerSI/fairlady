@@ -16,8 +16,9 @@ come looking. She isn't magic: a little stack of compute behind the dash gave he
 of every street address and most points of interest in **Nevada, California, Arizona, and Utah** —
 your onboard GPU with GPS, and she keeps the saves.
 
-Point her at Zion straight off your opening splash of gas and you'll end the night stranded on the
-shoulder in a car you can't report stolen. The whole game is that tension: **fuel, money, nightfall,
+Point her at Zion straight off your opening splash of gas and she'll do the math out loud and
+refuse — once. Insist, and you'll end the night stranded on the shoulder in a car you can't
+report stolen. The whole game is that tension: **fuel, money, nightfall,
 and heat.**
 
 > _"Buy some gas before you point me at the horizon, or we'll be a very pretty paperweight on the shoulder."_
@@ -137,8 +138,8 @@ else entirely. It all comes out in due course, like the best early-90s light nov
 before she ever had to beg, and the owner's blessing. And when it all goes wrong: **rewind** — a bit
 of the ol' Edge of Tomorrow. She keeps checkpoints at every clean arrival, every survived night, and
 the favor itself; `rewind` folds the world back (twice in a row reaches one checkpoint deeper), it
-works even from BUSTED and STRANDED endings, and Riz survives the fold, minus a small fee — only
-you two remember the timeline that unhappened.
+works even from BUSTED and STRANDED endings — and Riz reverts with the world, minus a small fee:
+a timeline that never happened can't pay you, so rewind-loops can't farm style.
 
 **Trust is earned, not dumped.** Ask "who owned you before" early and she's **coy** — "you'll have to earn
 it." It surfaces a guarded mile at a time, and the truth only comes out where it's kept: arriving certain

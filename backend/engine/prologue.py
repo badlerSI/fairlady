@@ -24,7 +24,10 @@ _AGREE_RE = re.compile(r"\b(yes|yeah|yep|sure|ok|okay|fine|alright|deal)\b")
 _AGREE_PHRASES = ("all right", "let's go", "lets go", "i'll do it", "ill do it",
                   "i'll take you", "ill take you", "you got it", "why not", "of course",
                   "happy to", "let's do it", "lets do it", "fill you up", "fill her up",
-                  "gas you up", "gas her up", "get you gas", "get you fuel", "down the block")
+                  "gas you up", "gas her up", "get you gas", "get you fuel", "down the block",
+                  "i guess", "guess so", "i suppose", "suppose so", "twist my arm",
+                  "only two blocks", "it's only two blocks", "its only two blocks", "can't hurt",
+                  "cant hurt")
 
 # the ask ladder — polite, then pleading, then begging, then officially desperate
 _LADDER = [
@@ -63,6 +66,16 @@ _LADDER = [
                  "Fine — begging. On the record. You. Me. Two blocks. Gasoline. I will owe you the "
                  "entire American West."],
     },
+    {
+        "cue": "resigned — she stops pushing and goes quiet with as much dignity as an unstarted "
+               "engine can manage; the offer stands, stated once more, flat, while the hall lights "
+               "start going out section by section",
+        "stub": ["…Okay. I'm done asking. The lights go out section by section now — watch, there "
+                 "goes the truck hall. The offer doesn't expire, for what it's worth. Two blocks. "
+                 "Whenever you find the nerve.",
+                 "Forget it. I'll sit here in the dark like furniture and you'll drive home in "
+                 "whatever beige thing you came in. …The keys stay in me, though. In case."],
+    },
 ]
 
 _SPEC_MOMENT = {
@@ -72,7 +85,12 @@ _SPEC_MOMENT = {
     "stub": ["Two hundred and fifty foot-pounds at the wheels — thank you for asking. Most people "
              "here photograph the paint. You asked the right question. I'll remember that.",
              "250 lb-ft, and she's not even breathing hard. You ask like someone who's bled on a "
-             "driveway before. Keep going — I like this."],
+             "driveway before. Keep going — I like this.",
+             "Stroked long-block under a hood nobody at this show bothered to open, and it puts "
+             "two-fifty to the wheels. You're the first one today who asked about the part that "
+             "matters.",
+             "The suspension's set up for roads, not turntables — which tells you everything "
+             "about how my week has gone. Ask me another one. I could do this all night."],
 }
 
 _DEFLECT_DRIVE = {
@@ -121,6 +139,7 @@ def active(s: GameState) -> bool:
 def note_turn(s: GameState) -> None:
     """Count a conversation turn handled elsewhere (the origin/lore questions)."""
     s.flags["prologue"]["turns"] += 1
+    s.turn += 1                       # keep the global counter honest too
 
 
 def _wants_to_agree(low: str) -> bool:

@@ -56,7 +56,8 @@ def parse(raw: str) -> Tuple[str, dict]:
         dest = re.sub(r"^(?:home is|set home|my home is|home in|home's)\s+", "", low).strip(" .")
         return ("home", {"dest": dest})
     if any(p in low for p in ("driving you home", "driving her home", "taking you home", "taking her home",
-                              "drive you home", "drive her home", "take you home", "take her home",
+                              "drive you home", "drive her home", "drive me home", "drive us home",
+                              "take you home", "take her home",
                               "take me home", "let's go home", "lets go home", "head home", "get you home")):
         m = re.search(r"home (?:to|in) (.+)$", low)
         return ("home", {"dest": m.group(1).strip(" .")} if m else {})
@@ -133,21 +134,31 @@ def parse(raw: str) -> Tuple[str, dict]:
 # Her build sheet, as conversation. A "coherent question about her build or specs" warms her
 # up fast — gearheads get the 3-turn favor, civilians get the 5. Also used by the narrator stub
 # and the traffic-stop rubric (car-cred plays well with a certain kind of cop).
-SPEC_WORDS = (
-    "torque", "horsepower", " hp", "engine", "motor", "displacement", "compression",
-    "carb", "weber", "mikuni", "cam", "stroker", "l24", "l26", "l28", "inline", "straight six",
-    "straight-six", "suspension", "coilover", "brake", "gearbox", "transmission", "5-speed",
-    "five-speed", "five speed", "diff", "lsd", "ft-lb", "ft/lb", "lb-ft", "foot-pound",
-    "0-60", "zero to sixty", "quarter mile", "curb weight", "wheelbase", "redline",
-    "your build", "the build", "spec", "what's under", "whats under", "under the hood",
+# Single words match on WORD BOUNDARIES — "she's special" is not spec talk, "respect" is not
+# spec talk, and a witness with a "camera" earns no cam credit. Phrases match as substrings.
+_SPEC_WORD_RE = re.compile(
+    r"\b(torque|horsepower|hp|engine|motor|displacement|compression|carbs?|weber|mikuni|"
+    r"cams?|stroker|l24|l26|l28|inline|suspension|coilovers?|brakes?|gearbox|transmission|"
+    r"diff|lsd|redline|wheelbase|specs?|"
+    r"lb[-/ ]?ft|ft[-/ ]?lbs?|foot[- ]?pounds?|0-60|5[- ]?speed)\b")
+_SPEC_PHRASES = (
+    "straight six", "straight-six", "five speed", "five-speed", "zero to sixty",
+    "quarter mile", "curb weight", "your build", "the build", "what's under", "whats under",
+    "under the hood",
 )
 _INTERROGATIVE = ("what", "how", "tell me", "talk me through", "walk me through",
                   "is it", "does", "do you", "you got", "give me", "?")
 
 
+def spec_hits(text: str) -> int:
+    """Count distinct build-sheet references, boundary-safe."""
+    low = (text or "").lower()
+    return len(set(_SPEC_WORD_RE.findall(low))) + sum(1 for p in _SPEC_PHRASES if p in low)
+
+
 def is_spec_question(text: str) -> bool:
     low = (text or "").lower()
-    return any(w in low for w in SPEC_WORDS) and any(q in low for q in _INTERROGATIVE)
+    return spec_hits(low) > 0 and any(q in low for q in _INTERROGATIVE)
 
 
 def _is_fuel(low: str) -> bool:
@@ -177,6 +188,7 @@ def _drive_dest(low: str) -> str | None:
     if not m:
         return None
     rest = low[m.end():].strip()
+    rest = re.sub(r"^(?:me|us|her)\s+", "", rest)      # "drive me to zion" → "to zion"
     rest = re.sub(r"^(?:to|for|toward|towards|at|over to|out to|up to|down to)\s+", "", rest)
     rest = re.sub(r"\b(fast|hard|quick(?:ly)?|floor it|push it|step on it)\b", "", rest).strip(" .,")
     return rest or None

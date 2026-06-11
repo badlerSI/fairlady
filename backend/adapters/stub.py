@@ -40,7 +40,27 @@ class StubNarrator(Narrator):
                 "Out of fuel, out of options. A flatbed's the only exit, and it's loud about it.",
                 "Stranded. Pretty paperweight, like I warned. Call the tow and swallow the bill.",
             ])
+        if "NAV" in kinds:
+            nav = kinds["NAV"].lower()
+            if "won't start" in nav or "guaranteed shoulder" in nav:
+                return _pick(rng, [
+                    "I did the math out loud so you don't have to do it on a shoulder. Gas "
+                    "first — or say it again and we'll find out together.",
+                    "That leg is longer than this tank. I'm a romantic, not a suicide pact. "
+                    "Pump first, horizon second.",
+                ])
+            return _pick(rng, [
+                "Not on my maps. Nevada, California, Arizona, Utah — inside that box I know "
+                "every curb. Outside it I'm just a pretty radio.",
+                "I've got four states memorized and that isn't in any of them. Say it the way "
+                "the road sign would.",
+            ])
         if "TOW" in kinds:
+            if "nothing to tow" in kinds["TOW"].lower():
+                return _pick(rng, [
+                    "Tow? I'm running fine, thanks for the confidence. Save the $175.",
+                    "We're not stranded. Don't tempt the universe — it's listening out here.",
+                ])
             return ("Back on a pump, two liters of dignity in the tank. "
                     "That flatbed driver looked at my plate a beat too long, though.")
         if "ENCOUNTER" in kinds:
@@ -68,21 +88,39 @@ class StubNarrator(Narrator):
                 return base + " Keep it quiet here — half the West is looking for this car."
             return base
         if "FUEL" in kinds:
-            if "declined" in kinds["FUEL"].lower() or "no pump" in kinds["FUEL"].lower():
+            fl = kinds["FUEL"].lower()
+            if "declined" in fl or "no pump" in fl:
                 return _pick(rng, [
                     "Card said no. The card doesn't bluff — find cash or find less car.",
                     "We can't cover that, and I won't pretend otherwise. Numbers don't negotiate.",
                     "Declined. Embarrassing for both of us. Let's not do it twice.",
+                ])
+            if "nothing to add" in fl or "already full" in fl:
+                return _pick(rng, [
+                    "That bought us exactly nothing. The tank noticed.",
+                    "I'm already as honest as I get — forty liters is the whole confession.",
+                ])
+            if s.get("tank_pct", 100) < 95:
+                return _pick(rng, [
+                    f"Some is not full, but I'll take it — about {s.get('range_mi', 0):.0f} "
+                    "miles of it. Keep the math in your mirror.",
+                    "A few liters closer to honest. The needle appreciates the gesture.",
                 ])
             return _pick(rng, [
                 "There. Forty liters of optimism. Spend the range like you mean it.",
                 "Topped off. I feel honest again. Try to keep me that way.",
                 "Good. A full tank is the only romance I trust completely.",
             ])
+        if "TALK" in kinds and "nobody here" in kinds["TALK"].lower():
+            return _pick(rng, [
+                "Nobody out here but us — which suits me fine. Talk to *me*. I'm better company "
+                "than most parking lots.",
+                "Empty. Just wind and one opinionated Datsun. Lucky you — I take questions.",
+            ])
         if "SLEEP" in kinds:
             if "rough" in kinds["SLEEP"].lower() or "no rooms" in kinds["SLEEP"].lower():
                 return _pick(rng, [
-                    "Slept in me again. My seats weren't built for this, and neither were you.",
+                    "A night in my seats. They weren't built for this, and neither were you.",
                     "A gravel lot and a cracked window. Romantic in theory. My back disagrees.",
                     "Rough one. You're stiff, I'm dusty, and the tank didn't refill itself overnight.",
                 ])

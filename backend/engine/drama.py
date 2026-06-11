@@ -21,9 +21,9 @@ def _clamp_heat(s):
 
 
 def _miles_home(s) -> float | None:
-    home = s.flags.get("home")
-    if not home:
-        return None
+    # Her home is the Oakland garage whether or not you've said the word — the homestretch
+    # should hit a player who drives to oakland_aisha directly, not just one who typed "home".
+    home = s.flags.get("home") or "oakland_aisha"
     hp = world.get_poi(home) if isinstance(home, str) else None
     if hp is None:
         return None
@@ -65,8 +65,9 @@ def _e_owner(s, rng):
     lvl = s.flags.get("owner_revealed", 0)
     s.flags["owner_revealed"] = lvl + 1
     s.heat -= 3; _clamp_heat(s)        # she slows, goes quiet — but says nothing she shouldn't
+    weekday = s.clock.strftime("%A")   # she knows what day it is — the dash clock is stuck, she isn't
     pieces = [
-        "someone used to drive this exact road. I'm not telling you who. Not on a Tuesday with you.",
+        f"someone used to drive this exact road. I'm not telling you who. Not on a {weekday} with you.",
         "there's a name I haven't said out loud since the show floor. Keep your eyes ahead.",
         "you keep not asking me the wrong way. That buys you a little. A storage unit's worth, maybe, "
         "someday, in a town we haven't reached.",
@@ -108,6 +109,9 @@ def _e_gremlin(s, rng):
     if rng.random() < 0.5 and economy.max_affordable(s) >= 60:
         cost = round(40 + rng.random() * 80)
         paid = economy.pay(s, cost)
+        if paid["method"] == "card":               # a roadside swipe is a record like any other
+            s.flags["card_swipes"] = s.flags.get("card_swipes", 0) + 1
+            s.heat += 2; _clamp_heat(s)
         return {"tag": "DRAMA", "id": "gremlin_fix",
                 "lines": [f"DRAMA: a misfire forced a roadside fix — ${cost} ({paid['method']})."],
                 "cue": f"the inline-six developed a hard misfire and you had to pay a roadside mechanic ${cost} "
@@ -171,7 +175,8 @@ EVENTS = [
      "weight": lambda s: 1.4, "fire": _e_overheat},
     {"id": "plate", "pred": lambda s: s.heat >= 30 and not s.flags.get("report_withdrawn"),
      "weight": lambda s: 0.8 + s.heat / 60.0, "fire": _e_plate},
-    {"id": "pulled_over", "pred": lambda s: s.heat >= 25 and not s.flags.get("report_withdrawn"),
+    {"id": "pulled_over", "pred": lambda s: (s.heat >= 20 and "stop" not in s.flags
+                                             and not s.flags.get("report_withdrawn")),
      "weight": lambda s: 0.6 + s.heat / 70.0, "fire": _e_pulled_over},
     {"id": "owner", "pred": lambda s: s.flags.get("owner_revealed", 0) < 3,
      "weight": lambda s: 1.1, "fire": _e_owner},
@@ -198,6 +203,8 @@ def maybe_event(s: GameState) -> dict | None:
     """Roll for a complication after a drive. Returns an event dict or None."""
     if s.status != "playing":
         return None
+    if "stop" in s.flags or "owner_scene" in s.flags:
+        return None                                # one crisis at a time
     s.flags["drama_drives"] = s.flags.get("drama_drives", 0) + 1
     rng = _rng(s)
     if rng.random() > _chance(s):
@@ -207,4 +214,10 @@ def maybe_event(s: GameState) -> dict | None:
         return None
     weights = [max(0.01, e["weight"](s)) for e in pool]
     chosen = rng.choices(pool, weights=weights, k=1)[0]
+    if chosen["id"] == s.flags.get("last_drama") and len(pool) > 1:
+        # the same complication twice in a row reads as scripted — pick again once
+        others = [e for e in pool if e["id"] != chosen["id"]]
+        ow = [max(0.01, e["weight"](s)) for e in others]
+        chosen = rng.choices(others, weights=ow, k=1)[0]
+    s.flags["last_drama"] = chosen["id"]
     return chosen["fire"](s, rng)

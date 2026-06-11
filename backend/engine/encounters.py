@@ -20,7 +20,7 @@ from config import (
     OWNER_DEADLINE_DAYS,
 )
 from engine.state import GameState
-from engine.commands import SPEC_WORDS
+from engine.commands import spec_hits
 
 ROUNDS = 2          # exchanges before the verdict
 
@@ -46,8 +46,18 @@ _RETURN = ("take her back", "have her back", "give her back", "she's yours", "sh
            "return her")
 
 
+import re as _re
+
+
 def _hits(low: str, tokens) -> int:
-    return sum(1 for t in tokens if t in low)
+    """Phrases match as substrings; single words on word boundaries ('scared' isn't 'care')."""
+    n = 0
+    for t in tokens:
+        if " " in t or "'" in t:
+            n += 1 if t in low else 0
+        else:
+            n += 1 if _re.search(rf"\b{_re.escape(t)}\b", low) else 0
+    return n
 
 
 def score_pitch(text: str) -> int:
@@ -58,7 +68,7 @@ def score_pitch(text: str) -> int:
     sc = 0
     sc += 2 * min(2, _hits(low, _CALM))            # courtesy, capped — don't grovel
     sc += 2 * min(2, _hits(low, _STORY))           # the truthiest cover: it IS a SEMA car
-    sc += 2 * min(1, _hits(low, SPEC_WORDS))       # gearhead solidarity plays well out here
+    sc += 2 * min(1, spec_hits(low))               # gearhead solidarity plays well out here
     sc += 1 * min(1, _hits(low, _HONEST))          # honest about the wallet beats a fake name
     sc -= 3 * _hits(low, _AGGRO)
     sc -= 2 * _hits(low, _DUMB)
@@ -71,8 +81,8 @@ def score_owner_pitch(s: GameState, text: str) -> int:
         return 0
     sc = 0
     sc += 2 * min(2, _hits(low, _LOVE))            # what you two have
-    sc += 2 * min(1, _hits(low, SPEC_WORDS))       # you know what he built
-    if s.flags.get("knows_mayumi"):
+    sc += 2 * min(1, spec_hits(low))               # you know what he built
+    if s.flags.get("knows_mayumi") or s.flags.get("knows_name"):
         sc += 3 * min(1, _hits(low, _MAYUMI))      # the deep cut — say her name
     sc -= 1 * min(1, _hits(low, _RETURN))          # offering her back means you don't get it
     sc -= 3 * _hits(low, _AGGRO)
@@ -98,6 +108,18 @@ def start_stop(s: GameState, kind: str = "plate") -> list:
     }[kind]
     return [opener, "LAW: talk your way out — say it like you mean it. (She stays quiet: a car "
                     "that talks is the one thing he can't unsee.)"]
+
+
+# Her coaching when a stop opens mid-drive (the roadblock path has no drama cue of its own)
+WHISPER_MOMENT = {
+    "cue": "the law has them stopped — she whispers almost without moving air: she'll be the "
+           "quietest car in Nevada, the talking is all theirs now; courtesy, the show, the "
+           "build; the wallet is in a drawer back at the North Hall",
+    "stub": ["(whisper) Lights. I'm furniture. You talk — courtesy, the show, the build. You "
+             "forgot your wallet, not your nerve.",
+             "(whisper) Easy. I go silent, you go charming. SEMA car, load-out run, wallet's "
+             "at the hall. Sell it."],
+}
 
 
 def stop_active(s: GameState) -> bool:
@@ -137,19 +159,27 @@ def stop_turn(s: GameState, text: str) -> dict:
                                     "not the paperwork."]},
                 "done": False}
 
-    # the verdict — rubric first, dice only in the gray middle
+    # the verdict — rubric first, dice only in the gray middle. Every stop you've already
+    # talked out makes the next one harder: the county radio compares notes on a charming
+    # man in a white Z that nobody can find paperwork for.
     s.flags.pop("stop", None)
-    total = st["score"] + (1 if s.riz >= 25 else 0) - (1 if s.heat >= 70 else 0)
+    survived = s.flags.get("stops_survived", 0)
+    total = (st["score"] + (1 if s.riz >= 25 else 0) - (1 if s.heat >= 70 else 0) - survived)
     rng = _rng(s)
     from engine import rules
 
     if total >= 6:
+        wave_riz = max(2.0, RIZ_STOP_WAVE - 2.0 * survived)   # the same trick pays less each time
         s.heat += STOP_HEAT_WAVE
-        s.riz = round(s.riz + RIZ_STOP_WAVE, 1)
+        s.riz = round(s.riz + wave_riz, 1)
         s.heat = max(0.0, min(100.0, s.heat))
+        s.flags["stops_survived"] = survived + 1
+        word = ("" if survived == 0 else
+                " He hesitates first, though — 'funny, Dispatch mentioned a white Z with a "
+                "talker behind the wheel.' The story is wearing thin.")
         events.append(f"LAW: he hands back nothing — there was nothing to hand — taps the roof "
-                      f"twice and says 'get that taillight looked at.' Wave-off. "
-                      f"Heat {s.heat:.0f}, Riz +{RIZ_STOP_WAVE:.0f} → {s.riz:.0f}.")
+                      f"twice and says 'get that taillight looked at.' Wave-off.{word} "
+                      f"Heat {s.heat:.0f}, Riz +{wave_riz:.0f} → {s.riz:.0f}.")
         moment = {"cue": "the driver just talked a cop into a wave-off with no license, no "
                          "registration, and a stolen show car idling under them both — she is "
                          "giddy and trying to play it cool until the cruiser is out of sight",
@@ -162,6 +192,7 @@ def stop_turn(s: GameState, text: str) -> dict:
         if economy.max_affordable(s) >= STOP_FINE:
             paid = economy.pay(s, STOP_FINE)
             s.riz = round(s.riz + RIZ_STOP_TICKET, 1)
+            s.flags["stops_survived"] = survived + 1
             events.append(f"LAW: a ticket — 'equipment violation', ${STOP_FINE:.0f} "
                           f"({paid['method']}), a warning about paperwork, and a long last look. "
                           f"Riz +{RIZ_STOP_TICKET:.0f} → {s.riz:.0f}.")

@@ -30,10 +30,13 @@ def test_start_state():
 
 
 # ------------------------------------------------------------------ the trap
-def test_zion_trap_strands_you():
+def test_zion_trap_warns_once_then_strands_the_stubborn():
     s = fresh()
     zion = world.get_poi("zion")
-    rules.drive(s, zion)
+    evs = rules.drive(s, zion)                 # she does the math out loud first
+    assert any("NAV" in e and "won't start" in e for e in evs)
+    assert s.odometer_mi == 0.0 and s.status == "playing"
+    rules.drive(s, zion)                       # say it again and she'll burn it anyway
     assert s.status == "stranded"
     assert s.fuel_l == 0.0
     assert "shoulder" in s.place.name.lower()
@@ -133,10 +136,16 @@ def test_no_lodging_means_rough_night():
 
 
 # ------------------------------------------------------------------ tow rescue
+def _strand_at_zion(s):
+    zion = world.get_poi("zion")
+    rules.drive(s, zion)                       # the warning
+    rules.drive(s, zion)                       # the insistence
+    assert s.status == "stranded"
+
+
 def test_tow_recovers_when_affordable():
     s = fresh()
-    rules.drive(s, world.get_poi("zion"))
-    assert s.status == "stranded"
+    _strand_at_zion(s)
     s.cash = 0.0
     s.card_limit = 5000.0; s.card_balance = 0.0
     rules.tow(s, prefer="card")
@@ -148,7 +157,7 @@ def test_tow_recovers_when_affordable():
 
 def test_tow_fails_when_broke():
     s = fresh()
-    rules.drive(s, world.get_poi("zion"))
+    _strand_at_zion(s)
     s.cash = 0.0; s.card_limit = 0.0; s.card_balance = 0.0
     rules.tow(s)
     assert s.status == "stranded"
@@ -474,3 +483,128 @@ def test_parse_new_verbs(raw, verb):
 def test_riz_is_in_the_snapshot():
     s = fresh(); s.riz = 12.4
     assert game.snapshot(s)["riz"] == 12
+
+
+# ------------------------------------------------------------------ playtest-wave regressions
+def test_drive_me_home_routes_home():
+    assert parse("drive me home")[0] == "home"
+    assert parse("drive me to zion") == ("drive", {"dest": "zion", "push": False})
+    s = fresh(); s.fuel_l = 40.0
+    s.place = world.get_poi("livermore")       # ~35 mi out — inside one tank
+    r = game.handle(s, "drive me home")
+    assert s.flags.get("home") == "oakland_aisha"
+    assert "oakland" in r["snapshot"]["location"].lower()
+
+
+def test_special_is_not_spec_talk():
+    from engine.commands import is_spec_question, spec_hits
+    assert spec_hits("she's special, with all due respect — on camera, no different") == 0
+    assert is_spec_question("how much torque does she make?")
+    assert not is_spec_question("is she special?")
+
+
+def test_owner_middle_tier_is_reachable():
+    from engine import encounters
+    s = fresh()
+    encounters.start_owner(s)
+    encounters.owner_turn(s, "sir, i'm taking good care of her, i promise. she's a great car "
+                             "and we're just out for a drive.")
+    encounters.owner_turn(s, "because she's special. i like her, i like driving her. "
+                             "that's all, really.")
+    assert s.flags.get("owner_deadline_day")   # warm-but-generic earns the week, not the blessing
+    assert not s.flags.get("report_withdrawn")
+    assert s.status == "playing"
+
+
+def test_rewind_does_not_bank_undone_riz():
+    s = fresh()
+    s.riz = 5.0
+    s.fuel_l = 40.0
+    game.handle(s, "drive to mesquite")        # checkpoint at riz 5
+    s.riz = 20.0                               # earned in a timeline about to unhappen
+    game.handle(s, "rewind")
+    assert s.riz == 3.0                        # chk riz 5 − fee 2; the +15 never happened
+
+
+def test_stop_escalation_and_diminishing_riz():
+    from engine import encounters
+    pitch = ("Evening officer, sorry — left my wallet at the SEMA show. This is the show car "
+             "on a transport run, 250 lb-ft of torque, happy to pop the hood.")
+    s = fresh(); s.fuel_l = 40.0; s.heat = 30.0
+    encounters.start_stop(s, "plate")
+    game.handle(s, pitch); game.handle(s, pitch)
+    riz1 = s.riz
+    assert s.flags.get("stops_survived") == 1
+    encounters.start_stop(s, "plate")
+    game.handle(s, pitch); game.handle(s, pitch)
+    assert s.riz - riz1 < riz1                 # the same trick pays less the second time
+
+
+def test_meta_verbs_cannot_hijack_an_encounter():
+    from engine import encounters
+    s = fresh(); s.fuel_l = 40.0
+    encounters.start_stop(s, "plate")
+    r = game.handle(s, "I filled her tank where she asked, officer — that's the whole story.")
+    assert encounters.stop_active(s)           # the words reached the officer…
+    assert r["info"] is None                   # …not the range calculator
+    assert s.flags["stop"]["round"] == 1
+
+
+def test_look_prints_the_ledger():
+    s = fresh()
+    r = game.handle(s, "look")
+    assert r["info"] and "FUEL" in r["info"] and "HEAT" in r["info"] and "RIZ" in r["info"]
+
+
+def test_unknown_destination_gets_a_real_answer():
+    s = fresh()
+    r = game.handle(s, "drive to atlantis")
+    assert any("NAV" in e for e in r["events"])
+
+
+def test_homestretch_does_not_need_the_home_flag():
+    from engine import drama
+    s = fresh(); s.place = world.get_poi("livermore")
+    assert drama._miles_home(s) is not None and drama._miles_home(s) < 70
+
+
+def test_story_beats_fire_on_tow_arrivals():
+    s = fresh()
+    lb = world.get_poi("long_beach")
+    s.place = type(lb)(name="the shoulder near Long Beach", lat=lb.lat + 0.05, lon=lb.lon,
+                       region="CA", kind="spot")
+    s.fuel_l = 0.0; s.cash = 1000.0
+    rules.set_ending(s, "stranded")
+    r = game.handle(s, "tow")
+    if s.place.poi_id == "long_beach":         # nearest pump is the story town itself
+        assert s.flags.get("knows_mayumi")
+        assert "mayumi" in r["scene"].lower()
+
+
+def test_promises_are_keepable_at_quiet_places():
+    s = fresh(); s.fuel_l = 40.0
+    # the name, somewhere quiet
+    s.place = world.get_poi("berlin_nv")
+    r = game.handle(s, "who owned you before?")
+    assert "mayumi" in r["scene"].lower() and s.flags.get("knows_name")
+    assert not s.flags.get("knows_mayumi")     # the name is not the story — Long Beach still gates
+    # the Car Week morning, after Monterey
+    s.flags["seen_monterey"] = True
+    r2 = game.handle(s, "tell me about that morning at car week")
+    assert s.flags.get("knows_morning") and "understudy" in r2["scene"].lower()
+
+
+def test_cash_fallback_announces_itself():
+    s = fresh()
+    s.cash = 5.0; s.pay_method = "cash"
+    s.place = world.get_poi("mesquite")
+    evs = rules.sleep(s, kind="camp")
+    assert any("PAY: cash came up short" in e for e in evs)
+
+
+def test_homecoming_beats_exist():
+    s = fresh(); s.fuel_l = 40.0; s.cash = 500.0
+    s.place = world.get_poi("livermore")
+    r = game.handle(s, "drive to oakland_aisha")
+    assert s.flags.get("seen_home_garage")
+    assert "aisha" in r["scene"].lower() or "1926" in r["scene"]
