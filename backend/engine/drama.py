@@ -75,7 +75,8 @@ def _e_owner(s, rng):
     piece = pieces[min(lvl, len(pieces) - 1)]
     return {
         "tag": "DRAMA", "id": "owner",
-        "lines": ["DRAMA: a song / a town / a mile of road pulled up the one who had her before. She goes quiet — and stays coy."],
+        "lines": [f"DRAMA: a song / a town / a mile of road pulled up the one who had her before. "
+                  f"She goes quiet — and stays coy. She also slows down. Heat {s.heat:.0f}."],
         "cue": f"something on this road reminded her of the owner she had before you. She does NOT reveal who "
                f"or what happened — that truth is locked away for later. She only lets slip a guarded, "
                f"melancholy hint and steers off it: {piece}",

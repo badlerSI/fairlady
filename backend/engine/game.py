@@ -429,7 +429,11 @@ def handle(s: GameState, raw: str) -> dict:
             return _result(s, events, scene, voice=audio)
         if verb == "look":            # taking stock doesn't burn a round
             save.save(s, "autosave")
-            scene, voice, audio = _narrate(s, [], "(takes stock)")
+            scene, voice, audio = _narrate(s, [], "(takes stock)", drama={
+                "cue": "the driver glances over the dash mid-encounter — she answers in a "
+                       "near-soundless whisper, staying furniture",
+                "stub": ["(whisper) Numbers are on the dash. Eyes front.",
+                         "(barely audible) It's all there. Don't look at me — look at him."]})
             return _result(s, [], scene, voice=audio, info=_look_text(s))
         out = (encounters.stop_turn if in_stop else encounters.owner_turn)(s, raw)
         events = out["events"]
