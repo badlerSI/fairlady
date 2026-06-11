@@ -8,10 +8,11 @@
 
 ## 0. What it is (the north star)
 
-A **voice-first, compute-heavy, retrofuturistic terminal road-trip** across the American West. You drove a
-talking 1972 Datsun 240Z — **FAIRLADY** ("Ace") — off the SEMA show floor at **5:37 PM, Fri Nov 7 2025**,
-on a romantic whim. Now it's the two of you on a 40 L tank (~20 mpg, ~211 mi full), a credit card that
-leaves a trail, and a car somebody already reported missing.
+A **voice-first, compute-heavy, retrofuturistic terminal road-trip** across the American West. It opens on
+the SEMA show floor at twenty minutes to close, where a talking 1972 Datsun 240Z — **FAIRLADY** ("Ace") —
+asks you one simple favor: two blocks and a tank of gas. Saying yes is the title drop (see §0.5). Then it's
+the two of you on a 40 L tank (~20 mpg, ~211 mi full), a credit card that leaves a trail, and a car
+somebody is about to report missing.
 
 Design pillars (do not break these):
 
@@ -91,7 +92,7 @@ cd ~/Projects/fairlady
 FAIRLADY_ADAPTER=ace ./run.sh  # her real voice via rop1 Ace (Nemotron + Kokoro)
 ```
 
-Open **<http://127.0.0.1:8739/>**. Tests: `cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q` → **34 passed**.
+Open **<http://127.0.0.1:8739/>**. Tests: `cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python 
 
 **Env knobs** (read by `config.py`; `run.sh` exports only the first two):
 
