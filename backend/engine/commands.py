@@ -25,6 +25,19 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("look", "l", "status", "state", "look around", "hud"):
         return ("look", {})
 
+    # the heat report — the credit-karma dashboard for your notoriety
+    if low in ("heat", "score", "heat report", "report", "record", "my record", "how hot",
+               "how hot are we", "how hot am i", "notoriety", "rap sheet", "the heat",
+               "heat score", "credit", "where do we stand with the law"):
+        return ("heatreport", {})
+    # lie low (active cool-down) and untag (post-tag damage control)
+    if low in ("lie low", "lay low", "lie low here", "hide", "hide out", "lay up", "go quiet",
+               "keep a low profile", "duck out of sight", "wait it out", "cool off"):
+        return ("lielow", {})
+    if low in ("untag", "untag the post", "take it down", "damage control", "delete the post",
+               "dm the poster", "get it taken down", "clean up the post"):
+        return ("untag", {})
+
     # rewind to the last checkpoint (the Edge-of-Tomorrow escape — must precede the drive check,
     # since "go back" would otherwise parse as a drive)
     if low in ("rewind", "go back", "rewind it", "take it back", "loop", "loop it",
@@ -164,9 +177,12 @@ def parse(raw: str) -> Tuple[str, dict]:
         args = {}
         if "rough" in low or "pull over" in low or "in the car" in low or "in the seat" in low:
             args["rough"] = True
-        for k in ("camp", "motel", "lodge"):
+        for k in ("camp", "motel", "lodge", "airbnb"):
             if k in low:
                 args["kind"] = k
+        if any(w in low for w in ("airbnb", "air bnb", "private", "rental", "alias", "off the books",
+                                  "under a name", "under an alias", "vrbo")):
+            args["kind"] = "airbnb"
         if "cash" in low:
             args["prefer"] = "cash"
         elif "card" in low:
@@ -247,8 +263,10 @@ def _is_fuel(low: str) -> bool:
 
 
 def _is_sleep(low: str) -> bool:
-    return low.startswith(("sleep", "rest", "motel", "camp", "lodge", "stay", "check in",
-                           "check-in", "bed", "crash", "pull over", "turn in", "good night"))
+    return (low.startswith(("sleep", "rest", "motel", "camp", "lodge", "stay", "check in",
+                            "check-in", "bed", "crash", "pull over", "turn in", "good night",
+                            "airbnb", "air bnb", "book", "find a place", "get a room"))
+            or "airbnb" in low or "private stay" in low or "private place" in low)
 
 
 def _is_talk(low: str) -> bool:

@@ -799,6 +799,99 @@ def test_a_long_pitch_during_an_encounter_is_speech_not_a_command():
     assert any("OWNER" in e for e in r["events"])
 
 
+# ------------------------------------------------------------------ heat-as-credit-score
+def test_visibility_classification():
+    from engine import heat
+    assert heat.visibility(world.get_poi("las_vegas")) == 3       # flashy
+    assert heat.visibility(world.get_poi("berlin_nv")) == 0       # remote
+    assert heat.visibility(world.get_poi("mesquite")) == 1        # low-key town
+
+
+def test_heat_changes_are_logged_as_factors_with_a_dashboard():
+    s = fresh(); s.fuel_l = 10.0; s.cash = 20.0                    # pay_method card by default
+    game.handle(s, "fill")                                         # a card-swipe mark
+    info = game.handle(s, "heat report")["info"]
+    assert "HEAT REPORT" in info and "DEROGATORY MARKS" in info
+    assert "credit card swipe" in info and "fades in" in info      # attribution + expiry
+    assert any(b in info for b in ("GHOST", "NOTICED", "TRENDING", "FLAGGED"))   # a readable band
+    assert "WHAT IF" in info                                       # the simulator
+
+
+def test_card_swipe_is_a_derogatory_mark_cash_is_clean():
+    s = fresh(); s.place = world.get_poi("mesquite"); s.cash = 200.0; s.fuel_l = 5.0
+    h0 = s.heat
+    game.handle(s, "pay cash"); game.handle(s, "gas $20")          # partial fill, cash
+    assert s.heat == h0                                            # cash leaves no mark
+    game.handle(s, "pay card"); game.handle(s, "gas $20")          # partial fill, card
+    assert s.heat > h0                                             # the card does
+    assert any("credit card swipe" in e["r"] for e in s.flags.get("heat_log", []))
+
+
+def test_instagram_tag_only_fires_where_visible_and_is_dodgeable():
+    from engine import heat
+    # never at a remote spot, no matter the roll
+    for seed in range(30):
+        s = game.new_game(seed=seed, prologue_on=False)
+        s.place = world.get_poi("berlin_nv"); s.turn += 5
+        assert heat.social_arrival(s) is None                     # zero exposure → no tag, ever
+    # at a flashy spot, a tag eventually fires across seeds and spikes heat as a hard inquiry
+    tagged = False
+    for seed in range(40):
+        s = game.new_game(seed=seed, prologue_on=False)
+        s.place = world.get_poi("las_vegas"); s.turn += 5; s.flags.pop("last_tag_turn", None)
+        out = heat.social_arrival(s)
+        if out and out.get("tagged"):
+            tagged = True
+            assert s.flags.get("instagram_tags") == 1
+            assert any("tagged by @" in e["r"] and e["k"] == "spike" for e in s.flags["heat_log"])
+            break
+    assert tagged
+
+
+def test_untag_and_lie_low_are_active_ways_down():
+    from engine import heat
+    s = fresh()
+    heat.add(s, 20, "tagged by @someone", "spike"); s.flags["instagram_tags"] = 1
+    s.flags["last_tag_turn"] = s.turn
+    h0 = s.heat
+    game.handle(s, "untag")
+    assert s.heat < h0                                             # damage control claws some back
+    # lie low cools at a quiet spot, refuses in plain sight
+    s.place = world.get_poi("las_vegas")
+    assert "can't disappear" in game.handle(s, "lie low")["events"][0]
+    s.place = world.get_poi("berlin_nv"); h1 = s.heat
+    game.handle(s, "lie low")
+    assert s.heat < h1
+
+
+def test_airbnb_is_clean_rest_motel_on_card_is_a_mark():
+    s = fresh(); s.place = world.get_poi("mesquite"); s.cash = 400.0; s.heat = 30.0
+    game.handle(s, "book an airbnb")
+    assert s.heat < 30.0                                           # cools, off the record
+    assert not any("front desk" in e["r"] for e in s.flags.get("heat_log", []))
+    assert s.flags.get("card_swipes", 0) == 0                      # no paper trail
+
+
+def test_curious_clerk_humble_slides_by_showoff_posts():
+    from engine import heat
+    seed = None
+    for sd in range(1, 40):
+        s = game.new_game(seed=sd, prologue_on=False); s.cash = 400; s.fuel_l = 8.0
+        s.place = world.get_poi("las_vegas"); s.turn += 9
+        game.handle(s, "fill")
+        if s.flags.get("clerk_curious"):
+            seed = sd; break
+    assert seed is not None                                        # the clerk fires at a flashy pump
+    h0 = s.heat
+    game.handle(s, "ha, just an old project car")                 # humble
+    assert s.heat == h0 and not s.flags.get("clerk_curious")
+    s2 = game.new_game(seed=seed, prologue_on=False); s2.cash = 400; s2.fuel_l = 8.0
+    s2.place = world.get_poi("las_vegas"); s2.turn += 9
+    game.handle(s2, "fill")
+    game.handle(s2, "yeah it's the SEMA car, take a pic")          # show off
+    assert s2.heat > h0 and s2.flags.get("instagram_tags")
+
+
 # ------------------------------------------------------------------ beta-test (my own playthroughs)
 def test_atm_parses_from_natural_phrasing():
     assert parse("let me hit the ATM for $5000") == ("atm", {"amount": 5000.0})

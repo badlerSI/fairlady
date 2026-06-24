@@ -56,7 +56,8 @@ LITERS_PER_GALLON = 3.785411784
 
 # --- Economy -------------------------------------------------------------------
 DEFAULT_GAS_PRICE = {"NV": 4.25, "CA": 4.95, "AZ": 3.95, "UT": 3.89}  # $/gal, Nov 2025-ish
-LODGING_PRICE = {"motel": 92.0, "lodge": 165.0, "camp": 28.0}
+LODGING_PRICE = {"motel": 92.0, "lodge": 165.0, "camp": 28.0, "airbnb": 110.0}
+AIRBNB_HEAT = -8.0    # a private stay booked under an alias, cash — lying low, off the record
 FOOD_PRICE = 16.0
 START_CASH = 40.0
 CARD_LIMIT = 2000.0

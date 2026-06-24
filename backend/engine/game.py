@@ -241,17 +241,8 @@ def rewind(s: GameState):
 
 # --------------------------------------------------------------------- snapshot
 def _heat_label(h: float, armed: bool = False) -> str:
-    if armed and h >= rules.HEAT_ROADBLOCK_THRESHOLD:
-        return "armed & dangerous — they're coming ready"
-    if h >= rules.HEAT_ROADBLOCK_THRESHOLD:
-        return "roadblocks out for this car"
-    if h >= rules.HEAT_DECLINE_CARD_THRESHOLD:
-        return "burning — they're watching the card"
-    if h >= rules.HEAT_PATROL_THRESHOLD:
-        return "hot — patrols are interested"
-    if h >= 20:
-        return "warm"
-    return "cold"
+    from engine import heat as _heat
+    return _heat.label(h, armed)
 
 
 def snapshot(s: GameState) -> dict:
@@ -535,6 +526,15 @@ def handle(s: GameState, raw: str) -> dict:
         return _result(s, [], "", info=_map_text(s, args.get("service")))
     if verb == "range":
         return _result(s, [], "", info=_range_text(s))
+    if verb == "heatreport":
+        from engine import heat as _heat
+        return _result(s, [], "", info=_heat.dashboard(s))
+    if verb == "untag":
+        from engine import heat as _heat
+        events = _heat.untag(s)
+        save.save(s, "autosave")
+        scene, voice, audio = _narrate(s, events, "")
+        return _result(s, events, scene, voice=audio)
     if verb == "pay":
         s.pay_method = args["method"]
         return _result(s, [], "", info=f"Paying with {s.pay_method} now.")
@@ -570,6 +570,21 @@ def handle(s: GameState, raw: str) -> dict:
     # ---- action verbs ----
     s.turn += 1                       # a true per-action counter (used for resume + rng)
     events, player_text, npc, drama_ev, story_beat, info = [], raw, None, None, None, None
+
+    # the curious gas-station clerk is mid-beat — your next ACTION resolves him: leave or play it
+    # humble and slide by; show off or linger and he posts the car
+    if s.flags.get("clerk_curious"):
+        from engine import heat as _heat
+        low = raw.lower()
+        showoff = any(t in low for t in ("sema", "yeah", "yes", "sure", "famous", "take a", "selfie",
+                                         "follow", " pic", "build", "show car", "250", "mikuni",
+                                         "go ahead", "post it", "tag"))
+        if verb in ("drive", "home"):
+            events += _heat.clerk_resolve(s, humble=True)        # you left — slid by
+        elif verb == "say":
+            events += _heat.clerk_resolve(s, humble=not showoff)
+        elif verb not in ("look", "heatreport", "map", "range", "untag", "lielow"):
+            events += _heat.clerk_resolve(s, humble=False)       # lingered at the pump — he got it
 
     if verb == "home":                # "drive her home" — her home is the Oakland garage by default
         if args.get("dest"):
@@ -624,6 +639,13 @@ def handle(s: GameState, raw: str) -> dict:
                                 events += drama_ev["lines"]
                             if encounters.stop_active(s) and drama_ev is None:
                                 drama_ev = encounters.WHISPER_MOMENT
+                            # arriving somewhere bright: telegraph exposure + maybe get posted
+                            if drama_ev is None and not encounters.stop_active(s):
+                                from engine import heat as _heat
+                                soc = _heat.social_arrival(s)
+                                if soc:
+                                    events += soc["events"]
+                                    drama_ev = soc["moment"]
             encounters.check_owner_deadline(s, events)
             # a clean arrival is a checkpoint — unless something's still standing at the window
             if (s.place.poi_id and s.status == "playing"
@@ -645,6 +667,14 @@ def handle(s: GameState, raw: str) -> dict:
         elif s.status == "playing" and s.fuel_l >= s.tank_l - 0.5 and any(
                 e.startswith("FUEL: pumped") for e in events):
             checkpoint(s)             # a full tank is a clean save point (and sets up the standoff)
+        # a curious clerk may clock the show car at a bright, busy pump
+        if (s.status == "playing" and any(e.startswith("FUEL: pumped") for e in events)
+                and not s.flags.get("clerk_curious")):
+            from engine import heat as _heat
+            clerk = _heat.social_fuel(s)
+            if clerk:
+                events += clerk["events"]
+                drama_ev = clerk["moment"]
         player_text = ""
     elif verb == "sleep":
         events = rules.sleep(s, kind=args.get("kind"), prefer=args.get("prefer"),
@@ -685,6 +715,10 @@ def handle(s: GameState, raw: str) -> dict:
         pid = garage.part_id(args.get("what", ""))
         events = garage.sell_part(s, pid) if pid else [
             "SELL: which part? 'parts' lists what's on her — the carbon hood, the Mikunis, the wheels."]
+        player_text = ""
+    elif verb == "lielow":
+        from engine import heat as _heat
+        events = _heat.lie_low(s)
         player_text = ""
     elif verb == "race":
         events = garage.race(s)

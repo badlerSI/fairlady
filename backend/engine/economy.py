@@ -13,12 +13,15 @@ def gas_price(place: Place) -> float:
 
 
 def lodging_options(place: Place) -> list:
-    """[(label, nightly_price)] available where you are."""
+    """[(label, nightly_price)] available where you are. 'airbnb' = a private stay you book
+    under an alias: cash-only, no front desk, no paper trail — the under-the-radar choice."""
     if not place.has("lodging"):
         return []
     if place.kind == "park":
         return [("lodge", LODGING_PRICE["lodge"]), ("camp", LODGING_PRICE["camp"])]
-    return [("motel", LODGING_PRICE["motel"]), ("camp", LODGING_PRICE["camp"])]
+    # towns: a traceable motel, a quiet private rental, or a campsite
+    return [("motel", LODGING_PRICE["motel"]), ("airbnb", LODGING_PRICE["airbnb"]),
+            ("camp", LODGING_PRICE["camp"])]
 
 
 def pay(state: GameState, amount: float, prefer: Optional[str] = None) -> dict:

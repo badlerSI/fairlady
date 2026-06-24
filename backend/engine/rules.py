@@ -69,6 +69,15 @@ def card_swipe_heat(state: GameState, place: Place) -> float:
     return base
 
 
+def _card_mark(state: GameState, place: Place, events: list, what: str) -> None:
+    """A card swipe = a derogatory mark on the record (traceable). Logged for the dashboard."""
+    from engine import heat as _heat
+    dh = card_swipe_heat(state, place)
+    state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
+    _heat.add(state, dh, "credit card swipe", "mark")
+    events.append(f"HEAT: {what} on the card — a mark on the record. +{dh:.0f} → {state.heat:.0f}.")
+
+
 def _clamp_heat(state: GameState) -> None:
     if state.flags.get("no_heat"):            # she's legally yours — nobody's looking anymore
         state.heat = 0.0
@@ -167,14 +176,17 @@ def drive(state: GameState, dest: Place, push: bool = False) -> list:
         state.odometer_mi = round(state.odometer_mi + dist, 1)
         state.fatigue = min(140.0, state.fatigue + drive_h * FATIGUE_PER_HOUR)
 
-        # heat: state line muddies the trail; distance cools you; pushing heats you
+        # heat: state line muddies the trail; distance cools you; pushing heats you. Each is a
+        # factor on the dashboard (heat.add records WHY), so the player can read the system.
+        from engine import heat as _heat
         crossed = bool(origin.region and dest.region and origin.region != dest.region)
         if crossed:
-            state.heat *= HEAT_STATELINE_MULT
+            _heat.add(state, state.heat * (HEAT_STATELINE_MULT - 1.0),
+                      "crossed a state line", "lower")
         if not dest.heat_zone:
-            state.heat -= HEAT_DECAY_PER_HOUR * drive_h
+            _heat.add(state, -HEAT_DECAY_PER_HOUR * drive_h, "miles and time, lying low", "lower")
         if push:
-            state.heat += HEAT_PUSH_DRIVE
+            _heat.add(state, HEAT_PUSH_DRIVE, "drove flashy — pushing hard", "mark")
         _clamp_heat(state)
 
         _register_arrival(state, dest, events)
@@ -274,11 +286,7 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
     elif q["capped_by"] == "money":
         events.append("FUEL: that's all the money would buy.")
     if paid["method"] == "card":
-        dh = card_swipe_heat(state, place)
-        state.heat += dh
-        _clamp_heat(state)
-        state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
-        events.append(f"HEAT: card swipe leaves a record. Heat +{dh:.0f} → {state.heat:.0f}.")
+        _card_mark(state, place, events, "gas")
     return events
 
 
@@ -312,11 +320,14 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
     if rough or not place.has("lodging"):
         if not rough and not place.has("lodging"):
             events.append(f"SLEEP: no rooms at {place.name}. You pull over and sleep rough.")
+        from engine import heat as _heat
         _sleep_until_morning(state)
         state.fatigue = 20.0
-        state.heat += ROUGH_SLEEP_HEAT
-        _clamp_heat(state)
-        events.append(f"SLEEP: a rough night in the seats. Half-rested, fatigue {state.fatigue:.0f}, "
+        # sleeping rough in a flashy car draws an eye — worse in a watched, affluent area
+        rough_h = ROUGH_SLEEP_HEAT * (2.0 if place.heat_zone else 1.0)
+        _heat.add(state, rough_h, "slept rough in a flashy car", "mark")
+        events.append(f"SLEEP: a rough night in the seats" + (" — and in the wrong part of town"
+                      if place.heat_zone else "") + f". Half-rested, fatigue {state.fatigue:.0f}, "
                       f"heat {state.heat:.0f}. {_clock_str(state)}.")
         return events
 
@@ -327,32 +338,37 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
         kind = "camp" if "camp" in options else next(iter(options))
     price = options[kind]
 
-    paid = economy.pay(state, price, prefer=prefer)
+    pref = "cash" if (kind == "airbnb" and not prefer) else prefer   # alias bookings are cash
+    paid = economy.pay(state, price, prefer=pref)
     if not paid["ok"]:
         events.append(f"SLEEP: a {kind} is ${price:.0f} and you can't cover it. "
                       "Pull over and sleep rough instead, or move on.")
         return events
     _note_cash_fallback(state, paid, prefer, events)
 
+    from engine import heat as _heat
+    from config import AIRBNB_HEAT
     _sleep_until_morning(state)
     state.fatigue = 0.0
-    state.heat += HEAT_SLEEP_LODGING
-    if state.last_sleep_poi and state.last_sleep_poi == place.poi_id:
-        state.heat += HEAT_LINGER
+    airbnb = kind == "airbnb"
+    _heat.add(state, AIRBNB_HEAT if airbnb else HEAT_SLEEP_LODGING,
+              "private stay, booked off the record" if airbnb else "a night off the road, lying low",
+              "lower")
+    if state.last_sleep_poi and state.last_sleep_poi == place.poi_id and not airbnb:
+        _heat.add(state, HEAT_LINGER, "lingered — second night, same town", "mark")
         events.append("HEAT: second night in the same town — you start to get noticed.")
     state.last_sleep_poi = place.poi_id
-    _clamp_heat(state)
+    place_word = "a private place off a quiet street in" if airbnb else f"a {kind} at"
     events.append(
-        f"SLEEP: a {kind} at {place.name}, ${price:.0f} ({paid['method']}). Rested. "
+        f"SLEEP: {place_word} {place.name}, ${price:.0f} ({paid['method']}). Rested. "
         f"Heat {state.heat:.0f}. {_clock_str(state)}."
     )
-    if paid["method"] == "card":
-        dh = card_swipe_heat(state, place)
-        state.heat += dh
-        _clamp_heat(state)
-        state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
+    # a private stay is booked under an alias in cash — no front-desk paper trail.
+    if paid["method"] == "card" and not airbnb:
         desk = "the campground kiosk" if kind == "camp" else "the front desk"
-        events.append(f"HEAT: {desk} took the card. Heat +{dh:.0f} → {state.heat:.0f}.")
+        _card_mark(state, place, events, desk + " stay")
+    elif paid["method"] == "card" and airbnb:
+        _card_mark(state, place, events, "a card-booked rental (so much for the alias)")
     return events
 
 
@@ -388,10 +404,10 @@ def tow(state: GameState, prefer=None) -> list:
         f"Two liters of splash in the tank. {_clock_str(state)}."
     )
     # a tow driver who sees a hot car, plus a card record, is the worst kind of attention
+    from engine import heat as _heat
     if paid["method"] == "card":
         state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
-    dh = (card_swipe_heat(state, dest) if paid["method"] == "card" else 1.0) + 8.0
-    state.heat += dh
-    _clamp_heat(state)
-    events.append(f"HEAT: a tow driver got a long look at the car and the card. Heat +{dh:.0f} → {state.heat:.0f}.")
+        _heat.add(state, card_swipe_heat(state, dest), "credit card swipe", "mark")
+    _heat.add(state, 8.0, "a tow driver got a long look at the car", "spike")
+    events.append(f"HEAT: a tow driver got a long look at the car and the card. Heat → {state.heat:.0f}.")
     return events

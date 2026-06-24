@@ -109,6 +109,32 @@ class StubNarrator(Narrator):
                 "Here it is, exactly where I said. Memorized every inch. You're welcome.",
                 "Worth the fuel, this. Look at it a minute. Then we vanish before someone looks at me.",
             ])
+        if "SOCIAL" in kinds:
+            so = kinds["SOCIAL"].lower()
+            if "posted the car" in so or "tagged" in so:
+                return _pick(rng, [
+                    "We just went viral. NOT the good kind. My plate's in frame and the comments are "
+                    "already doing detective work. Drive — put miles on it.",
+                    "Geotagged. Four hundred likes and a cop somewhere scrolling. That's the trouble "
+                    "with being this pretty. Clean miles, now.",
+                ])
+            return _pick(rng, [
+                "Phones out here. Nobody's posted us yet — but linger and we trend. Your call.",
+                "I count cameras pretending not to point at me. Quick stop, or we're content.",
+            ])
+        if "UNTAG" in kinds:
+            return _pick(rng, [
+                "DM sent — charming, with a little threat under it. Post's down. Screenshots live "
+                "forever, but the heat eased.",
+                "Handled. The poster suddenly remembered they have a life. We breathe a little.",
+            ])
+        if "LIE LOW" in kinds:
+            if "can't disappear" in kinds["LIE LOW"].lower():
+                return "You don't hide a show car in a crowd, ace. Back road first, then we vanish."
+            return _pick(rng, [
+                "Tucked away, lights off, an hour of nothing. Boring is the bravest thing we do.",
+                "Nobody came. Nobody posted. An hour of being invisible — worth every minute of daylight.",
+            ])
         if "FACT" in kinds:
             return _pick(rng, [
                 f"Dash has one line on this place: {kinds['FACT']} The rest you get by looking.",
