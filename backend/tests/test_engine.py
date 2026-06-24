@@ -501,6 +501,20 @@ def test_special_is_not_spec_talk():
     assert spec_hits("she's special, with all due respect — on camera, no different") == 0
     assert is_spec_question("how much torque does she make?")
     assert not is_spec_question("is she special?")
+    # plurals/possessives of real build words count (found by self-playtest)
+    assert is_spec_question("triple Mikunis?")
+    assert is_spec_question("what carbs is she running?")
+    assert spec_hits("stroked L24 on triple webers") >= 2
+
+
+def test_agreeing_as_she_asks_does_not_need_a_second_yes():
+    # pre-empting her ask on the very turn she'd ask should seal it (self-playtest finding)
+    s = game.new_game(seed=44)
+    for chat in ("nice booth", "long week?", "you're the cleanest one here", "love the stance"):
+        game.handle(s, chat)                       # 4 turns of small talk — she asks on turn 5
+    r = game.handle(s, "you had me at the build — let's get you that gas")
+    assert s.flags.get("prologue_done") and "prologue" not in s.flags
+    assert s.place.poi_id == "sema_chevron"        # one yes, not two
 
 
 def test_owner_middle_tier_is_reachable():

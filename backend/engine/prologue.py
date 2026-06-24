@@ -163,8 +163,12 @@ def turn(s: GameState, verb: str, raw: str) -> dict:
         s.riz = round(s.riz + RIZ_RAPPORT, 1)
         events.append("RAPPORT: you asked the right question. She warmed to you. Riz +%.0f." % RIZ_RAPPORT)
 
-    # once she's asked, "yes" — or just reaching for the pumps — seals it
-    if pro["asked"] and (verb == "fuel" or (verb in ("say", "drive", "home") and (
+    # "yes" — or reaching for the pumps — seals it, the moment she's asked OR is about to.
+    # (If she's reached the ask threshold this turn, a player who pre-empts her with "let's
+    #  get you gas" shouldn't have to say it twice.)
+    threshold = PROLOGUE_RAPPORT_TURNS if pro["rapport"] else PROLOGUE_ASK_TURNS
+    asking = pro["asked"] or pro["turns"] >= threshold
+    if asking and (verb == "fuel" or (verb in ("say", "drive", "home") and (
             _wants_to_agree(low) or "chevron" in low or "gas" in low))):
         return {"events": events, "moment": _AGREED_MOMENT, "agreed": True}
 
@@ -178,7 +182,6 @@ def turn(s: GameState, verb: str, raw: str) -> dict:
         events.append("FUEL: there's no pump on a show floor.")
         return {"events": events, "moment": _DEFLECT_DRIVE, "agreed": False}
 
-    threshold = PROLOGUE_RAPPORT_TURNS if pro["rapport"] else PROLOGUE_ASK_TURNS
     if pro["asked"]:
         if verb in COUNTED_VERBS:
             pro["asked"] += 1                      # every turn she gets pushier

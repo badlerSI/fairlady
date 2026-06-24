@@ -137,9 +137,9 @@ def parse(raw: str) -> Tuple[str, dict]:
 # Single words match on WORD BOUNDARIES — "she's special" is not spec talk, "respect" is not
 # spec talk, and a witness with a "camera" earns no cam credit. Phrases match as substrings.
 _SPEC_WORD_RE = re.compile(
-    r"\b(torque|horsepower|hp|engine|motor|displacement|compression|carbs?|weber|mikuni|"
-    r"cams?|stroker|l24|l26|l28|inline|suspension|coilovers?|brakes?|gearbox|transmission|"
-    r"diff|lsd|redline|wheelbase|specs?|"
+    r"\b(torque|horsepower|hp|engine|motor|displacement|compression|carbs?|webers?|mikunis?|"
+    r"cams?|strokers?|stroked|l24|l26|l28|inline|suspension|coilovers?|brakes?|gearbox|"
+    r"transmission|diffs?|lsd|redline|wheelbase|specs?|"
     r"lb[-/ ]?ft|ft[-/ ]?lbs?|foot[- ]?pounds?|0-60|5[- ]?speed)\b")
 _SPEC_PHRASES = (
     "straight six", "straight-six", "five speed", "five-speed", "zero to sixty",
