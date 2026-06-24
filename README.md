@@ -54,6 +54,10 @@ pay cash | pay card    cash leaves no trail; the card does
 sleep / motel          rest for the night — you must, most nights
 talk                   speak with the locals where the language isn't English
 who owned you before / where were you born / where'd you grow up   — her story, filled in over time
+i have $300 cash | withdraw $2000 | explore   claim what you carry · ATM (<$10k) · the glovebox ($500)
+parts / sell the carbon hood   strip the build off her for cash (a cheap stock part goes on)
+buy her | offer $5000   come to terms with the owner — the GOOD ending; unlocks legal race / show
+race | show            once she's yours: run a real track, or enter the show field — legal, by name
 disarm / draw          (Desperado) go for an armed clerk's gun; once you're armed, force your way out
 rewind                 back to the last checkpoint (twice in a row reaches one deeper) — she keeps the saves
 map / look / tow / new
@@ -74,7 +78,8 @@ backend/
     economy.py        gas pricing, fueling math, cash-vs-card
     commands.py       intent parser (the LLM never decides what happens)
     prologue.py       the favor — the SEMA show-floor opening; she asks, then begs
-    encounters.py     talk-your-way-out: traffic stops, the owner, the gas-station standoff (Desperado)
+    encounters.py     talk-your-way-out: stops, the owner, the standoff (Desperado), the buyout
+    garage.py         the economy: cash claims, ATM, glovebox, parts, racing, shows, going legit
     game.py           orchestration: new game, snapshots, suggested moves, turns
     save.py           JSON save/load
   adapters/
@@ -95,7 +100,7 @@ tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes
 tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
-backend/tests/        78 deterministic-core tests
+backend/tests/        97 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -137,6 +142,24 @@ wave-off to a ticket to a BOLO to busted — and fleeing is exactly as smart as 
 waiting at the next pump island. He's not there to fight; he's there to ask *why her*. He knows true
 love with cars — and what you two have is it, if you can say so out loud. (He's pining for someone
 else entirely. It all comes out in due course, like the best early-90s light novel games.)
+
+### Coming to terms — buy her, and go legit
+
+There's a way off the run that isn't a gun. The economy is **trust-the-player**: tell her what you're
+carrying (`i have $2000 cash` — any reasonable amount), hit an **ATM** for anything under $10k, and if
+you claim you're broke, there's **$500 in the glovebox** when you `explore`. Short on funds, you can
+**sell the build off her** — the carbon hood for a stock 280Z steel one, the triple Mikunis for a
+single Hitachi, the deep-dish wheels for steelies — each `sell` puts cash in your hand and a cheaper
+part on the car (and quietly tanks her value and her show-worthiness).
+
+Scrape together enough and, when the owner comes looking — or when you `drive me home` to the Oakland
+garage after meeting him — you can **`buy her`**. He doesn't sell at market; he sells to someone who'll
+love her, for a price that drops the more you've shown him (knowing Mayumi, real Riz). Come to terms
+and it's **the good ending**: the title's yours, **Heat is gone for good** (`no-heat` mode), and the
+running is over. Now you can do it all in the daylight — **`race`** her on a real circuit (Laguna Seca,
+Willow Springs, Sonoma…) or **`show`** her on a museum lawn or at Monterey, legal, with your name on
+the entry. Keep the build whole and she wins the lawn; strip her for the buy-in and she'll still race,
+but she can't win a concours stripped. Your call.
 
 ### Desperado Mode — armed and dangerous
 
@@ -248,7 +271,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-78 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+97 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
 ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
 traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,

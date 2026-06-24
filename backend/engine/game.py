@@ -10,7 +10,7 @@ from config import (
     OWNER_MIN_DAY, OWNER_MIN_SWIPES,
 )
 from engine.state import GameState
-from engine import world, rules, economy, save, drama, prologue, encounters
+from engine import world, rules, economy, save, drama, prologue, encounters, garage
 from engine.commands import parse
 from adapters import get_narrator
 from adapters.base import voices
@@ -272,9 +272,13 @@ def snapshot(s: GameState) -> dict:
         "hours_awake": round(rules.hours_awake(s), 1),
         "must_sleep": rules.hours_awake(s) >= AWAKE_FORCE_HOURS,
         "tired": rules.hours_awake(s) >= AWAKE_WARN_HOURS,
-        "heat": round(s.heat), "heat_label": _heat_label(s.heat, bool(s.flags.get("desperado"))),
+        "heat": 0 if s.flags.get("no_heat") else round(s.heat),
+        "heat_label": ("yours — free and clear" if s.flags.get("no_heat")
+                       else _heat_label(s.heat, bool(s.flags.get("desperado")))),
         "riz": round(s.riz),
-        "desperado": bool(s.flags.get("desperado")),
+        "desperado": bool(s.flags.get("desperado")) and not s.flags.get("no_heat"),
+        "bought": bool(s.flags.get("bought")),
+        "car_value": garage.car_value(s), "show_score": garage.show_score(s),
         "encounter_open": (encounters.stop_active(s) or encounters.owner_active(s)
                            or encounters.standoff_active(s)),
         "odometer_mi": round(s.odometer_mi), "adventures": list(s.adventures),
@@ -325,6 +329,8 @@ def choices(s: GameState) -> list:
     # mid-encounter: your mouth is the only tool you have (the gun, if you have it, is louder)
     if encounters.stop_active(s) or encounters.owner_active(s):
         c = [{"cmd": "look", "note": "stall for one second"}]
+        if encounters.owner_active(s) and not s.flags.get("bought"):
+            c.append({"cmd": "buy", "note": f"come to terms — buy her (~${encounters.owner_price(s):.0f})"})
         if s.flags.get("gun"):
             c.append({"cmd": "draw", "note": "armed and dangerous — force it"})
         return c
@@ -332,6 +338,15 @@ def choices(s: GameState) -> list:
     p = s.place
     out = [{"cmd": "look", "note": "where things stand"},
            {"cmd": "map", "note": "what's around"}]
+    # legal play, once she's yours
+    if s.flags.get("bought"):
+        if p.kind == "track":
+            out.append({"cmd": "race", "note": "run her, legal, in the daylight"})
+        if garage.can_show(s):
+            out.append({"cmd": "show", "note": "enter the show field"})
+    if (p.has("gas") or p.kind == "city") and not s.flags.get("bought"):
+        if garage.sold(s) != list(garage.PARTS):
+            out.append({"cmd": "parts", "note": "the build — sell bits for cash"})
     if p.has("gas"):
         price = economy.gas_price(p)
         out.append({"cmd": "fill", "note": f"top off @ ${price:.2f}/gal"})
@@ -473,9 +488,20 @@ def handle(s: GameState, raw: str) -> dict:
             save.save(s, "autosave")
             scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
             return _result(s, out["events"], scene, voice=audio)
-        if verb in ("drive", "home", "fuel", "sleep", "tow", "disarm", "draw"):
+        if verb == "buy" and encounters.owner_active(s):   # come to terms — the good ending
+            out = encounters.owner_buy(s, args.get("amount"))
+            good = out.get("moment", {}).get("good_ending")
+            if good:
+                checkpoint(s)
+            save.save(s, "autosave")
+            scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
+            welcome = ("愛車 — SHE'S YOURS\nLegally, on paper, free and clear. The running is over."
+                       if good else None)
+            return _result(s, out["events"], scene, voice=audio, welcome=welcome)
+        if verb in ("drive", "home", "fuel", "sleep", "tow", "disarm", "draw",
+                    "atm", "sell", "claim", "explore", "race", "show", "parts"):
             events = ["LAW: not while the flashlight's on you. Talk first." if in_stop
-                      else "OWNER: he's standing right there. Talk."]
+                      else "OWNER: he's standing right there. Talk — or make an offer ('buy')."]
             save.save(s, "autosave")
             scene, voice, audio = _narrate(s, events, "", drama={
                 "cue": "the driver tried to do anything except talk while "
@@ -569,21 +595,31 @@ def handle(s: GameState, raw: str) -> dict:
                 if npc:
                     events.append(f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
                                   "not switching to English.")
-                story_beat = _story_on_arrival(s)    # a set-piece reveal takes the moment
-                if not story_beat and not s.place.poi_id:
-                    fact = world.wiki_fact(s.place.lat, s.place.lon)   # ANY town brings something up
-                    if fact:
-                        events.append(f"FACT: {fact}")
-                if not story_beat:
-                    if _owner_should_appear(s):  # the man who built her finds you before the dice do
-                        events += encounters.start_owner(s)
-                        drama_ev = OWNER_ARRIVAL_MOMENT
-                    else:
-                        drama_ev = drama.maybe_event(s)  # else: nothing ever goes to plan
-                        if drama_ev:
-                            events += drama_ev["lines"]
-                        if encounters.stop_active(s) and drama_ev is None:
-                            drama_ev = encounters.WHISPER_MOMENT
+                # he said he'd wait at the Oakland garage to make the deal — and he's there,
+                # ahead of the homecoming tour and the dice
+                if (s.place.poi_id == "oakland_aisha" and s.flags.get("owner_met")
+                        and not s.flags.get("bought")):
+                    events += encounters.start_owner(s)
+                    events.append(f"OWNER: he's leaning on the roll-up, waiting. 'You came back. "
+                                  f"${encounters.owner_price(s):.0f} and she's yours — or talk, "
+                                  f"if you'd rather. Your call.'")
+                    drama_ev = OWNER_ARRIVAL_MOMENT
+                else:
+                    story_beat = _story_on_arrival(s)    # a set-piece reveal takes the moment
+                    if not story_beat and not s.place.poi_id:
+                        fact = world.wiki_fact(s.place.lat, s.place.lon)   # ANY town brings something up
+                        if fact:
+                            events.append(f"FACT: {fact}")
+                    if not story_beat:
+                        if _owner_should_appear(s):  # the man who built her finds you first
+                            events += encounters.start_owner(s)
+                            drama_ev = OWNER_ARRIVAL_MOMENT
+                        else:
+                            drama_ev = drama.maybe_event(s)  # else: nothing ever goes to plan
+                            if drama_ev:
+                                events += drama_ev["lines"]
+                            if encounters.stop_active(s) and drama_ev is None:
+                                drama_ev = encounters.WHISPER_MOMENT
             encounters.check_owner_deadline(s, events)
             # a clean arrival is a checkpoint — unless something's still standing at the window
             if (s.place.poi_id and s.status == "playing"
@@ -629,6 +665,39 @@ def handle(s: GameState, raw: str) -> dict:
     elif verb == "look":
         player_text = "(takes stock)"
         info = _look_text(s)                    # the promised ledger: place + numbers
+    elif verb == "claim":
+        events = garage.claim_cash(s, args.get("amount") or 0.0)
+        player_text = ""
+    elif verb == "atm":
+        events = garage.atm(s, args.get("amount"))
+        player_text = ""
+    elif verb == "explore":
+        events = garage.explore(s)
+        player_text = ""
+    elif verb == "parts":
+        info = garage.parts_text(s)
+        player_text = "(eyes the build)"
+    elif verb == "sell":
+        pid = garage.part_id(args.get("what", ""))
+        events = garage.sell_part(s, pid) if pid else [
+            "SELL: which part? 'parts' lists what's on her — the carbon hood, the Mikunis, the wheels."]
+        player_text = ""
+    elif verb == "race":
+        events = garage.race(s)
+        player_text = ""
+    elif verb == "show":
+        events = garage.show(s)
+        player_text = ""
+    elif verb == "buy":                          # not in front of the owner
+        if s.flags.get("bought"):
+            events = ["BUY: she's already yours. The pink slip's in the glovebox."]
+        elif s.flags.get("owner_met"):
+            events = [f"BUY: he's not here. He said he'd be at the AiSha garage in Oakland — "
+                      f"'drive me home' and bring ${s.flags.get('owner_price', encounters.owner_price(s)):.0f}."]
+        else:
+            events = ["BUY: there's no one to buy her from yet. The man who built her finds you "
+                      "when the trail runs hot enough — keep moving through the cities."]
+        player_text = ""
     elif verb in ("disarm", "draw"):            # the gun, with nothing to point it at
         events = ["GUN: nobody's holding a gun on you right now." if verb == "disarm"
                   else ("GUN: you keep the piece down — no call for it here." if s.flags.get("gun")
@@ -733,10 +802,16 @@ def _look_text(s: GameState) -> str:
         f"  {svc} · {p.kind}",
         f"  FUEL  {s.fuel_l:.1f}/{s.tank_l:.0f} L  (~{s.range_mi:.0f} mi)",
         f"  CASH  ${s.cash:.2f} · ${s.credit_available:.0f} card ({s.pay_method})",
-        f"  HEAT  {s.heat:.0f} ({_heat_label(s.heat)}) · RIZ ♠ {s.riz:.0f}",
+        (f"  HEAT  yours — free and clear · RIZ ♠ {s.riz:.0f}" if s.flags.get("no_heat")
+         else f"  HEAT  {s.heat:.0f} ({_heat_label(s.heat, bool(s.flags.get('desperado')))}) · "
+              f"RIZ ♠ {s.riz:.0f}"),
         f"  {dt.strftime('%a %b %-d, %-I:%M %p')} · day {s.day} · {s.odometer_mi:.0f} mi · "
         f"awake {rules.hours_awake(s):.0f}h",
     ]
+    if s.flags.get("bought"):
+        lines.append("  OWNED · pink slip in the glovebox · race tracks, show lawns, all legal")
+    elif garage.sold(s):
+        lines.append(f"  stripped: {', '.join(garage.PARTS[p]['stock'] for p in garage.sold(s))}")
     return "\n".join(lines)
 
 
@@ -759,6 +834,9 @@ def _help_text() -> str:
         "                        or any street address in NV/CA/AZ/UT. Add 'fast' to push it.\n"
         "  fill / gas $20 / gas 10 gal / gas 30 L     buy fuel (40 L tank, ~20 mpg)\n"
         "  pay cash | pay card   cash leaves no trail; the card does\n"
+        "  i have $300 cash | withdraw $2000 | explore   your wallet, an ATM (<$10k), the glovebox\n"
+        "  parts / sell the carbon hood   strip the build off her for cash (a stock part goes on)\n"
+        "  buy her               come to terms with the owner — the good ending; then 'race'/'show'\n"
         "  sleep / motel / camp  rest for the night (you must, most nights)\n"
         "  talk                  speak with the locals where the language isn't English\n"
         "  map / nearby gas      see what's around\n"

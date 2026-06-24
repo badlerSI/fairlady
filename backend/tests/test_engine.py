@@ -616,6 +616,117 @@ def test_cash_fallback_announces_itself():
     assert any("PAY: cash came up short" in e for e in evs)
 
 
+# ------------------------------------------------------------------ the garage economy
+def _at_town(seed=909, cash=0.0):
+    s = game.new_game(seed=seed, prologue_on=False)
+    s.place = world.get_poi("mesquite"); s.cash = cash
+    return s
+
+
+@pytest.mark.parametrize("raw,verb", [
+    ("i have $300 cash", "claim"), ("i'm broke", "claim"), ("withdraw $2000", "atm"),
+    ("explore", "explore"), ("check the glovebox", "explore"), ("sell the carbon hood", "sell"),
+    ("parts", "parts"), ("race", "race"), ("show her", "show"), ("buy her", "buy"),
+    ("offer $5000", "buy"), ("name your price", "buy"),
+])
+def test_parse_garage_verbs(raw, verb):
+    assert parse(raw)[0] == verb
+
+
+def test_money_extraction():
+    from engine.commands import _money
+    assert _money("withdraw $2,000") == 2000.0
+    assert _money("i have 5 grand") == 5000.0
+    assert _money("offer 3k for her") == 3000.0
+    assert _money("nothing here") is None
+
+
+def test_claim_cap_and_broke_then_glovebox():
+    s = _at_town()
+    game.handle(s, "i have $50000 cash")
+    from config import CASH_CLAIM_CAP
+    assert s.cash == CASH_CLAIM_CAP                 # "any reasonable amount" — capped
+    s2 = _at_town()
+    game.handle(s2, "i'm broke")
+    assert s2.cash == 0.0
+    r = game.handle(s2, "explore")
+    assert s2.cash == 500.0 and "glovebox" not in s2.flags or s2.flags.get("glovebox_found")
+    assert any("500" in e for e in r["events"])
+    r2 = game.handle(s2, "explore")               # only once
+    assert s2.cash == 500.0
+
+
+def test_atm_under_10k_and_camera_heat():
+    s = _at_town()
+    h0 = s.heat
+    game.handle(s, "withdraw $4000")
+    assert s.cash == 4000.0 and s.heat > h0
+    game.handle(s, "withdraw $99999")             # clamps to the account ceiling
+    from config import ATM_ACCOUNT_LIMIT
+    assert abs(s.cash - ATM_ACCOUNT_LIMIT) < 1.0
+    r = game.handle(s, "withdraw $100")
+    assert "tapped" in r["events"][0]
+
+
+def test_sell_part_pays_strips_value_and_changes_her():
+    from engine import garage
+    s = _at_town()
+    v0 = garage.car_value(s); show0 = garage.show_score(s); mpg0 = s.mpg
+    r = game.handle(s, "sell the carbon hood")
+    assert s.cash == 1800.0
+    assert garage.car_value(s) < v0 and garage.show_score(s) < show0
+    assert s.mpg < mpg0                             # steel hood is heavier
+    assert "hood" in garage.sold(s)
+    game.handle(s, "sell the mikunis"); game.handle(s, "sell the wheels")
+    assert garage.is_stripped(s)
+
+
+def test_buy_the_car_is_the_good_ending():
+    from engine import encounters
+    s = game.new_game(seed=44, prologue_on=False)
+    s.flags["owner_met"] = True; s.flags["knows_mayumi"] = True; s.riz = 25
+    s.fuel_l = 40.0; s.cash = 9000.0
+    s.place = world.get_poi("livermore")            # ~35 mi out — one tank
+    game.handle(s, "drive to oakland_aisha")        # he's waiting at the garage
+    assert encounters.owner_active(s)
+    price = encounters.owner_price(s)
+    assert price == 2000                            # 6000 − Mayumi 2500 − riz 1500, floored
+    r = game.handle(s, "buy her")
+    assert s.flags.get("bought") and s.flags.get("no_heat")
+    assert s.cash == 9000.0 - price
+    assert r["welcome"] and "YOURS" in r["welcome"]
+    assert game.snapshot(s)["heat"] == 0
+    # no_heat is permanent
+    s.heat = 90.0; rules._clamp_heat(s)
+    assert s.heat == 0.0
+
+
+def test_buy_when_broke_names_the_price_and_waits():
+    from engine import encounters
+    s = game.new_game(seed=8, prologue_on=False)
+    s.flags["owner_met"] = True; s.fuel_l = 40.0; s.cash = 100.0
+    s.place = world.get_poi("livermore")
+    game.handle(s, "drive to oakland_aisha")
+    assert encounters.owner_active(s)               # he's at the garage to deal
+    r = game.handle(s, "buy her")
+    assert not s.flags.get("bought")
+    assert any("AiSha" in e or "Oakland" in e for e in r["events"])
+    assert not encounters.owner_active(s)           # he closes and waits
+
+
+def test_race_and_show_require_ownership_then_reward():
+    s = _at_town(cash=0.0)
+    s.place = world.get_poi("laguna_seca")
+    assert any("title" in e.lower() or "missing" in e.lower()
+               for e in game.handle(s, "race")["events"])
+    s.flags["bought"] = True
+    r = game.handle(s, "race")
+    assert "RACE:" in r["events"][0] and s.place.kind == "track"
+    s.place = world.get_poi("petersen")             # a museum show field
+    r2 = game.handle(s, "show")
+    assert "SHOW:" in r2["events"][0]
+
+
 # ------------------------------------------------------------------ the gazetteer layer
 def test_gazetteer_towns_are_valid_and_beats_fire_once():
     from config import REGION_BBOX

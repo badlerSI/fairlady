@@ -120,6 +120,25 @@ OWNER_MIN_SWIPES = 3          # ...and a trail to work
 OWNER_DEADLINE_DAYS = 7       # the mid outcome: "one week — bring her home whole"
 OWNER_DEADLINE_HEAT = 40.0    # blow the deadline and he calls it in
 
+# --- Garage: claims, ATM, the glovebox, parts, ownership -------------------------
+# A trust-the-player economy (this is the GTA of AI-interaction games): you narrate what
+# you're carrying, within reason, and the engine holds you to it.
+CASH_CLAIM_CAP = 3000.0       # "any reasonable amount" you can claim to have on you
+ATM_ACCOUNT_LIMIT = 9999.0    # total you can ever pull from ATMs (under $10k)
+ATM_HEAT = 1.5                # an ATM camera clocks the car a little
+GLOVEBOX_CASH = 500.0         # the forgotten roll in the glovebox — found once, if you explore
+CAR_VALUE_BASE = 12000.0      # the bare shell's worth; the build is what makes her a SEMA car
+PART_VALUE_MULT = 3.0         # stripping her tanks the value faster than the parts resell
+
+# Buying her from the owner — the GOOD resolution. He doesn't sell at market; he sells to
+# someone who'll love her, for what they can scrape together. Floor drops with rapport.
+OWNER_BUY_FLOOR = 6000.0
+OWNER_BUY_MAYUMI_DISC = 2500.0   # ...less if you know what she meant to him
+OWNER_BUY_RIZ_DISC = 1500.0      # ...less if you've shown real style (riz ≥ 20)
+RIZ_BOUGHT = 25.0
+RIZ_RACE_WIN = 12.0
+RIZ_SHOW_WIN = 15.0
+
 # --- Clock ---------------------------------------------------------------------
 # Pacific Standard Time (Nov 7 2025 is after DST end). Stored as naive local.
 START_ISO = "2025-11-07T17:37:00"

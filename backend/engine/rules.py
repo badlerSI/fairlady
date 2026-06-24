@@ -70,6 +70,9 @@ def card_swipe_heat(state: GameState, place: Place) -> float:
 
 
 def _clamp_heat(state: GameState) -> None:
+    if state.flags.get("no_heat"):            # she's legally yours — nobody's looking anymore
+        state.heat = 0.0
+        return
     floor = DESPERADO_HEAT_FLOOR if state.flags.get("desperado") else 0.0
     state.heat = round(max(floor, min(100.0, state.heat)), 1)
 

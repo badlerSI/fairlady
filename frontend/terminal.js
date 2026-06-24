@@ -103,6 +103,7 @@ function updateDash(s) {
     <div class="d-row"><span class="d-k">CASH</span><span class="d-v">$${s.cash} · $${s.credit_available} card (${esc(s.pay_method)})</span></div>
     <div class="d-row"><span class="d-k">HEAT</span><span class="bar heat"><i style="width:${heatW}%"></i></span><span class="d-v dim">${esc(s.heat_label)}</span></div>
     <div class="d-row"><span class="d-k">RIZ</span><span class="d-v">♠ ${s.riz ?? 0}</span><span class="d-v dim">style, banked</span></div>` +
+    (s.bought ? `<div class="d-row owned"><span class="d-k">♥</span><span class="d-v">YOURS</span><span class="d-v dim">legal · race · show</span></div>` : ``) +
     (s.desperado ? `<div class="d-row desperado"><span class="d-k">⚠</span><span class="d-v">DESPERADO</span><span class="d-v dim">armed &amp; dangerous · 'draw'</span></div>` : ``);
 }
 

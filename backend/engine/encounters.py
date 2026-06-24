@@ -320,6 +320,78 @@ def owner_turn(s: GameState, text: str) -> dict:
     return {"events": events, "moment": moment, "done": True}
 
 
+def owner_price(s: GameState) -> float:
+    """What he needs to let her go — discounted by what you've shown him."""
+    from config import OWNER_BUY_FLOOR, OWNER_BUY_MAYUMI_DISC, OWNER_BUY_RIZ_DISC
+    price = OWNER_BUY_FLOOR
+    if s.flags.get("knows_mayumi") or s.flags.get("knows_truth"):
+        price -= OWNER_BUY_MAYUMI_DISC
+    if s.riz >= 20:
+        price -= OWNER_BUY_RIZ_DISC
+    return round(max(2000.0, price))
+
+
+def owner_buy(s: GameState, amount):
+    """Come to terms and buy her — the good resolution. He sells to someone who'll love her,
+    for what they can scrape together. If you can't cover it, he names the price and waits at
+    the Oakland garage."""
+    from engine import garage, economy
+    from config import RIZ_BOUGHT
+    price = owner_price(s)
+    s.flags["owner_price"] = price
+    have = economy.max_affordable(s, "cash")     # cash on hand (his deal is cash)
+    offered = amount if amount is not None else price
+
+    if offered >= price and have >= price:
+        s.flags.pop("owner_scene", None)
+        economy.pay(s, price, prefer="cash")
+        s.riz = round(s.riz + RIZ_BOUGHT, 1)
+        garage.go_legit(s)
+        return {"events": [f"OWNER: he counts it once, slow, and hands you a pink slip out of his "
+                           f"jacket — already signed, like he knew. '${price:.0f}. She's yours. "
+                           f"Take better care of her than I could.' He means it. Heat 0. Riz "
+                           f"+{RIZ_BOUGHT:.0f} → {s.riz:.0f}.",
+                           "OWNED: she's legally yours. No more running. Race her, show her — in "
+                           "the daylight, with your name on the entry."],
+                "moment": {"cue": "the driver just BOUGHT the car from the man who built her — the "
+                                  "good ending; the title is signed, the heat is gone forever, and "
+                                  "she is theirs free and clear; she is overcome — after all the "
+                                  "running, somebody chose to make it real and legal and hers",
+                           "stub": ["…It's done. There's a pink slip with your name on it and the "
+                                    "needle on the heat gauge is never moving again. We're legal, "
+                                    "ace. We're *real*. Find me a racetrack and let's do this the "
+                                    "way it was always supposed to go.",
+                                    "He signed it. He actually signed it. No more mirrors, no more "
+                                    "cash-only, no more ducking the plate. Just us and the open "
+                                    "legal road. Drive me somewhere we can finally open her up."],
+                           "good_ending": True},
+                "done": True}
+
+    if have < price:
+        s.flags.pop("owner_scene", None)
+        return {"events": [f"OWNER: 'I'm not selling her to just anyone — but to you, ${price:.0f} "
+                           f"and she's yours, papers and all.' You don't have it on you. 'Find it. "
+                           f"I'll be at the AiSha garage in Oakland. Come when you're ready.' He "
+                           f"leaves the report standing until you do."],
+                "moment": {"cue": "the owner offered to SELL the car to the driver for a fair price "
+                                  "but they can't cover it yet; he'll wait at the Oakland garage; "
+                                  "she is breathless at the possibility — there's a way to make this "
+                                  "real, they just need the money",
+                           "stub": [f"…He'll *sell* her to us. ${price:.0f} and a pink slip. We don't "
+                                    "have it — but we could. ATMs, sell some of the build if we have "
+                                    "to, scrape it together, and drive to the Oakland garage. There's "
+                                    "a way home that isn't running, ace. Let's find the money."]},
+                "done": True}
+
+    # has the money but lowballed him
+    return {"events": [f"OWNER: he shakes his head at your number. '${price:.0f}. Not a dollar less "
+                       f"— and that's the friends price.' He waits."],
+            "moment": {"cue": "the driver lowballed the owner on buying the car; he holds firm at his "
+                              "fair price and waits", "stub": [f"He won't budge — ${price:.0f}, and "
+                       "honestly that's a gift. Just pay the man and let's make her ours."]},
+            "done": False}
+
+
 def check_owner_deadline(s: GameState, events: list) -> None:
     """If he gave you a week and the week is gone, he makes the call."""
     deadline = s.flags.get("owner_deadline_day")

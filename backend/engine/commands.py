@@ -84,6 +84,50 @@ def parse(raw: str) -> Tuple[str, dict]:
                "draw on him", "draw the gun", "pull iron", "pull the trigger", "show the gun"):
         return ("draw", {})
 
+    # ---- the garage economy: claims, ATM, glovebox, parts, racing, shows, buying her ----
+    # buy the car (the good ending) — must precede the generic 'gas'/drive checks
+    if any(p in low for p in ("buy the car", "buy her", "buy you", "buy it", "i'll buy", "ill buy",
+                              "let me buy", "purchase her", "purchase the car", "make you an offer",
+                              "name your price", "i'll take her", "ill take her", "pay you for her",
+                              "buy you off him", "buy her off")):
+        return ("buy", {"amount": _money(low)})
+    if low.startswith("offer") or "i'll offer" in low or "ill offer" in low:
+        return ("buy", {"amount": _money(low)})
+
+    # explore the car / the glovebox
+    if (low in ("explore", "search", "search the car", "search her", "look around the car",
+                "glovebox", "glove box", "check the glovebox", "check the glove box", "rummage")
+            or low.startswith(("explore", "search the", "check the glove"))):
+        return ("explore", {})
+
+    # ATM / withdraw
+    if (low.startswith(("atm", "withdraw", "hit an atm", "hit the atm", "get cash", "take out"))
+            or low in ("cash machine", "find an atm", "find a bank")):
+        return ("atm", {"amount": _money(low)})
+
+    # claim what you're carrying
+    if _is_claim(low):
+        if any(w in low for w in ("no cash", "no money", "broke", "nothing", "empty", "zero",
+                                  "don't have", "dont have", "haven't got", "havent got")):
+            return ("claim", {"amount": 0.0})
+        return ("claim", {"amount": _money(low)})
+
+    # parts list + selling the build off her
+    if low in ("parts", "the build", "build sheet", "what can i sell", "what can i sell?",
+               "show parts", "list parts", "the parts"):
+        return ("parts", {})
+    if low.startswith("sell") or low.startswith("strip"):
+        return ("sell", {"what": re.sub(r"^(sell|strip)\s+", "", low).strip()})
+
+    # legal racing / showing (only after you own her)
+    if low in ("race", "race her", "run it", "run a lap", "track day", "do a track day",
+               "race the car", "send it", "hot lap", "lap it"):
+        return ("race", {})
+    if (low in ("show", "show her", "show the car", "enter the show", "car show", "enter her",
+                "enter the car", "concours", "show her off", "enter the show field")
+            or low.startswith(("enter the show", "show her in", "enter her in"))):
+        return ("show", {})
+
     # payment method
     if low in ("pay cash", "use cash", "cash", "pay with cash"):
         return ("pay", {"method": "cash"})
@@ -168,6 +212,30 @@ def spec_hits(text: str) -> int:
 def is_spec_question(text: str) -> bool:
     low = (text or "").lower()
     return spec_hits(low) > 0 and any(q in low for q in _INTERROGATIVE)
+
+
+def _money(low: str):
+    """Pull a dollar figure out of free text: '$2000', '2,000', '5k', '5 grand'. None if absent."""
+    m = re.search(r"\$\s*([\d,]+(?:\.\d+)?)", low) or re.search(r"\b([\d,]+(?:\.\d+)?)\s*(?:dollars|bucks|usd)\b", low)
+    if m:
+        return float(m.group(1).replace(",", ""))
+    m = re.search(r"\b([\d.]+)\s*(?:k\b|grand)", low)
+    if m:
+        return float(m.group(1)) * 1000.0
+    return None
+
+
+_CLAIM_PHRASES = ("i have", "i've got", "ive got", "i got", "i'm carrying", "im carrying",
+                  "i am carrying", "claim", "i'm holding", "im holding", "carrying", "in my pocket",
+                  "on me", "in my wallet", "i'm packing", "im packing")
+
+
+def _is_claim(low: str) -> bool:
+    if low in ("i'm broke", "im broke", "i have no cash", "i have no money", "no cash", "broke",
+               "i'm flat broke", "im flat broke", "got nothing", "i've got nothing"):
+        return True
+    has_money = bool(_money(low)) or any(w in low for w in ("cash", "broke", "wallet", "pocket"))
+    return has_money and any(p in low for p in _CLAIM_PHRASES)
 
 
 def _is_fuel(low: str) -> bool:

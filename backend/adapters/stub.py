@@ -40,6 +40,35 @@ class StubNarrator(Narrator):
                 "Out of fuel, out of options. A flatbed's the only exit, and it's loud about it.",
                 "Stranded. Pretty paperweight, like I warned. Call the tow and swallow the bill.",
             ])
+        if "OWNED" in kinds:
+            return _pick(rng, [
+                "Legal. Ours. The heat gauge is a decoration now. Point me at a track and let's "
+                "find out what she does in the daylight.",
+                "Pink slip, real name, no mirrors. I didn't know a car could feel like this. Drive "
+                "me somewhere we can finally open her up — properly.",
+            ])
+        if "RACE" in kinds:
+            rl = kinds["RACE"].lower()
+            if "win" in rl: return "We WON. Flag and a photo and your name on the sheet. That's the only kind of fast that lasts."
+            if "podium" in rl: return "Podium. Clean. Did you feel that corner? I felt that corner."
+            if "title" in rl or "missing" in rl: return "They check titles at the gate, ace. Can't race a ghost. Make her real first."
+            return "Mid-pack, but legal and in the sun. The stripped bits show on the clock — worth every part we kept."
+        if "SHOW" in kinds:
+            sl = kinds["SHOW"].lower()
+            if "best in class" in sl: return "Best in class. The spade, the lines, the story. I told you she was a SEMA car."
+            if "stripped" in sl or "shake their heads" in sl: return "Too much of the build is gone — you can race me stripped, but you can't win a lawn. Should've kept the carbon."
+            return "A show field wants a title and a name. Not while she's stolen."
+        if "SELL" in kinds:
+            return _pick(rng, [
+                "There goes a piece of who I was, for folding money. Don't sell the soul of me unless we have to.",
+                "Lighter wallet for them, lighter car for us. Stock steel where the carbon lived. It'll run. It won't sing.",
+            ])
+        if "EXPLORE" in kinds:
+            return "Glovebox archaeology. Somebody's rainy-day roll — ours now. Don't spend it on something stupid."
+        if "ATM" in kinds:
+            return "Cash machine money spends clean once it's in your hand. The camera saw you, though — it always does."
+        if "CASH" in kinds:
+            return "However much you say you've got, that's what we play with. I'll hold you to it.";
         if "NAV" in kinds:
             nav = kinds["NAV"].lower()
             if "won't start" in nav or "guaranteed shoulder" in nav:

@@ -173,6 +173,30 @@ section) + wiring:
 - Knobs in config.py under "Desperado Mode". Prose is DRAFT for Ben. 8 tests (`test_*desperado*`,
   `test_*standoff*`, `test_*disarm*`, `test_draw_*`, `test_talking_the_clerk_down*`).
 
+## 0.9 The garage economy + the GOOD ending (2026-06-10, Ben's request)
+
+`engine/garage.py` + wiring. A trust-the-player economy and what BUYING the car unlocks.
+- **Claims/ATM/glovebox**: `claim` ("i have $X cash", capped `CASH_CLAIM_CAP` 3000, tops up not
+  overwrite; "i'm broke" only zeros if you're already <$100). `atm`/`withdraw` (running total under
+  `ATM_ACCOUNT_LIMIT` 9999, +`ATM_HEAT` camera ping; needs gas/city POI). `explore` → glovebox $500
+  once (`glovebox_found`). Parser `_money()` handles $/k/grand; `_is_claim` searches anywhere.
+- **Parts** (`garage.PARTS`): hood/wheels/carbs/exhaust/coilovers/seats. `parts` lists, `sell <part>`
+  (alias-matched) pays resale, appends to `flags.parts_sold`, swaps in the cheap stock part, applies
+  mpg/torque effects (carbs sold → +1.6 mpg −70 tq; hood → −0.4 mpg). `car_value` and `show_score`
+  drop; `is_stripped` ≥3 sold. Only at gas/city POIs.
+- **The GOOD ending — buy her**: `buy`/`offer $X` in the owner encounter → `encounters.owner_buy`.
+  `owner_price` = `OWNER_BUY_FLOOR` 6000 − Mayumi 2500 − riz(≥20) 1500, floor 2000, paid CASH. Afford
+  it → `garage.go_legit`: `bought`+`no_heat`+`report_withdrawn`, pops `desperado`, heat 0, +25 riz,
+  checkpoint, "SHE'S YOURS" welcome. Can't afford → he names the price and waits; **drive to
+  oakland_aisha after `owner_met` re-summons him** (takes precedence over the homecoming story beat).
+- **no_heat**: `rules._clamp_heat` forces heat 0 when set; snapshot heat/label reflect it; law/owner/
+  plate dramas already gated on `report_withdrawn`.
+- **Legal `race`/`show`** (require `bought`): `race` at kind==track (perf from remaining build − seeded
+  roll → win/podium/midpack + prize + riz); `show` at museums/`SHOW_POIS` (needs show_score ≥90 =
+  mostly-whole build → best-in-class + prize + riz; stripped → refused). Pre-ownership both refuse
+  ("they check titles at the gate").
+- Dash badges: red DESPERADO + cyan OWNED (`snapshot.bought` → `.d-row.owned`). 97 tests. Prose draft.
+
 ## 1. Run it
 
 ```bash
