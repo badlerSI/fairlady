@@ -47,6 +47,19 @@ OWNER_ARRIVAL_MOMENT = {
              "Just — be true. It's the only language he respects."],
 }
 
+# When the loop won't catch — you battered the same wall too many times. DRAFT.
+REWIND_STUCK_MOMENT = {
+    "cue": "the driver keeps rewinding to the exact same moment and trying the exact same thing, "
+           "and the loop has stopped folding for them here — she tells them, not unkindly, that "
+           "some walls aren't meant to break at the last second; the mistake was earlier, and they "
+           "have to go back further and change something that actually mattered",
+    "stub": ["It's not catching, ace. Same corner, same wall, same wreck — the timeline's made up "
+             "its mind about this minute. The thing that doomed us happened further back. Pull up "
+             "'branches' and fold to somewhere that still had a choice in it.",
+             "No. Not this one. Some minutes are load-bearing and this is one of them. Go back to "
+             "before it was already too late — or we live with what we did."],
+}
+
 # Her line when the world snaps back. She keeps the saves — the rewind is hers. DRAFT.
 REWIND_MOMENT = {
     "cue": "time folded back to the last checkpoint and only the two of you remember the timeline "
@@ -190,58 +203,117 @@ def new_game(seed: int | None = None, prologue_on: bool = True) -> GameState:
     base = s.heat
     s.heat = 0.0
     _heat.add(s, base, "she's a stolen SEMA show car — the baseline", "spike")
-    save.delete(f"chk1_{seed}")            # a fresh game owns a fresh checkpoint ring
-    save.delete(f"chk2_{seed}")
+    for n in range(1, TIMELINE_KEEP + 2):  # a fresh game owns a fresh timeline
+        save.delete(_cp(s, n))
     if prologue_on:
         prologue.start(s)
     else:
         s.flags["prologue_done"] = True
         s.flags["favor_filled"] = True
-        checkpoint(s)
+        checkpoint(s, "at the Chevron, favor done")
     save.save(s, "autosave")
     return s
 
 
-# --------------------------------------------------------------------- checkpoints
-# She keeps the saves — the compute behind the dash. Checkpoints land on every clean POI
-# arrival, after sleep, after the favor, and after a resolved encounter. 'rewind' goes back
-# one; a second consecutive rewind reaches one checkpoint deeper. Riz survives the fold —
-# only you two remember.
-def _chk(s: GameState, n: int) -> str:
-    return f"chk{n}_{s.flags.get('sid', 'x')}"
+# --------------------------------------------------------------------- the timeline (branches)
+# She keeps the saves — the compute behind the dash. Every clean beat (arrival, sleep, the favor,
+# a survived encounter) lands a labeled CHECKPOINT on a navigable timeline, like commits on a
+# branch. 'rewind' jumps to the most recent; 'branches' lists them; 'branch N' / 'rewind to <X>'
+# jumps to any of them. Brute-forcing the SAME wall costs escalating Riz and she'll tell you when
+# it's the wrong wall — go back further. And sometimes the loop simply doesn't reach far enough.
+TIMELINE_KEEP = 8
+META_PERSIST = ("timeline", "cp_seq", "rewinds", "rewinds_here", "last_rewind_seq")
 
 
-def checkpoint(s: GameState) -> None:
-    if save.exists(_chk(s, 1)):
-        prev = save.load(_chk(s, 1))
-        save.save(prev, _chk(s, 2))
+def _cp(s: GameState, seq: int) -> str:
+    return f"cp_{s.flags.get('sid', 'x')}_{seq}"
+
+
+def checkpoint(s: GameState, label: str = "a checkpoint") -> None:
+    seq = s.flags.get("cp_seq", 0) + 1
+    s.flags["cp_seq"] = seq
+    s.flags["rewinds_here"] = 0            # reaching a NEW state resets the brute-force counter
     s.flags.pop("rewound_once", None)
-    save.save(s, _chk(s, 1))
+    tl = s.flags.setdefault("timeline", [])
+    tl.append({"seq": seq, "label": label, "loc": (s.place.name or "")[:26],
+               "day": s.day, "turn": s.turn})
+    while len(tl) > TIMELINE_KEEP:
+        old = tl.pop(0)
+        save.delete(_cp(s, old["seq"]))
+    save.save(s, _cp(s, seq))             # the saved state carries its own timeline snapshot
 
 
-def rewind(s: GameState):
-    """In-place restore to the last checkpoint. Returns (events, moment|None).
-    Riz REVERTS with the world (minus the fee) — style earned in a timeline that never
-    happened never happened either, which is what keeps rewind-loops from farming it."""
-    deeper = bool(s.flags.get("rewound_once")) and save.exists(_chk(s, 2))
-    chk = save.load(_chk(s, 2) if deeper else _chk(s, 1))
+def _resolve_target(s: GameState, target):
+    """Pick a timeline entry from a number (1 = most recent) or a fuzzy label/place match."""
+    tl = s.flags.get("timeline", [])
+    if not tl:
+        return None
+    if target is None:
+        return tl[-1]
+    if isinstance(target, int):
+        idx = len(tl) - target                    # 1 = newest
+        return tl[idx] if 0 <= idx < len(tl) else None
+    q = str(target).lower()
+    for e in reversed(tl):                         # newest match first
+        if q in e["label"].lower() or q in e["loc"].lower():
+            return e
+    return None
+
+
+def branches_text(s: GameState) -> str:
+    tl = s.flags.get("timeline", [])
+    if not tl:
+        return "TIMELINE: nothing saved yet — the loop has nothing to fold back to."
+    lines = ["TIMELINE  (the branches you can fold back to — 'branch N' or 'rewind to <place>'):"]
+    for i, e in enumerate(reversed(tl)):
+        n = i + 1
+        here = "  ← you rewound here" if e["seq"] == s.flags.get("last_rewind_seq") else ""
+        lines.append(f"  {n:>2}.  Day {e['day']} · {e['loc']} — {e['label']}{here}")
+    lines.append("  (1 is the most recent. Folding back to the SAME wall costs more each time — "
+                 "if it won't break, go back further.)")
+    return "\n".join(lines)
+
+
+def rewind(s: GameState, target=None):
+    """Fold back to a checkpoint on the timeline. Returns (events, moment|None).
+    Riz reverts with the world (minus a fee that GROWS the more you batter one wall) — so a
+    timeline you never lived can't farm style, and brute-forcing one spot gets expensive."""
+    entry = _resolve_target(s, target)
+    if entry is None:
+        if target is not None:
+            return (["REWIND: no branch like that on the timeline. 'branches' lists what you can "
+                     "reach."], None)
+        return (["REWIND: no loop reaches before this — you were already past saving. 'new' to "
+                 "start over, ace."], None)
+    chk = save.load(_cp(s, entry["seq"]))
     if chk is None:
-        return (["REWIND: there's no checkpoint behind you yet."], None)
-    riz = max(0.0, round(chk.riz - RIZ_REWIND_COST, 1))
-    rewinds = s.flags.get("rewinds", 0) + 1
-    # the curse and the gun belong to you, not to the timeline — carry them across the fold
-    meta = {k: s.flags.get(k) for k in encounters.DESPERADO_PERSIST if k in s.flags}
+        return (["REWIND: that branch is gone — the loop only holds the last few. 'branches' shows "
+                 "what's left."], None)
+
+    same_wall = (target is None and entry["seq"] == s.flags.get("last_rewind_seq"))
+    here = s.flags.get("rewinds_here", 0) if same_wall else 0
+    # sometimes the third time is NOT the charm: batter the exact same wall four times and the
+    # timeline sets — she tells you honestly to break a different one (use a branch further back)
+    if same_wall and here >= 4:
+        return (["REWIND: …it won't fold. Same moves, same wall, same ending — the timeline's set "
+                 "here, ace. This isn't the moment to break. Go back FURTHER ('branches') and "
+                 "change something that mattered, or live with it."], REWIND_STUCK_MOMENT)
+    cost = RIZ_REWIND_COST + here                  # 2, then 3, 4, 5… on the same wall
+
+    riz = max(0.0, round(chk.riz - cost, 1))
+    meta = {k: s.flags.get(k) for k in META_PERSIST if k in s.flags}
+    meta.update({k: s.flags.get(k) for k in encounters.DESPERADO_PERSIST if k in s.flags})
     s.__dict__.update(GameState.from_dict(chk.to_dict()).__dict__)
     s.riz = riz
-    s.flags["rewinds"] = rewinds
-    s.flags["rewound_once"] = True
     s.flags.update(meta)
-    if deeper:
-        save.save(s, _chk(s, 1))             # collapse the ring — this is the floor now
+    s.flags["rewinds"] = s.flags.get("rewinds", 0) + 1
+    s.flags["rewinds_here"] = here + 1
+    s.flags["last_rewind_seq"] = entry["seq"]
     save.save(s, "autosave")
-    events = [f"REWIND: the world folds back to {s.place.name}. {rules._clock_str(s)}. "
-              f"Riz −{RIZ_REWIND_COST:.0f} → {s.riz:.0f}. "
-              "(Rewinding again, before anything saves, reaches one checkpoint deeper.)"]
+    far = "" if same_wall or target is None else "  (a different branch — the counter resets)"
+    nudge = ("  Same wall again — try something new or go back further." if here >= 2 else "")
+    events = [f"REWIND: the world folds back to {s.place.name}, Day {s.day}. "
+              f"Riz −{cost:.0f} → {s.riz:.0f}.{far}{nudge}"]
     return (events, REWIND_MOMENT)
 
 
@@ -286,7 +358,7 @@ def snapshot(s: GameState) -> dict:
 
 # --------------------------------------------------------------------- choices
 def choices(s: GameState) -> list:
-    can_rewind = save.exists(_chk(s, 1))
+    can_rewind = bool(s.flags.get("timeline"))
     if s.status == "stranded":
         gas = world.nearest_with_service(s.place, "gas", limit=1)
         c = []
@@ -431,19 +503,16 @@ def _encounter(s, force=False):
 def handle(s: GameState, raw: str) -> dict:
     verb, args = parse(raw)
 
-    # "Rewind again, before anything else happens" is what reaches one checkpoint deeper —
-    # ANY intervening turn (even a busted standoff attempt that didn't save) breaks the chain.
-    if verb != "rewind":
-        s.flags.pop("rewound_once", None)
-
     # ---- pure console verbs, available everywhere ----
     if verb == "help":
         return _result(s, [], "", info=_help_text())
     if verb == "save":
         save.save(s, "autosave")
         return _result(s, [], "", info="Saved.")
+    if verb == "branches":            # the git-like timeline selector
+        return _result(s, [], "", info=branches_text(s))
     if verb == "rewind":              # the Edge-of-Tomorrow escape — works from any ending
-        events, moment = rewind(s)
+        events, moment = rewind(s, args.get("target"))
         if moment is None:
             return _result(s, events, "")
         scene, voice, audio = _narrate(s, events, "", drama=moment)
@@ -473,9 +542,9 @@ def handle(s: GameState, raw: str) -> dict:
                 return _result(s, events, scene, voice=audio)
             out = encounters.standoff_turn(s, verb, raw)
             if out.get("moment", {}).get("unlock"):
-                checkpoint(s)         # the special checkpoint: you walk out armed
+                checkpoint(s, "walked out armed — Desperado")  # the special checkpoint
             elif out["done"] and s.status == "playing":
-                checkpoint(s)
+                checkpoint(s, "survived the standoff")
             save.save(s, "autosave")
             scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
             return _result(s, out["events"], scene, voice=audio)
@@ -489,7 +558,7 @@ def handle(s: GameState, raw: str) -> dict:
             out = encounters.owner_buy(s, args.get("amount"))
             good = out.get("moment", {}).get("good_ending")
             if good:
-                checkpoint(s)
+                checkpoint(s, "bought her — she's yours")
             save.save(s, "autosave")
             scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
             welcome = ("愛車 — SHE'S YOURS\nLegally, on paper, free and clear. The running is over."
@@ -522,7 +591,7 @@ def handle(s: GameState, raw: str) -> dict:
         out = (encounters.stop_turn if in_stop else encounters.owner_turn)(s, raw)
         events = out["events"]
         if out["done"] and s.status == "playing":
-            checkpoint(s)             # survived it — that's worth saving
+            checkpoint(s, "talked your way clear")  # survived it
         save.save(s, "autosave")
         scene, voice, audio = _narrate(s, events, "", drama=out["moment"])
         return _result(s, events, scene, voice=audio)
@@ -563,7 +632,7 @@ def handle(s: GameState, raw: str) -> dict:
             s.flags.pop("prologue", None)
             s.flags["prologue_done"] = True
             events += rules.drive(s, world.get_poi("sema_chevron"))   # down the block
-            checkpoint(s)
+            checkpoint(s, "the favor — down the block")
             save.save(s, "autosave")
             scene, voice, audio = _narrate(s, events, "", drama=out["moment"])
             return _result(s, events, scene, voice=audio, welcome=TITLE_DROP)
@@ -659,7 +728,7 @@ def handle(s: GameState, raw: str) -> dict:
             # a clean arrival is a checkpoint — unless something's still standing at the window
             if (s.place.poi_id and s.status == "playing"
                     and not encounters.stop_active(s) and not encounters.owner_active(s)):
-                checkpoint(s)
+                checkpoint(s, f"arrived {s.place.name}")
         player_text = ""
     elif verb == "fuel":
         events = rules.fuel(s, dollars=args.get("dollars"), liters=args.get("liters"),
@@ -672,10 +741,10 @@ def handle(s: GameState, raw: str) -> dict:
             events.append("FAVOR: the tank is full. The favor is done — she's ready to load out "
                           "for home tomorrow. ...She goes quiet a second.")
             drama_ev = prologue.favor_done_moment()
-            checkpoint(s)
+            checkpoint(s, "tank full — the favor's done")
         elif s.status == "playing" and s.fuel_l >= s.tank_l - 0.5 and any(
                 e.startswith("FUEL: pumped") for e in events):
-            checkpoint(s)             # a full tank is a clean save point (and sets up the standoff)
+            checkpoint(s, "topped off")  # a full tank is a clean save point (and sets up the standoff)
         # a curious clerk may clock the show car at a bright, busy pump
         if (s.status == "playing" and any(e.startswith("FUEL: pumped") for e in events)
                 and not s.flags.get("clerk_curious")):
@@ -689,13 +758,13 @@ def handle(s: GameState, raw: str) -> dict:
         events = rules.sleep(s, kind=args.get("kind"), prefer=args.get("prefer"),
                              rough=args.get("rough", False))
         if s.status == "playing":
-            checkpoint(s)             # a survived night is a checkpoint
+            checkpoint(s, "a night's rest")  # a survived night is a checkpoint
         player_text = ""
     elif verb == "tow":
         events = rules.tow(s, prefer=args.get("prefer"))
         if s.status == "playing":
             story_beat = _story_on_arrival(s)    # a flatbed arrival still counts as arriving
-            checkpoint(s)             # rescued — don't make them re-buy the flatbed
+            checkpoint(s, "towed off the shoulder")  # rescued
         player_text = ""
     elif verb == "talk":
         npc = _encounter(s, force=True)
@@ -729,6 +798,34 @@ def handle(s: GameState, raw: str) -> dict:
         from engine import heat as _heat
         events = _heat.lie_low(s)
         player_text = ""
+    elif verb == "bet":
+        out = garage.gamble(s, args.get("amount"), args.get("pick"))
+        events = out["events"]
+        if out.get("won"):                            # bank the win so a later loss can't rewind past it
+            checkpoint(s, f"won at the tables — ${s.cash:,.0f}")
+        drama_ev = out.get("moment")
+        player_text = ""
+    elif verb == "rob":
+        out = encounters.rob_bank(s)
+        events = out["events"]
+        if s.status == "playing" and s.flags.get("robbed_banks"):
+            checkpoint(s, f"robbed a bank — ${s.cash:,.0f}")
+        drama_ev = out.get("moment")
+        player_text = ""
+    elif verb == "flirt":
+        from engine import dating
+        out = dating.flirt(s)
+        events = out["events"]
+        drama_ev = out.get("moment")
+        player_text = ""
+    elif verb == "killengine":
+        from engine import dating
+        events = dating.kill_engine(s)
+        player_text = ""
+    elif verb == "compliment":
+        from engine import dating
+        events = dating.compliment(s)
+        player_text = "(sweet-talks her)"
     elif verb == "race":
         events = garage.race(s)
         player_text = ""
@@ -883,13 +980,16 @@ def _help_text() -> str:
         "  pay cash | pay card   cash leaves no trail; the card does\n"
         "  i have $300 cash | withdraw $2000 | explore   your wallet, an ATM (<$10k), the glovebox\n"
         "  parts / sell the carbon hood   strip the build off her for cash (a stock part goes on)\n"
-        "  buy her               come to terms with the owner — the good ending; then 'race'/'show'\n"
-        "  sleep / motel / camp  rest for the night (you must, most nights)\n"
+        "  buy her               come to terms with the owner ($80k — she's insured for $100k); then race/show\n"
+        "  bet $1000 on <team>   gamble at the Vegas/Reno tables to raise it (rewind a loss, re-roll)\n"
+        "  rob the bank          (armed only) a heist — big take, big heat\n"
+        "  flirt / compliment her   pick up a date anywhere there's a crowd — but she's watching\n"
+        "  sleep / motel / airbnb / camp   rest for the night (airbnb = cash, off the record)\n"
         "  talk                  speak with the locals where the language isn't English\n"
         "  map / nearby gas      see what's around\n"
         "  where can we get to on one tank?           the range question, with real math\n"
-        "  look                  fuel, money, time, heat, riz\n"
-        "  rewind                back to the last checkpoint (twice in a row goes one deeper)\n"
+        "  look | heat report    fuel/money/time · the credit-karma heat dashboard\n"
+        "  rewind | branches | branch N   fold the timeline back; list checkpoints; jump to one\n"
         "  tow                   the only way off the shoulder — and a fast way to get caught\n"
         "  save / new            \n"
         "Just typing to her also works. She has opinions. If the law pulls you over, your\n"

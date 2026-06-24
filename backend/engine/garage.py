@@ -237,6 +237,72 @@ def show(s: GameState) -> list:
             "She idles like she's purring."]
 
 
+# ---------------------------------------------------------------- gambling (raise the $80k)
+# The tables don't care how you got rich. And here's the open secret: she keeps the saves, so a
+# losing bet is a bet you can take BACK — rewind and re-roll. The catch is the rewind costs Riz
+# (escalating), so cheating the house with the loop is a real trade: money for style.
+GAMBLE_POIS = {"las_vegas", "fremont", "sphere", "neon_museum", "lv_motor_speedway", "primm",
+               "laughlin", "mesquite", "jackpot_nv", "wendover_ut", "west_wendover", "reno",
+               "carson_city", "stateline", "pahrump"}
+_TEAMS = ["the Raiders", "the Aces", "the Knights", "UNLV", "the Rebels", "the over",
+          "black", "the hard eight", "red 7", "a parlay you don't understand"]
+
+
+def can_gamble(s: GameState) -> bool:
+    return (s.place.poi_id in GAMBLE_POIS or "casino" in (s.place.blurb or "").lower()
+            or "sportsbook" in (s.place.blurb or "").lower())
+
+
+def gamble(s: GameState, amount, pick=None) -> dict:
+    """Bet `amount` at a Nevada table/book. ~47% to win even money (house edge). Returns
+    {events, won}. A WIN should be checkpointed by the caller (banking it); a loss is left
+    un-banked so 'rewind' folds back to before the bet — the cheat. The roll varies with the
+    rewind count, so re-rolling after a fold actually re-rolls."""
+    if s.flags.get("bought") or s.flags.get("no_heat"):
+        return {"events": ["BET: you own her free and clear — no need to chase a number anymore. "
+                           "But sure, blow some winnings for fun if you like."], "won": None}
+    if not can_gamble(s):
+        return {"events": ["BET: no action here. The tables are in Vegas, Laughlin, Reno, the "
+                           "border books — go where the money moves."], "won": None}
+    if amount is None or amount <= 0:
+        return {"events": ["BET: name a number. 'bet $1000' — and the wad runs out fast if the "
+                           "loop's not catching."], "won": None}
+    if amount > s.cash + 1e-6:
+        return {"events": [f"BET: you've got ${s.cash:,.0f}. Can't lay down what you don't have."],
+                "won": None}
+    import random
+    rng = random.Random(s.seed * 16411 + s.turn * 911 + s.flags.get("rewinds", 0) * 2749 + 5)
+    pick = pick or _TEAMS[rng.randrange(len(_TEAMS))]
+    won = rng.random() < 0.47
+    if won:
+        s.cash = round(s.cash + amount, 2)
+        s.flags["gambled_up"] = s.flags.get("gambled_up", 0) + amount
+        return {"events": [f"BET: ${amount:,.0f} on {pick} — and it HITS. You double it. "
+                           f"Cash ${s.cash:,.0f}.  (She just banked this — keep it or push it.)"],
+                "won": True,
+                "moment": {"cue": f"the driver bet ${amount:,.0f} at a Nevada table on {pick} and "
+                                  "won, doubling it — she's banking the win so a future loss can't "
+                                  "rewind past it; she's gleeful and a little crooked about it",
+                           "stub": [f"{pick.upper()}. We DOUBLED it. ${s.cash:,.0f} and climbing — I "
+                                    "banked this one, so push your luck or walk, but you can't lose "
+                                    "this back. That's the cheat, baby.",
+                                    "Hit. We're up. I just saved this exact second, so if the next "
+                                    "bet eats it, we fold right back here. The house has no idea "
+                                    "who it's playing."]}}
+    s.cash = round(s.cash - amount, 2)
+    return {"events": [f"BET: ${amount:,.0f} on {pick} — and it misses. Gone. Cash ${s.cash:,.0f}. "
+                       "('rewind' to take that bet back and roll again — costs you Riz, not cash.)"],
+            "won": False,
+            "moment": {"cue": f"the driver bet ${amount:,.0f} on {pick} and lost it; she reminds "
+                              "them, dry, that a losing bet is the one thing in this world they can "
+                              "actually take back — rewind and re-roll, at the cost of style",
+                       "stub": [f"{pick} let us down. ${amount:,.0f}, gone. …Or is it? Rewind, ace. "
+                                "We take that bet back and roll again. It costs Riz, not cash — the "
+                                "only honest cheat in Nevada.",
+                                "Lost it. Which, lucky us, is the kind of mistake the loop was made "
+                                "for. Fold back and bet smarter — or bet the same and pray harder."]}}
+
+
 # ---------------------------------------------------------------- the good ending
 def go_legit(s: GameState) -> None:
     """She's yours, on paper. Heat's gone for good; the law and the owner stop hunting — and you

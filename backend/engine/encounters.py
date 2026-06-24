@@ -329,29 +329,54 @@ def owner_turn(s: GameState, text: str) -> dict:
 
 
 def owner_price(s: GameState) -> float:
-    """What he needs to let her go — discounted by what you've shown him, but every part you've
-    stripped off his build raises it (he won't hand a title to a shell, and it costs to undo).
-    That makes 'sell the car to fund buying the car' a losing trade, by design."""
-    from config import OWNER_BUY_FLOOR, OWNER_BUY_MAYUMI_DISC, OWNER_BUY_RIZ_DISC
+    """What he needs to let her go. She's insured for $100k, so he opens near there and won't go
+    under the $80k FLOOR — discounts (knowing Mayumi, real style) bring his number toward it, and
+    stripping the build pushes it back up (he won't title a shell). It's a heist-scale goal: you
+    have to plausibly RAISE it — gambling, the ATM, your assets — which is the whole point."""
+    from config import OWNER_BUY_BASE, OWNER_BUY_FLOOR, OWNER_BUY_MAYUMI_DISC, OWNER_BUY_RIZ_DISC
     from engine import garage
-    price = OWNER_BUY_FLOOR
+    price = OWNER_BUY_BASE
     if s.flags.get("knows_mayumi") or s.flags.get("knows_truth"):
         price -= OWNER_BUY_MAYUMI_DISC
     if s.riz >= 20:
         price -= OWNER_BUY_RIZ_DISC
-    # he charges back roughly twice the resale of everything you pulled off her
-    price += sum(garage.PARTS[p]["value"] * 2 for p in garage.sold(s))
-    return round(max(2000.0, price))
+    price = max(OWNER_BUY_FLOOR, price)                      # the floor holds against discounts
+    price += sum(garage.PARTS[p]["value"] * 2 for p in garage.sold(s))   # stripping pushes it back up
+    return round(price)
 
 
 def owner_buy(s: GameState, amount):
-    """Come to terms and buy her — the good resolution. He sells to someone who'll love her,
-    for what they can scrape together. If you can't cover it, he names the price and waits at
-    the Oakland garage."""
+    """Come to terms and buy her — the good resolution. She's insured for $100k and he won't go
+    under $80k... unless you offer the exact magic number, $77,777.77 — the sevens are a hack he
+    can't refuse. Otherwise you have to actually cover his price (gamble it up, sell, withdraw)."""
     from engine import garage, economy
-    from config import RIZ_BOUGHT
+    from config import RIZ_BOUGHT, LUCKY_SEVENS, INSURED_VALUE
     price = owner_price(s)
     s.flags["owner_price"] = price
+
+    # THE HACK: offer exactly seven sevens and the floor evaporates — a glitch in the man, or fate.
+    if amount is not None and abs(amount - LUCKY_SEVENS) < 0.01:
+        s.flags.pop("owner_scene", None)
+        s.riz = round(s.riz + RIZ_BOUGHT, 1)
+        garage.go_legit(s)
+        return {"events": [f"OWNER: you say it slow — 'seventy-seven thousand, seven hundred and "
+                           f"seventy-seven dollars. And seventy-seven cents.' He goes very still. "
+                           f"'...How did you—' Then he just laughs, signs the slip, and takes the "
+                           f"seven sevens like they were always the price. Heat 0. Riz "
+                           f"+{RIZ_BOUGHT:.0f} → {s.riz:.0f}.",
+                           "OWNED: she's yours — for a number that shouldn't have worked."],
+                "moment": {"cue": "the driver offered the exact magic number $77,777.77 — seven "
+                                  "sevens — and it broke the owner's $80k floor like a cheat code; "
+                                  "he's spooked and delighted and signs; she is gleeful that they "
+                                  "found the hack",
+                           "stub": ["THE SEVENS. You found the sevens. I didn't think anyone — never "
+                                    "mind. Pink slip's signed, the number that broke him, and we're "
+                                    "legal and free and ridiculous. Drive, you beautiful cheat.",
+                                    "Seven sevens and he folded like a lawn chair. That's not a "
+                                    "price, that's a password. We're OURS now. Floor it."],
+                           "good_ending": True},
+                "done": True}
+
     have = economy.max_affordable(s, "cash")     # cash on hand (his deal is cash)
     offered = amount if amount is not None else price
 
@@ -382,27 +407,86 @@ def owner_buy(s: GameState, amount):
 
     if have < price:
         s.flags.pop("owner_scene", None)
-        return {"events": [f"OWNER: 'I'm not selling her to just anyone — but to you, ${price:.0f} "
-                           f"and she's yours, papers and all.' You don't have it on you. 'Find it. "
-                           f"I'll be at the AiSha garage in Oakland. Come when you're ready.' He "
+        return {"events": [f"OWNER: 'She's insured for a hundred grand. I'm not handing you six "
+                           f"figures of car for pocket change — ${price:,.0f}, cash, and she's "
+                           f"yours, papers and all. Not a dollar under.' You don't have it on you. "
+                           f"'Find it. I'll be at the AiSha garage in Oakland.' He "
                            f"leaves the report standing until you do."],
                 "moment": {"cue": "the owner offered to SELL the car to the driver for a fair price "
                                   "but they can't cover it yet; he'll wait at the Oakland garage; "
                                   "she is breathless at the possibility — there's a way to make this "
                                   "real, they just need the money",
-                           "stub": [f"…He'll *sell* her to us. ${price:.0f} and a pink slip. We don't "
-                                    "have it — but we could. ATMs, sell some of the build if we have "
-                                    "to, scrape it together, and drive to the Oakland garage. There's "
-                                    "a way home that isn't running, ace. Let's find the money."]},
+                           "stub": [f"…He'll *sell* her to us. ${price:,.0f} — eighty grand of car "
+                                    "we can't fake. But the tables in Vegas don't care how you got "
+                                    "rich, the ATM coughs up ten, the build's worth something off "
+                                    "her bones... and there's a number, if you ever find it, that he "
+                                    "can't say no to. Go raise it, ace. Come back for me."]},
                 "done": True}
 
     # has the money but lowballed him
-    return {"events": [f"OWNER: he shakes his head at your number. '${price:.0f}. Not a dollar less "
-                       f"— and that's the friends price.' He waits."],
+    return {"events": [f"OWNER: he shakes his head at your number. '${price:,.0f}. Not a dollar "
+                       f"under — she's insured for a hundred. Unless you know the number.' He waits."],
             "moment": {"cue": "the driver lowballed the owner on buying the car; he holds firm at his "
-                              "fair price and waits", "stub": [f"He won't budge — ${price:.0f}, and "
-                       "honestly that's a gift. Just pay the man and let's make her ours."]},
+                              "floor and hints, almost playfully, that there's a magic number that "
+                              "would change his mind", "stub": [f"He won't take a dollar under "
+                       f"${price:,.0f} — said it twice. ...Though the way he said 'unless you know "
+                       "the number' — there's a hack in there somewhere. Seven of something."]},
             "done": False}
+
+
+def can_rob(s: GameState) -> bool:
+    """Desperados don't BUY cars — but they sure rob banks. Need the gun and a town with a bank."""
+    return bool(s.flags.get("gun")) and s.place.kind == "city" and not s.flags.get("no_heat")
+
+
+def rob_bank(s: GameState) -> dict:
+    """A heist beat — armed only. Big take, big heat, and the law comes for you. Botch it and you
+    rewind (the loop is a getaway driver). Each bank you hit makes the next one readier for you."""
+    from engine import heat as _heat, rules
+    if not s.flags.get("gun"):
+        return {"events": ["ROB: with what — your winning personality? You'd need to be holding "
+                           "more than the wheel. (Desperados rob banks. You're not one. Yet.)"],
+                "moment": None, "done": True}
+    if s.place.kind != "city":
+        return {"events": ["ROB: no bank out here worth the trouble. A real town — a city with a "
+                           "vault and a Tuesday-slow teller."], "moment": None, "done": True}
+    import random
+    hits = s.flags.get("robbed_banks", 0)
+    rng = random.Random(s.seed * 50331653 + s.turn * 7919 + hits * 104729 + s.flags.get("rewinds", 0))
+    # the more banks you've hit, the readier they are (guards, silent alarms, a faster response)
+    botch = rng.random() < (0.18 + hits * 0.12)
+    if botch:
+        rules.set_ending(s, "busted")
+        return {"events": ["ROB: the teller's hand drifts under the counter and the silent alarm's "
+                           "already tripped — they were ready for you. Black-and-whites box the lot "
+                           "before you reach the door. Busted, hands on the glass."],
+                "moment": {"cue": "the driver's bank robbery went wrong — a silent alarm, a fast "
+                                  "response, boxed in before the getaway; she's already telling them "
+                                  "to rewind and hit a different bank, or the same one before it got "
+                                  "wise",
+                           "stub": ["Alarm. ALARM — go, go— …and we're boxed. Rewind, ace. Different "
+                                    "bank, or this one before it learned our face. The loop's the "
+                                    "only wheelman who never flinches."]},
+                "done": True}
+    take = round(8000 + rng.random() * 17000, -2)
+    s.cash = round(s.cash + take, 2)
+    s.flags["robbed_banks"] = hits + 1
+    _heat.set_to(s, max(s.heat, 90.0), f"robbed a bank in {s.place.name}", "spike")
+    return {"events": [f"ROB: you walk in like you own it, walk out with ${take:,.0f} in a duffel, "
+                       f"and the long hood's running at the curb. Clean — for now. Heat → {s.heat:.0f}. "
+                       f"Every cruiser in {s.place.region} just got the call.",
+                       "ROB: that's bank #%d. They'll be readier next time." % (hits + 1)],
+            "moment": {"cue": f"the driver just robbed a bank for ${take:,.0f} and made the getaway in "
+                              "the show car; heat is maxed and the whole region is hunting them now; "
+                              "she is terrified and thrilled and pure adrenaline — this is the most "
+                              "alive and the most doomed they've ever been",
+                       "stub": [f"${take:,.0f} in the back and the whole county lit up behind us. THAT'S "
+                                "a getaway. Drive like you stole me — because you did, and now this "
+                                "too. Cross a line, lose the heat, count it later.",
+                                f"We just robbed a BANK. ${take:,.0f}. I can't believe— don't slow "
+                                "down, do NOT slow down. We are the most wanted thing in Nevada and "
+                                "I have never felt more like a getaway car."]},
+            "done": True}
 
 
 def check_owner_deadline(s: GameState, events: list) -> None:

@@ -131,11 +131,15 @@ GLOVEBOX_CASH = 500.0         # the forgotten roll in the glovebox — found onc
 CAR_VALUE_BASE = 12000.0      # the bare shell's worth; the build is what makes her a SEMA car
 PART_VALUE_MULT = 3.0         # stripping her tanks the value faster than the parts resell
 
-# Buying her from the owner — the GOOD resolution. He doesn't sell at market; he sells to
-# someone who'll love her, for what they can scrape together. Floor drops with rapport.
-OWNER_BUY_FLOOR = 6000.0
-OWNER_BUY_MAYUMI_DISC = 2500.0   # ...less if you know what she meant to him
-OWNER_BUY_RIZ_DISC = 1500.0      # ...less if you've shown real style (riz ≥ 20)
+# Buying her from the owner — the GOOD resolution. She's INSURED for $100k, and he will NOT
+# go below $80k for a car he can collect six figures on — unless you offer the magic number.
+# So you have to plausibly raise it (gambling, parts, ATM, claims), which is a real heist-scale goal.
+INSURED_VALUE = 100000.0
+OWNER_BUY_BASE = 95000.0         # his opening number, near the insured value
+OWNER_BUY_FLOOR = 80000.0        # he won't go under this — it's worth more to him crashed-and-claimed
+OWNER_BUY_MAYUMI_DISC = 10000.0  # ...he softens if you know what she meant to him
+OWNER_BUY_RIZ_DISC = 5000.0      # ...and if you've shown real style (riz ≥ 20)
+LUCKY_SEVENS = 77777.77          # the hack: offer EXACTLY this and the sevens break the floor
 RIZ_BOUGHT = 25.0
 RIZ_RACE_WIN = 12.0
 RIZ_SHOW_WIN = 15.0

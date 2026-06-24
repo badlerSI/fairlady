@@ -349,14 +349,32 @@ def test_rewind_restores_last_checkpoint_and_riz_survives():
     assert s.flags.get("rewinds") == 1
 
 
-def test_double_rewind_reaches_one_checkpoint_deeper():
-    s = fresh()                                        # new_game checkpointed the Chevron
+def test_branch_selector_navigates_the_timeline():
+    s = fresh(); s.fuel_l = 40.0
+    game.handle(s, "drive to mesquite")                # a checkpoint
     s.fuel_l = 40.0
-    game.handle(s, "drive to mesquite")                # chk1=mesquite, chk2=chevron
+    game.handle(s, "drive to st_george")               # another, newer
+    tl = game.handle(s, "branches")["info"]
+    assert "TIMELINE" in tl and "Mesquite" in tl and "St. George" in tl
+    # 'rewind' (no target) = the most recent (St. George)
     game.handle(s, "rewind")
+    assert s.place.poi_id == "st_george"
+    # 'branch 3' / 'rewind to mesquite' jumps to an OLDER branch
+    r = game.handle(s, "rewind to mesquite")
     assert s.place.poi_id == "mesquite"
-    game.handle(s, "rewind")                           # consecutive → one deeper
-    assert s.place.poi_id == "sema_chevron"
+
+
+def test_battering_one_wall_costs_more_and_eventually_wont_fold():
+    s = fresh(); s.fuel_l = 40.0; s.riz = 50.0
+    game.handle(s, "drive to mesquite")                # checkpoint with riz 50
+    game.handle(s, "rewind"); assert s.riz == 48.0     # first fold: −2 (50−2)
+    game.handle(s, "rewind"); assert s.riz == 47.0     # same wall: −3 (50−3)
+    game.handle(s, "rewind"); assert s.riz == 46.0     # −4 — escalating from the checkpoint
+    game.handle(s, "rewind")                           # −5
+    # batter it enough and the loop won't fold here anymore
+    r = game.handle(s, "rewind")
+    assert "won't fold" in r["events"][0] or "not catching" in (r["scene"] or "")
+    assert s.place.poi_id == "mesquite"                # still stuck — you must branch further back
 
 
 def test_rewind_escapes_an_ending():
@@ -686,20 +704,33 @@ def test_buy_the_car_is_the_good_ending():
     from engine import encounters
     s = game.new_game(seed=44, prologue_on=False)
     s.flags["owner_met"] = True; s.flags["knows_mayumi"] = True; s.riz = 25
-    s.fuel_l = 40.0; s.cash = 9000.0
-    s.place = world.get_poi("livermore")            # ~35 mi out — one tank
+    s.fuel_l = 40.0; s.cash = 85000.0               # a heist-scale war chest
+    s.place = world.get_poi("livermore")
     game.handle(s, "drive to oakland_aisha")        # he's waiting at the garage
     assert encounters.owner_active(s)
     price = encounters.owner_price(s)
-    assert price == 2000                            # 6000 − Mayumi 2500 − riz 1500, floored
+    assert price == 80000                           # 95k − Mayumi 10k − riz 5k, floored at 80k
     r = game.handle(s, "buy her")
     assert s.flags.get("bought") and s.flags.get("no_heat")
-    assert s.cash == 9000.0 - price
+    assert s.cash == 85000.0 - price
     assert r["welcome"] and "YOURS" in r["welcome"]
     assert game.snapshot(s)["heat"] == 0
-    # no_heat is permanent
-    s.heat = 90.0; rules._clamp_heat(s)
-    assert s.heat == 0.0
+    s.heat = 90.0; rules._clamp_heat(s); assert s.heat == 0.0
+
+
+def test_the_seven_sevens_hack_breaks_the_floor():
+    from engine import encounters
+    from engine.commands import parse
+    assert parse("seven sevens")[1]["amount"] == 77777.77
+    assert parse("offer $77,777.77")[1]["amount"] == 77777.77
+    s = game.new_game(seed=44, prologue_on=False)
+    s.flags["owner_met"] = True; s.fuel_l = 40.0; s.cash = 100.0   # nearly broke!
+    s.place = world.get_poi("livermore")
+    game.handle(s, "drive to oakland_aisha")
+    assert encounters.owner_price(s) >= 80000        # he'd never sell this low normally
+    r = game.handle(s, "seven sevens")               # ...but the magic number breaks him
+    assert s.flags.get("bought") and s.flags.get("no_heat")
+    assert "shouldn't have worked" in " ".join(r["events"]) or "sevens" in (r["scene"] or "").lower()
 
 
 def test_buy_when_broke_names_the_price_and_waits():
@@ -890,6 +921,62 @@ def test_curious_clerk_humble_slides_by_showoff_posts():
     game.handle(s2, "fill")
     game.handle(s2, "yeah it's the SEMA car, take a pic")          # show off
     assert s2.heat > h0 and s2.flags.get("instagram_tags")
+
+
+# ------------------------------------------------------------------ gambling, robbery, dating
+def test_gambling_and_the_rewind_cheat_can_raise_the_money():
+    s = game.new_game(seed=5, prologue_on=False)
+    s.cash = 5000.0; s.fuel_l = 40.0; s.place = world.get_poi("primm")
+    game.handle(s, "drive to las_vegas")               # a real arrival checkpoint at $5000
+    # all-in, rewind every loss — the sanctioned cheat. it WILL reach the buy price.
+    bets = 0
+    while s.cash < 80000 and bets < 60:
+        bets += 1
+        r = game.handle(s, f"bet ${int(s.cash)} on the raiders")
+        if "misses" in r["events"][0]:
+            game.handle(s, "rewind")
+    assert s.cash >= 80000                              # you can grind to the $80k
+    assert s.riz == 0.0                                 # ...at the cost of all your style
+
+    # you can't gamble in the desert
+    s2 = fresh(); s2.cash = 1000.0; s2.place = world.get_poi("berlin_nv")
+    assert "no action here" in game.handle(s2, "bet $500")["events"][0]
+
+
+def test_bank_robbery_is_armed_only():
+    from engine import encounters
+    s = fresh(); s.place = world.get_poi("mesquite")
+    assert "more than the wheel" in game.handle(s, "rob the bank")["events"][0]   # unarmed: no
+    s.flags["gun"] = True
+    found = False
+    for sd in range(1, 12):
+        s2 = game.new_game(seed=sd, prologue_on=False); s2.place = world.get_poi("mesquite")
+        s2.flags["gun"] = True; s2.turn += sd
+        r = game.handle(s2, "rob the bank")
+        if s2.status == "playing":                      # a clean heist
+            assert s2.cash > 8000 and s2.heat >= 90 and s2.flags.get("robbed_banks") == 1
+            found = True; break
+    assert found
+
+
+def test_dating_jealousy_ladder_and_kill_engine():
+    from engine import dating
+    s = fresh(); s.place = world.get_poi("las_vegas")
+    game.handle(s, "flirt"); assert s.flags.get("ace_jealousy") == 1
+    game.handle(s, "flirt"); game.handle(s, "flirt")
+    assert s.flags.get("ace_jealousy") == 3            # escalates
+    assert s.heat > rules.HEAT_START                    # the jealous rev drew eyes
+    game.handle(s, "compliment her")
+    assert s.flags.get("ace_jealousy") < 3              # sweet-talk cools it
+    # flirt with her off → no jealousy
+    s2 = fresh(); s2.place = world.get_poi("las_vegas")
+    game.handle(s2, "kill the engine")
+    game.handle(s2, "flirt")
+    assert not s2.flags.get("ace_jealousy")             # she didn't see it
+    # driving turns her back on
+    s2.fuel_l = 40.0
+    game.handle(s2, "drive to primm")
+    assert not s2.flags.get("ace_off")
 
 
 # ------------------------------------------------------------------ heat dashboard reconciles

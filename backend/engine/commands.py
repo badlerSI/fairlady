@@ -38,6 +38,16 @@ def parse(raw: str) -> Tuple[str, dict]:
                "dm the poster", "get it taken down", "clean up the post"):
         return ("untag", {})
 
+    # the timeline / branch selector (git-like) — list your checkpoints
+    if low in ("branches", "branch", "timeline", "checkpoints", "saves", "history", "the timeline",
+               "list branches", "show branches", "where can i rewind to"):
+        return ("branches", {})
+    # jump to a specific branch: "branch 3", "rewind to mesquite", "fold back to the standoff"
+    m = re.match(r"^(?:branch|rewind to|fold back to|go back to|jump to|load branch)\s+(.+)$", low)
+    if m:
+        tgt = m.group(1).strip(" .")
+        return ("rewind", {"target": int(tgt) if tgt.isdigit() else tgt})
+
     # rewind to the last checkpoint (the Edge-of-Tomorrow escape — must precede the drive check,
     # since "go back" would otherwise parse as a drive)
     if low in ("rewind", "go back", "rewind it", "take it back", "loop", "loop it",
@@ -109,6 +119,10 @@ def parse(raw: str) -> Tuple[str, dict]:
         return ("buy", {"amount": _money(low)})
     if low == "offer" or low.startswith("offer ") or "i'll offer" in low or "ill offer" in low:
         return ("buy", {"amount": _money(low)})
+    # the seven-sevens hack — spelled out, or the bare magic number
+    if any(p in low for p in ("seven sevens", "77777.77", "77,777.77", "seven 7s", "all the sevens",
+                              "lucky sevens")):
+        return ("buy", {"amount": 77777.77})
 
     # explore the car / the glovebox
     if (low in ("explore", "search", "search the car", "search her", "look around the car",
@@ -134,6 +148,32 @@ def parse(raw: str) -> Tuple[str, dict]:
         return ("parts", {})
     if low.startswith("sell") or low.startswith("strip"):
         return ("sell", {"what": re.sub(r"^(sell|strip)\s+", "", low).strip()})
+
+    # dating + her jealousy
+    if (low in ("flirt", "date", "find a date", "pick up a date", "get a date", "hit on someone",
+                "find someone", "go on a date", "pull", "rizz someone up", "ask someone out",
+                "meet someone", "chat someone up", "flirt with someone")
+            or low.startswith(("flirt with", "pick up", "hit on", "ask out"))):
+        return ("flirt", {})
+    if low in ("kill the engine", "kill engine", "turn her off", "shut her off", "park her",
+               "leave her in the lot", "leave her", "power her down", "engine off"):
+        return ("killengine", {})
+    if low in ("compliment her", "sweet talk her", "sweet-talk her", "tell her she's pretty",
+               "apologize to her", "make it up to her", "reassure her", "she's the best"):
+        return ("compliment", {})
+
+    # rob a bank (Desperado only)
+    if low in ("rob", "rob bank", "rob the bank", "rob a bank", "hit a bank", "stick up the bank",
+               "rob the vault", "heist", "do a bank job", "rob this bank"):
+        return ("rob", {})
+
+    # gambling — raise the money (and the rewind cheat)
+    if (low.startswith(("bet", "gamble", "wager", "put ", "lay ", "place a bet"))
+            or low in ("hit the tables", "hit the casino", "play the tables", "sports bet",
+                       "double or nothing", "all in", "all-in", "let it ride")):
+        amt = _money(low)
+        m = re.search(r"on\s+(.+)$", low)            # "bet $1000 on the raiders"
+        return ("bet", {"amount": amt, "pick": (m.group(1).strip() if m else None)})
 
     # legal racing / showing (only after you own her)
     if low in ("race", "race her", "run it", "run a lap", "track day", "do a track day",
