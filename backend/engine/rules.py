@@ -11,6 +11,7 @@ from config import (
     HEAT_SWIPE_HOTZONE, HEAT_SWIPE_FIRST_DAY, HEAT_DECAY_PER_HOUR,
     HEAT_STATELINE_MULT, HEAT_PUSH_DRIVE, HEAT_SLEEP_LODGING, HEAT_LINGER,
     FATIGUE_PER_HOUR, ROUGH_SLEEP_HEAT, AWAKE_WARN_HOURS, AWAKE_FORCE_HOURS,
+    DESPERADO_HEAT_FLOOR,
 )
 from engine.state import GameState, Place
 from engine import world, economy
@@ -69,7 +70,8 @@ def card_swipe_heat(state: GameState, place: Place) -> float:
 
 
 def _clamp_heat(state: GameState) -> None:
-    state.heat = round(max(0.0, min(100.0, state.heat)), 1)
+    floor = DESPERADO_HEAT_FLOOR if state.flags.get("desperado") else 0.0
+    state.heat = round(max(floor, min(100.0, state.heat)), 1)
 
 
 def set_ending(state: GameState, key: str) -> None:
@@ -254,6 +256,7 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
         events.append("FUEL: " + paid["message"])
         return events
     _note_cash_fallback(state, paid, prefer, events)
+    state.flags["last_fuel_cash"] = (paid["method"] == "cash")   # the 'paid cash' clause
 
     state.fuel_l = round(min(state.tank_l, state.fuel_l + q["liters"]), 3)
     if state.flags.pop("limp", None):                    # a town pump = a mechanic; the gremlin's gone

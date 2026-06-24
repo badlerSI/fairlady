@@ -223,10 +223,13 @@ def rewind(s: GameState):
         return (["REWIND: there's no checkpoint behind you yet."], None)
     riz = max(0.0, round(chk.riz - RIZ_REWIND_COST, 1))
     rewinds = s.flags.get("rewinds", 0) + 1
+    # the curse and the gun belong to you, not to the timeline — carry them across the fold
+    meta = {k: s.flags.get(k) for k in encounters.DESPERADO_PERSIST if k in s.flags}
     s.__dict__.update(GameState.from_dict(chk.to_dict()).__dict__)
     s.riz = riz
     s.flags["rewinds"] = rewinds
     s.flags["rewound_once"] = True
+    s.flags.update(meta)
     if deeper:
         save.save(s, _chk(s, 1))             # collapse the ring — this is the floor now
     save.save(s, "autosave")
@@ -237,7 +240,9 @@ def rewind(s: GameState):
 
 
 # --------------------------------------------------------------------- snapshot
-def _heat_label(h: float) -> str:
+def _heat_label(h: float, armed: bool = False) -> str:
+    if armed and h >= rules.HEAT_ROADBLOCK_THRESHOLD:
+        return "armed & dangerous — they're coming ready"
     if h >= rules.HEAT_ROADBLOCK_THRESHOLD:
         return "roadblocks out for this car"
     if h >= rules.HEAT_DECLINE_CARD_THRESHOLD:
@@ -267,8 +272,11 @@ def snapshot(s: GameState) -> dict:
         "hours_awake": round(rules.hours_awake(s), 1),
         "must_sleep": rules.hours_awake(s) >= AWAKE_FORCE_HOURS,
         "tired": rules.hours_awake(s) >= AWAKE_WARN_HOURS,
-        "heat": round(s.heat), "heat_label": _heat_label(s.heat),
+        "heat": round(s.heat), "heat_label": _heat_label(s.heat, bool(s.flags.get("desperado"))),
         "riz": round(s.riz),
+        "desperado": bool(s.flags.get("desperado")),
+        "encounter_open": (encounters.stop_active(s) or encounters.owner_active(s)
+                           or encounters.standoff_active(s)),
         "odometer_mi": round(s.odometer_mi), "adventures": list(s.adventures),
         "status": s.status, "turn": s.turn,
         "gas_price": round(economy.gas_price(p), 2) if p.has("gas") else None,
@@ -307,9 +315,19 @@ def choices(s: GameState) -> list:
                 {"cmd": "look", "note": "the hall, the car"}]
         return out
 
-    # mid-encounter: your mouth is the only tool you have
+    # mid-standoff: a gun is on you — talk him down or take it
+    if encounters.standoff_active(s):
+        c = [{"cmd": "easy — no trouble, just buying gas", "note": "talk him down"},
+             {"cmd": "disarm", "note": "go for the gun"}]
+        if s.flags.get("gun"):
+            c.append({"cmd": "draw", "note": "your own piece"})
+        return c
+    # mid-encounter: your mouth is the only tool you have (the gun, if you have it, is louder)
     if encounters.stop_active(s) or encounters.owner_active(s):
-        return [{"cmd": "look", "note": "stall for one second"}]
+        c = [{"cmd": "look", "note": "stall for one second"}]
+        if s.flags.get("gun"):
+            c.append({"cmd": "draw", "note": "armed and dangerous — force it"})
+        return c
 
     p = s.place
     out = [{"cmd": "look", "note": "where things stand"},
@@ -401,6 +419,11 @@ def _encounter(s, force=False):
 def handle(s: GameState, raw: str) -> dict:
     verb, args = parse(raw)
 
+    # "Rewind again, before anything else happens" is what reaches one checkpoint deeper —
+    # ANY intervening turn (even a busted standoff attempt that didn't save) breaks the chain.
+    if verb != "rewind":
+        s.flags.pop("rewound_once", None)
+
     # ---- pure console verbs, available everywhere ----
     if verb == "help":
         return _result(s, [], "", info=_help_text())
@@ -416,14 +439,41 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "load" or verb == "new":
         return _result(s, [], "", info="(handled by the server)")
 
-    # ---- an open traffic stop / the owner owns the conversation ----
+    # ---- an open traffic stop / the owner / a gas-station standoff owns the conversation ----
     # This must come before every other verb: anything you say mid-encounter is SPEECH.
     # "…full tank of fresh 91 sitting in her right now…" has to reach the officer,
     # not the range calculator.
-    if (encounters.stop_active(s) or encounters.owner_active(s)) and s.status == "playing":
+    if ((encounters.stop_active(s) or encounters.owner_active(s) or encounters.standoff_active(s))
+            and s.status == "playing"):
         s.turn += 1
         in_stop = encounters.stop_active(s)
-        if verb in ("drive", "home", "fuel", "sleep", "tow"):
+        in_standoff = encounters.standoff_active(s)
+
+        if in_standoff:               # the clerk with the gun — its own ruleset (talk/disarm/draw)
+            if verb in ("drive", "home", "fuel", "sleep", "tow"):
+                events = ["STANDOFF: not with a pistol pointed at you. Talk him down, or take it."]
+                save.save(s, "autosave")
+                scene, voice, audio = _narrate(s, events, "", drama={
+                    "cue": "the driver tried to leave while the clerk held a gun on them; she "
+                           "snaps them back — you don't move with a barrel on you",
+                    "stub": ["You don't MOVE, ace — talk or grab, those are the doors.",
+                             "Hands flat. We leave when the gun's down or it's ours, not before."]})
+                return _result(s, events, scene, voice=audio)
+            out = encounters.standoff_turn(s, verb, raw)
+            if out.get("moment", {}).get("unlock"):
+                checkpoint(s)         # the special checkpoint: you walk out armed
+            elif out["done"] and s.status == "playing":
+                checkpoint(s)
+            save.save(s, "autosave")
+            scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
+            return _result(s, out["events"], scene, voice=audio)
+
+        if verb == "draw" and s.flags.get("gun"):     # Desperado's nuclear option
+            out = encounters.draw_in_stop(s, in_owner=encounters.owner_active(s))
+            save.save(s, "autosave")
+            scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
+            return _result(s, out["events"], scene, voice=audio)
+        if verb in ("drive", "home", "fuel", "sleep", "tow", "disarm", "draw"):
             events = ["LAW: not while the flashlight's on you. Talk first." if in_stop
                       else "OWNER: he's standing right there. Talk."]
             save.save(s, "autosave")
@@ -552,6 +602,9 @@ def handle(s: GameState, raw: str) -> dict:
                           "for home tomorrow. ...She goes quiet a second.")
             drama_ev = prologue.favor_done_moment()
             checkpoint(s)
+        elif s.status == "playing" and s.fuel_l >= s.tank_l - 0.5 and any(
+                e.startswith("FUEL: pumped") for e in events):
+            checkpoint(s)             # a full tank is a clean save point (and sets up the standoff)
         player_text = ""
     elif verb == "sleep":
         events = rules.sleep(s, kind=args.get("kind"), prefer=args.get("prefer"),
@@ -576,11 +629,22 @@ def handle(s: GameState, raw: str) -> dict:
     elif verb == "look":
         player_text = "(takes stock)"
         info = _look_text(s)                    # the promised ledger: place + numbers
-    else:  # say — conversation
-        player_text = args.get("text", raw)
-        payoff = _promise_payoff(s, raw)        # promised follow-ups, kept (quiet places only)
-        if payoff:
-            story_beat = payoff
+    elif verb in ("disarm", "draw"):            # the gun, with nothing to point it at
+        events = ["GUN: nobody's holding a gun on you right now." if verb == "disarm"
+                  else ("GUN: you keep the piece down — no call for it here." if s.flags.get("gun")
+                        else "GUN: you don't have a gun. Not yet.")]
+        player_text = ""
+    else:  # say — conversation, or leaning on the clerk at a manned pump
+        if (s.place.has("gas") and not encounters.standoff_active(s)
+                and encounters.gas_aggression(raw) >= 2):
+            events = encounters.start_standoff(s)
+            drama_ev = encounters.STANDOFF_WHISPER
+            player_text = ""
+        else:
+            player_text = args.get("text", raw)
+            payoff = _promise_payoff(s, raw)    # promised follow-ups, kept (quiet places only)
+            if payoff:
+                story_beat = payoff
 
     save.save(s, "autosave")
     welcome = _state_welcome(s)

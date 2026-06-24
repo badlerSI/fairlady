@@ -145,6 +145,34 @@ Known-and-accepted: DRIVE event lines show pre-drama fuel/time when a drama muta
 - `tools/gazetteer_merge.py` is idempotent: rerun after editing beats.json or rebaking scenes.
 - Eureka exists twice (NV + CA) — CA displays as "Eureka, CA" so name matching stays unambiguous.
 
+## 0.8 Desperado Mode (2026-06-10, Ben's request)
+
+Heat → the gas-station standoff → armed and dangerous. All in `engine/encounters.py` (the DESPERADO
+section) + wiring:
+- **Trigger**: `gas_aggression(text) >= 2` while the player `say`s something hostile/robbery-flavored
+  at a place with gas (game.py say-tail) → `start_standoff` (flag `standoff`). Clerk pulls a pistol,
+  dialing the cops. Routed encounter-first in `handle()` alongside stop/owner; movement verbs blocked
+  (no bust — just "not with a gun on you"); `STANDOFF_COPS_ROUNDS` (3) stall limit.
+- **Two exits**: de-escalate (≥2 `_DEESCALATE` tokens, no robbery tokens → clean walk-out, no gun) OR
+  `disarm`.
+- **The disarm** = `_set_up_right(s)`: full tank AND `flags.last_fuel_cash` (set in rules.fuel). If
+  not set up → instant busted (she yells DO IT RIGHT). If set up → the Edge-of-Tomorrow ladder:
+  `flags.desperado_tries` (1,2 = busted; `DESPERADO_DISARM_LUCKY`=3 = WIN). The counter is in
+  `encounters.DESPERADO_PERSIST` which `game.rewind` re-applies AFTER restoring the checkpoint — so it
+  survives the fold (like riz). The loop: fail→rewind→fail→rewind→win.
+- **CRITICAL fix that makes the loop work**: `handle()` now clears `rewound_once` on any non-rewind
+  verb, so a busted disarm between two rewinds breaks the "consecutive → go deeper" chain (otherwise
+  the 2nd rewind jumped to chk2 = empty-tank Chevron and the setup was lost). Also: a fill-to-full now
+  checkpoints, so the rewind lands on the set-up state.
+- **Unlock** (win): `flags.desperado`+`gun`+`wanted_armed`, +`RIZ_DESPERADO` (20), +`DESPERADO_HEAT_ON_UNLOCK`
+  (30), and a checkpoint (the "special checkpoint" — moment carries `unlock:True`).
+- **Desperado persistent**: `DESPERADO_HEAT_FLOOR` (35) enforced in `rules._clamp_heat`; dash badge
+  (`snapshot.desperado` → terminal.js red `.d-row.desperado`); `_heat_label` armed variant; `draw`
+  verb (`draw_in_stop`) usable in stops (escape, heat→`DRAW_HEAT` 100, law comes ready) and as a dark
+  beat in the owner scene. All meta flags survive rewind; the gun is forever.
+- Knobs in config.py under "Desperado Mode". Prose is DRAFT for Ben. 8 tests (`test_*desperado*`,
+  `test_*standoff*`, `test_*disarm*`, `test_draw_*`, `test_talking_the_clerk_down*`).
+
 ## 1. Run it
 
 ```bash

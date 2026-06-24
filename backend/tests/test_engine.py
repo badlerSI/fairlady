@@ -655,6 +655,100 @@ def test_wiki_fact_is_silent_offline():
     assert world.wiki_fact(36.1, -115.1) is None   # ROUTING=offline in tests
 
 
+# ------------------------------------------------------------------ Desperado Mode
+def _armed_setup(seed=555):
+    """At a gas+lodging town, full tank, paid cash — 'do it right'."""
+    s = game.new_game(seed=seed, prologue_on=False)
+    s.place = world.get_poi("mesquite")
+    s.cash = 300.0
+    game.handle(s, "fill cash")
+    assert s.fuel_l >= s.tank_l - 0.5 and s.flags.get("last_fuel_cash")
+    return s
+
+
+def test_aggression_at_a_pump_opens_the_standoff():
+    from engine import encounters
+    assert encounters.gas_aggression("give me everything in the register") >= 2
+    assert encounters.gas_aggression("nice night, fill it up please") == 0
+    s = _armed_setup()
+    r = game.handle(s, "empty the register or else")
+    assert encounters.standoff_active(s)
+    assert any("STANDOFF" in e for e in r["events"])
+    # mid-standoff you can't just drive off
+    r2 = game.handle(s, "drive to st_george")
+    assert s.place.poi_id == "mesquite" and encounters.standoff_active(s)
+
+
+def test_disarm_needs_full_tank_and_cash():
+    from engine import encounters
+    s = _armed_setup()
+    s.fuel_l = 10.0                              # not full → not set up
+    game.handle(s, "this is a holdup")
+    r = game.handle(s, "disarm")
+    assert s.status == "busted"
+    assert s.flags.get("desperado_tries") is None   # a not-set-up grab doesn't count toward the 3
+    assert "before you're ready" in r["events"][0]
+
+
+def test_desperado_unlocks_on_the_third_setup_right_disarm():
+    from engine import encounters
+    s = _armed_setup()
+    for n in (1, 2):                            # the two cursed failures
+        game.handle(s, "give me the cash, now")
+        game.handle(s, "disarm")
+        assert s.status == "busted" and s.flags.get("desperado_tries") == n
+        game.handle(s, "rewind")
+        assert s.status == "playing"
+        assert s.fuel_l >= s.tank_l - 0.5 and s.flags.get("last_fuel_cash")  # setup restored
+        assert s.flags.get("desperado_tries") == n                          # curse persists
+    game.handle(s, "this is a holdup, empty the register")
+    r = game.handle(s, "disarm")
+    assert s.flags.get("desperado") and s.flags.get("gun")
+    assert s.riz >= 20 and s.heat >= 35
+    assert "armed" in (r["scene"] or "").lower() or "DESPERADO" in " ".join(r["events"])
+
+
+def test_desperado_heat_floor_and_survives_rewind():
+    s = _armed_setup()
+    s.flags["desperado"] = True; s.flags["gun"] = True
+    s.heat = 10.0
+    rules._clamp_heat(s)
+    assert s.heat >= 35.0                       # armed and named — never cold again
+    # rewind to a pre-armed checkpoint still leaves you armed (it's meta-progress)
+    game.handle(s, "drive to st_george")        # a clean checkpoint
+    s.heat = 50.0
+    game.handle(s, "rewind")
+    assert s.flags.get("desperado") and s.flags.get("gun")
+
+
+def test_draw_forces_a_stop_but_burns_every_bridge():
+    from engine import encounters
+    s = _armed_setup()
+    s.flags["desperado"] = True; s.flags["gun"] = True
+    s.heat = 50.0
+    encounters.start_stop(s, "plate")
+    r = game.handle(s, "draw")
+    assert not encounters.stop_active(s)        # you got away
+    assert s.heat >= 99                          # ...and lit up every scanner
+    assert s.flags.get("wanted_armed")
+    # without the gun, 'draw' in a stop is just talk-first
+    s2 = _armed_setup()
+    encounters.start_stop(s2, "plate")
+    game.handle(s2, "draw")
+    assert encounters.stop_active(s2)           # nothing to draw — stop still open
+
+
+def test_talking_the_clerk_down_avoids_desperado():
+    from engine import encounters
+    s = _armed_setup()
+    game.handle(s, "back off, you didn't see anything")
+    assert encounters.standoff_active(s)
+    r = game.handle(s, "easy — sorry, no trouble, just buying gas, we're cool")
+    assert not encounters.standoff_active(s)
+    assert not s.flags.get("desperado")         # you stayed soft — no gun
+    assert s.status == "playing"
+
+
 def test_homecoming_beats_exist():
     s = fresh(); s.fuel_l = 40.0; s.cash = 500.0
     s.place = world.get_poi("livermore")

@@ -18,9 +18,15 @@ from config import (
     STOP_FINE, STOP_HEAT_WAVE, STOP_HEAT_TICKET, STOP_HEAT_BAD,
     RIZ_STOP_WAVE, RIZ_STOP_TICKET, RIZ_OWNER_BLESSING,
     OWNER_DEADLINE_DAYS,
+    STANDOFF_COPS_ROUNDS, DESPERADO_DISARM_LUCKY, DESPERADO_HEAT_ON_UNLOCK,
+    DESPERADO_HEAT_FLOOR, RIZ_DESPERADO, DRAW_HEAT,
 )
 from engine.state import GameState
 from engine.commands import spec_hits
+
+# flags that are META-progress: they survive rewinds (game.rewind re-applies them), because
+# the curse — and the gun you eventually win — belong to you, not to any one timeline.
+DESPERADO_PERSIST = ("desperado", "gun", "desperado_tries", "wanted_armed")
 
 ROUNDS = 2          # exchanges before the verdict
 
@@ -323,3 +329,245 @@ def check_owner_deadline(s: GameState, events: list) -> None:
         s.heat = min(100.0, s.heat + OWNER_DEADLINE_HEAT)
         events.append(f"OWNER: the week he gave you is gone, and the phone call he promised is "
                       f"made. Heat {s.heat:.0f}. The whole West knows the car again.")
+
+
+# ============================================================ DESPERADO MODE
+# Act suspicious or aggressive at a manned pump and the jumpy clerk pulls a pistol over the
+# counter: keep still, he's calling the cops. You can talk him down (clean exit, no gun) OR
+# go for the gun. The disarm only lands if you set it up RIGHT — full tank, paid cash, before
+# you spooked him — and even then you fail the first two grabs and get lucky on the third.
+# Because the try-counter survives rewinds, you are cursed to relive the standoff until you
+# win it. Winning takes his gun: a special checkpoint and Desperado Mode — armed and dangerous.
+# All prose is a working DRAFT — Ben fills the details.
+
+# robbery / threat language (strong, worth 2) and merely hinky behavior (worth 1)
+_ROB = ("give me", "hand it over", "hand over", "empty the", "the register", "the cash",
+        "all the money", "all the cash", "the money", "rob", "stick up", "stick 'em",
+        "stick em", "this is a holdup", "freeze", "don't move", "dont move",
+        "don't you move", "or i'll", "or else", "i'll shoot", "do as i say", "on the floor",
+        "open the register", "no cops", "don't call", "dont call", "shut up", "gimme")
+_HINKY = ("back off", "what're you looking at", "what are you looking at", "you got a problem",
+          "mind your business", "keep your mouth", "you didn't see", "you saw nothing",
+          "casing", "nervous", "twitchy", "don't try", "you're not calling")
+
+
+def gas_aggression(text: str) -> int:
+    """Score how hard the player just leaned on the clerk. >=2 makes him reach under the counter."""
+    low = (text or "").lower()
+    return 2 * _hits(low, _ROB) + _hits(low, _HINKY)
+
+
+def standoff_active(s: GameState) -> bool:
+    return "standoff" in s.flags
+
+
+STANDOFF_WHISPER = {
+    "cue": "the gas-station clerk has a pistol up over the counter, pointed at the driver, phone "
+           "in the other hand dialing the police; she whispers, electric and a little thrilled and "
+           "very scared: hands where he can see them — talk him down, or go for the gun, but the "
+           "gun only works if the tank's full and you paid him cash before this started",
+    "stub": ["(low, fast) Gun. He's got a gun and he's dialing. Hands flat. Talk him off it — "
+             "or go for it, but only if we're full and we paid cash, or we don't make the door.",
+             "(barely moving) Easy. Easy. Either you sweet-talk that pistol back under the counter, "
+             "or you take it off him. Half a tank and a card receipt and we're dead either way."],
+}
+
+
+def start_standoff(s: GameState) -> list:
+    s.flags["standoff"] = {"round": 0}
+    return [
+        "STANDOFF: the clerk's hand comes up from under the counter with a pistol in it, and the "
+        "other hand has the phone. 'Keep still. Hands where I can see 'em. I'm calling the cops — "
+        "I know what you are.' The barrel doesn't waver as much as you'd hope.",
+        "STANDOFF: talk him down, or go for the gun ('disarm'). He's already dialing.",
+    ]
+
+
+def _set_up_right(s: GameState) -> bool:
+    """The 'do it right' clause: a full tank and your last fill paid in clean cash."""
+    full = s.fuel_l >= s.tank_l - 0.5
+    return full and bool(s.flags.get("last_fuel_cash"))
+
+
+_DEESCALATE = ("sorry", "easy", "whoa", "no trouble", "didn't mean", "didnt mean", "my mistake",
+               "just buying gas", "just getting gas", "just fuel", "put it down", "lower the",
+               "we're cool", "were cool", "no need", "calm", "relax", "i'll go", "ill go",
+               "leaving now", "no harm", "friend", "please")
+
+
+def standoff_turn(s: GameState, verb: str, raw: str) -> dict:
+    """One beat of the standoff. verb ∈ {disarm, draw, say/talk (de-escalate), look}."""
+    st = s.flags["standoff"]
+    st["round"] += 1
+    from engine import rules
+
+    # --- go for the gun ---
+    if verb == "disarm":
+        s.flags.pop("standoff", None)
+        if not _set_up_right(s):
+            # not set up: the grab can't land, and now the cops have a reason and a corpse-to-be
+            rules.set_ending(s, "busted")
+            return {"events": ["STANDOFF: you lunge before you're ready — half a tank, a card "
+                               "receipt still on the counter — and he's faster than your odds. "
+                               "It ends at the pump."],
+                    "moment": {"cue": "the driver went for the gun without setting it up — no full "
+                                      "tank, no clean cash — and it went exactly as badly as she "
+                                      "warned; she is furious and grieving and already telling them "
+                                      "to rewind and DO IT RIGHT this time",
+                               "stub": ["I SAID full tank and cash, you beautiful idiot. Rewind. "
+                                        "Fill up. Pay the man cash. THEN go for it. We do this "
+                                        "until we get it right — that's the whole curse."]},
+                    "done": True}
+        tries = s.flags.get("desperado_tries", 0) + 1
+        s.flags["desperado_tries"] = tries          # survives rewind — the curse remembers
+        if tries < DESPERADO_DISARM_LUCKY:
+            rules.set_ending(s, "busted")
+            left = DESPERADO_DISARM_LUCKY - tries
+            return {"events": [f"STANDOFF: you go for it — full tank, clean hands — and you almost "
+                               f"have it. Almost. The grip slips and the cops are in the lot. "
+                               f"Busted. (Something tells you the next grab goes different.)"],
+                    "moment": {"cue": "the driver set it up right and went for the gun and it ALMOST "
+                                      "worked — closer than last time; she has the strange certainty "
+                                      "of someone who's lived this before that the next attempt is "
+                                      "the one; she tells them to rewind and try again, " + str(left)
+                                      + " more and it lands",
+                               "stub": ["So close I felt it. Rewind, ace. Again. I've got a feeling "
+                                        "about the next one — like we've done this before and the "
+                                        "third time's the charm. Go for it again.",
+                                        "Almost. ALMOST. Don't talk — rewind and do the exact same "
+                                        "thing. I can feel the timeline bending our way."]},
+                    "done": True}
+        # the lucky third — you take the gun
+        s.flags["desperado"] = True
+        s.flags["gun"] = True
+        s.flags["wanted_armed"] = True
+        s.heat = min(100.0, s.heat + DESPERADO_HEAT_ON_UNLOCK)
+        s.riz = round(s.riz + RIZ_DESPERADO, 1)
+        return {"events": [f"STANDOFF: this time your hand finds the barrel first. One twist and "
+                           f"the pistol is yours, the clerk's backing into the cigarette rack with "
+                           f"his hands open. Full tank, clean cash, open road. You walk out armed. "
+                           f"Heat {s.heat:.0f}, Riz +{RIZ_DESPERADO:.0f} → {s.riz:.0f}.",
+                           "DESPERADO: armed and dangerous. The law plays for keeps now — and so "
+                           "can you ('draw' in a tight spot)."],
+                "moment": {"cue": "the driver finally disarmed the clerk on the third try and walked "
+                                  "out with the gun — full tank, paid cash, untouchable for one shining "
+                                  "second; she is exhilarated and changed and a little frightened of "
+                                  "what they've both become — they are armed and dangerous now and "
+                                  "there is no rewinding past who they are",
+                           "stub": ["…You did it. You actually did it. Gun's ours, tank's full, and "
+                                    "I have never felt so alive or so doomed. We're something else "
+                                    "now, ace. Armed and dangerous and out of second chances at being "
+                                    "anything softer. Drive.",
+                                    "Got it. GOT it. Third time, just like I knew. We walked out of "
+                                    "there armed, and the West is going to feel it. No going back to "
+                                    "before this — not even I can rewind that far."],
+                           "unlock": True},
+                "done": True}
+
+    # --- pull a gun you don't have ---
+    if verb == "draw" and not s.flags.get("gun"):
+        return {"events": ["STANDOFF: you reach for a gun you don't own yet. He sees the move and "
+                           "the barrel jerks up. Don't."],
+                "moment": {"cue": "the driver reached for a weapon they don't have during the "
+                                  "standoff; she hisses at them to stop", "stub": ["You don't HAVE "
+                           "one yet — that's the whole point. Hands flat. Talk, or take HIS."]},
+                "done": False}
+
+    # --- flee ---
+    if verb in ("drive", "home", "tow"):
+        s.flags.pop("standoff", None)
+        rules.set_ending(s, "busted")
+        return {"events": ["STANDOFF: you go for the door. He goes for the trigger. Nobody "
+                           "outdrives a pistol from ten feet."],
+                "moment": {"cue": "the driver tried to flee a man pointing a gun at them; it ended "
+                                  "at once", "stub": ["You can't DRIVE away from a gun, ace. Rewind."]},
+                "done": True}
+
+    # --- de-escalate (talk him down) ---
+    if verb in ("say", "talk"):
+        calm = _hits((raw or "").lower(), _DEESCALATE)
+        if calm >= 2 and not _hits((raw or "").lower(), _ROB):
+            s.flags.pop("standoff", None)
+            return {"events": ["STANDOFF: you keep your hands flat and your voice flatter, and the "
+                               "barrel drops an inch, then a foot. 'Just get your gas and go. And "
+                               "don't come back.' He doesn't lower the phone until you're at the door."],
+                    "moment": {"cue": "the driver talked the clerk down off the gun — no shot, no "
+                                      "hero, just a slow exit; she exhales like a cut brake line and "
+                                      "is quietly relieved they didn't become the other thing tonight",
+                               "stub": ["Good. GOOD. Out the door, don't run, don't look back. That's "
+                                        "how you walk away from a gun — boring. We stayed boring. "
+                                        "Tonight that's the bravest thing we did.",
+                                        "He's putting it down. Slow. Slower. …Drive normal. We were "
+                                        "never here. Nice work staying soft — it's harder than the "
+                                        "other thing."]},
+                    "done": True}
+        # didn't land — and he's still dialing
+        if st["round"] >= STANDOFF_COPS_ROUNDS:
+            s.flags.pop("standoff", None)
+            rules.set_ending(s, "busted")
+            return {"events": ["STANDOFF: you talk in circles and the dispatcher picks up. Two "
+                               "minutes later there are lights in the lot. Busted at the pump."],
+                    "moment": {"cue": "the driver dithered too long and the cops arrived at the "
+                                      "standoff", "stub": ["Too slow — they're here. Rewind and "
+                               "mean it this time, words or the gun, but pick one."]},
+                    "done": True}
+        return {"events": [f"STANDOFF: he's not buying it and the phone's still to his ear. "
+                           f"'I said keep still.' ({STANDOFF_COPS_ROUNDS - st['round']} before the "
+                           f"cops are here.)"],
+                "moment": {"cue": "the de-escalation isn't landing and the clerk is still on the "
+                                  "phone with police; she urges calm, fast", "stub": ["Not working. "
+                           "Drop the act, go simpler — sorry, easy, just buying gas, putting it down. "
+                           "Or go for the gun. Clock's running."]},
+                "done": False}
+
+    # look / anything else — stall (counts toward the cops arriving)
+    if st["round"] >= STANDOFF_COPS_ROUNDS:
+        s.flags.pop("standoff", None)
+        rules.set_ending(s, "busted")
+        return {"events": ["STANDOFF: you freeze a beat too long and the lot fills with red and "
+                           "blue. Busted at the pump."],
+                "moment": {"cue": "the driver stalled out the standoff clock", "stub": ["That's "
+                           "the cops. Rewind, ace."]}, "done": True}
+    return {"events": ["STANDOFF: the pistol stays level. He's still on the phone. Do something."],
+            "moment": {"cue": "mid-standoff, nothing resolved, the clerk still aiming and dialing",
+                       "stub": ["Talk or grab, ace — staring at him isn't a plan."]}, "done": False}
+
+
+def draw_in_stop(s: GameState, in_owner: bool) -> dict:
+    """Desperado's nuclear option: pull the gun on the law (or the owner). Forces an exit at a
+    ruinous cost. Only reachable once you're armed."""
+    from engine import rules
+    if in_owner:
+        s.flags.pop("owner_scene", None)
+        s.flags["owner_refused_forever"] = True
+        s.heat = min(100.0, s.heat + 20.0)
+        return {"events": ["OWNER: you put the gun on the man who built her. He goes still, then "
+                           "raises both hands and steps back, slow. 'Okay. Okay. She's yours.' He "
+                           "walks to his rental without turning his back on you. He will not ask "
+                           "again — and he will not call it off, either."],
+                "moment": {"cue": "the driver drew the gun on the man who built her to make him back "
+                                  "off; she is sick about it — this is the coldest thing they've done "
+                                  "and it bought freedom at the price of the one person who understood "
+                                  "them both", "stub": ["…You pulled it on HIM. He built me. He's "
+                           "walking away with his hands up and something just died in the car that "
+                           "isn't coming back with a rewind. We're free. God help us, we're free."]},
+                "done": True}
+    s.flags.pop("stop", None)
+    s.flags["wanted_armed"] = True
+    s.heat = DRAW_HEAT
+    return {"events": [f"LAW: you draw first. The officer's eyes go wide and he dives behind his "
+                       f"door as you drop it into gear — clean away, this time, but every radio in "
+                       f"the state just learned this car shoots back. Heat {s.heat:.0f}.",
+                       "LAW: armed-and-dangerous now. The next ones won't wave you off — they'll "
+                       "come ready."],
+            "moment": {"cue": "the driver pulled a gun on a cop to escape a stop; they got away but "
+                              "crossed a line — the law will now treat this car as a lethal threat; "
+                              "she is breathless, half-feral, aware they just traded every soft "
+                              "ending for this one",
+                       "stub": ["GO — go go go, before he's up. …We're clear. We're clear. And we "
+                                "are never going to be waved off again, you understand that? We pulled "
+                                "iron on the law. That door's shut now. Just drive.",
+                                "Holstered, hammer down, hands at ten and two like a Sunday drive. "
+                                "Nobody behind us. But they know now — this Z bites. No more talking "
+                                "our way out. Only this."]},
+            "done": True}

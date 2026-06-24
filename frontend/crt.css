@@ -68,6 +68,9 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 #dash { flex: 0 0 auto; border: 3px solid var(--cyan-faint); border-radius: 10px; background: #000; padding: 8px 12px;
   display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .d-row { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.d-row.desperado { color: var(--red); text-shadow: 0 0 7px rgba(226,59,46,.55); animation: despFlick 2.2s steps(1) infinite; }
+.d-row.desperado .d-k, .d-row.desperado .d-v { color: var(--red); }
+@keyframes despFlick { 0%,93%,100% { opacity: 1; } 95% { opacity: .55; } }
 .d-k { color: var(--cyan-dim); min-width: 48px; letter-spacing: 1px; }
 .d-v { color: var(--paper); overflow: hidden; text-overflow: ellipsis; }
 .gauge { display: inline-flex; gap: 1px; align-items: center; }

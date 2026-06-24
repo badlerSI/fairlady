@@ -54,6 +54,7 @@ pay cash | pay card    cash leaves no trail; the card does
 sleep / motel          rest for the night — you must, most nights
 talk                   speak with the locals where the language isn't English
 who owned you before / where were you born / where'd you grow up   — her story, filled in over time
+disarm / draw          (Desperado) go for an armed clerk's gun; once you're armed, force your way out
 rewind                 back to the last checkpoint (twice in a row reaches one deeper) — she keeps the saves
 map / look / tow / new
 ```
@@ -73,7 +74,7 @@ backend/
     economy.py        gas pricing, fueling math, cash-vs-card
     commands.py       intent parser (the LLM never decides what happens)
     prologue.py       the favor — the SEMA show-floor opening; she asks, then begs
-    encounters.py     talk-your-way-out: traffic stops + the owner (deterministic rubric)
+    encounters.py     talk-your-way-out: traffic stops, the owner, the gas-station standoff (Desperado)
     game.py           orchestration: new game, snapshots, suggested moves, turns
     save.py           JSON save/load
   adapters/
@@ -94,7 +95,7 @@ tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes
 tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
-backend/tests/        71 deterministic-core tests
+backend/tests/        78 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -136,6 +137,19 @@ wave-off to a ticket to a BOLO to busted — and fleeing is exactly as smart as 
 waiting at the next pump island. He's not there to fight; he's there to ask *why her*. He knows true
 love with cars — and what you two have is it, if you can say so out loud. (He's pining for someone
 else entirely. It all comes out in due course, like the best early-90s light novel games.)
+
+### Desperado Mode — armed and dangerous
+
+Lean on the clerk at a manned pump — threaten him, act hinky — and his hand comes up from under the
+counter with a **pistol**: keep still, he's calling the cops. You can talk him down (clean exit) or
+go for the gun (`disarm`). But the grab only lands if you **did it right** — full tank, paid **cash**,
+*before* you spooked him — and even then, in the spirit of *Edge of Tomorrow*, you **fail the first
+two attempts and get lucky on the third**. The catch: the try-counter **survives rewinds**, so you're
+cursed to relive the standoff — fail, rewind, fail, rewind, *win* — until the third grab takes his
+gun. That unlocks a **special checkpoint** and **Desperado Mode**: armed and dangerous. Your Heat now
+has a permanent floor, the law comes ready instead of waving you off, and you carry a new nuclear
+option — `draw` — that forces your way out of any traffic stop at a ruinous, no-going-back cost. The
+gun, like Riz, is yours across every timeline; not even a rewind takes you back to before it.
 
 **Riz** is the style ledger: earned by suave wave-offs, taken tickets, asking the right questions
 before she ever had to beg, and the owner's blessing. And when it all goes wrong: **rewind** — a bit
@@ -234,7 +248,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-71 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+78 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
 ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
 traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,

@@ -102,6 +102,18 @@ STOP_HEAT_WAVE = -8.0         # a cop who waved you off stops being a threat
 STOP_HEAT_TICKET = 10.0       # a written ticket is a record with your face on it
 STOP_HEAT_BAD = 15.0          # he didn't buy it — expect a BOLO
 
+# --- Desperado Mode (the gas-station standoff → armed and dangerous) --------------
+# Act suspicious/aggressive at a manned pump and the clerk pulls a pistol, tells you to
+# freeze, and starts dialing the cops. "Do it right" — full tank, paid CASH, before the
+# confrontation — and the disarm is winnable: you fail the first two grabs, the third
+# lands (Edge of Tomorrow; the try-counter survives rewinds, so you're cursed to relive it).
+STANDOFF_COPS_ROUNDS = 3        # he's on the phone — stall this many turns and they arrive
+DESPERADO_DISARM_LUCKY = 3      # set-up-right disarm #1 and #2 fail; #3 is lucky
+DESPERADO_HEAT_ON_UNLOCK = 30.0 # taking a man's gun with the cops called spikes the meter
+DESPERADO_HEAT_FLOOR = 35.0     # armed and named — heat never falls below this again
+RIZ_DESPERADO = 20.0           # pulling it off is the most style the road has to give
+DRAW_HEAT = 100.0              # pull a gun on the law and every scanner in the county lights up
+
 # --- The owner (he will come looking) --------------------------------------------
 OWNER_MIN_DAY = 3             # he needs time to work the card trail
 OWNER_MIN_SWIPES = 3          # ...and a trail to work

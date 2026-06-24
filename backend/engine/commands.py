@@ -75,6 +75,15 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("tow", "call a tow", "call tow", "get towed", "tow truck"):
         return ("tow", {})
 
+    # the gun (Desperado): go for an armed clerk's pistol, or pull your own once you have it
+    if low in ("disarm", "disarm him", "grab the gun", "go for the gun", "grab for the gun",
+               "go for it", "take the gun", "take his gun", "lunge", "lunge for it",
+               "make a grab", "grab it", "jump him", "wrestle the gun"):
+        return ("disarm", {})
+    if low in ("draw", "pull the gun", "pull my gun", "pull the piece", "point the gun",
+               "draw on him", "draw the gun", "pull iron", "pull the trigger", "show the gun"):
+        return ("draw", {})
+
     # payment method
     if low in ("pay cash", "use cash", "cash", "pay with cash"):
         return ("pay", {"method": "cash"})
