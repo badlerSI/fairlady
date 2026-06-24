@@ -56,7 +56,9 @@ class StubNarrator(Narrator):
         if "SHOW" in kinds:
             sl = kinds["SHOW"].lower()
             if "best in class" in sl: return "Best in class. The spade, the lines, the story. I told you she was a SEMA car."
-            if "stripped" in sl or "shake their heads" in sl: return "Too much of the build is gone — you can race me stripped, but you can't win a lawn. Should've kept the carbon."
+            if "already taken best" in sl or "plaque's on the shelf" in sl: return "Already won this one — the plaque's on the shelf. Let's just enjoy the lawn."
+            if "shake their heads" in sl or "build is gone" in sl: return "Too much of the build is gone — you can race me stripped, but you can't win a lawn. Should've kept the carbon."
+            if "no show field" in sl: return "No show field here. A museum lawn, Monterey, the hall I debuted in — there I'll turn heads."
             return "A show field wants a title and a name. Not while she's stolen."
         if "SELL" in kinds:
             return _pick(rng, [

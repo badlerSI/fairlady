@@ -86,12 +86,15 @@ def parse(raw: str) -> Tuple[str, dict]:
 
     # ---- the garage economy: claims, ATM, glovebox, parts, racing, shows, buying her ----
     # buy the car (the good ending) — must precede the generic 'gas'/drive checks
-    if any(p in low for p in ("buy the car", "buy her", "buy you", "buy it", "i'll buy", "ill buy",
-                              "let me buy", "purchase her", "purchase the car", "make you an offer",
-                              "name your price", "i'll take her", "ill take her", "pay you for her",
-                              "buy you off him", "buy her off")):
+    if (low in ("buy", "buy her", "buy it", "buy the car", "i'll buy her", "ill buy her",
+                "come to terms", "let's come to terms", "lets come to terms")
+            or any(p in low for p in ("buy the car", "buy her", "buy you", "buy it", "i'll buy",
+                                      "ill buy", "let me buy", "purchase her", "purchase the car",
+                                      "make you an offer", "name your price", "i'll take her",
+                                      "ill take her", "pay you for her", "buy you off him",
+                                      "buy her off"))):
         return ("buy", {"amount": _money(low)})
-    if low.startswith("offer") or "i'll offer" in low or "ill offer" in low:
+    if low == "offer" or low.startswith("offer ") or "i'll offer" in low or "ill offer" in low:
         return ("buy", {"amount": _money(low)})
 
     # explore the car / the glovebox

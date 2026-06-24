@@ -195,7 +195,24 @@ section) + wiring:
   roll → win/podium/midpack + prize + riz); `show` at museums/`SHOW_POIS` (needs show_score ≥90 =
   mostly-whole build → best-in-class + prize + riz; stripped → refused). Pre-ownership both refuse
   ("they check titles at the gate").
-- Dash badges: red DESPERADO + cyan OWNED (`snapshot.bought` → `.d-row.owned`). 97 tests. Prose draft.
+- Dash badges: red DESPERADO + cyan OWNED (`snapshot.bought` → `.d-row.owned`).
+
+### 0.95 Economy playtest wave (2026-06-10) — 4 agents, fixes:
+- **bare `buy` now parses** (was the listed choice but looped on 'Why her?' — only 'offer $N' worked).
+  'deal' deliberately NOT mapped to buy (it's the prologue agreement word).
+- **Encounter pitch-vs-command**: a >4-word sentence during a stop/owner scene is SPEECH even if it
+  contains a movement word ("I'll drive her home and put the parts back" used to parse as 'home' and
+  get blocked). Only terse (≤4-word) action verbs are intercepted now.
+- **Claim ratchet closed**: claim is a one-time wallet (`claimed_total`, lifetime ≤ cap); re-claiming
+  after spending no longer refills (was an infinite slow-cash faucet).
+- **Glovebox broke-gated** (per Ben's spec "if they claim none"): `explore` only yields $500 if
+  cash < $100; otherwise flavor.
+- **Race/show one-prize-per-venue** + race now costs ~1h + 3L and needs fuel (was a zero-cost
+  cash/riz faucet — flagged by 3 of 4 agents). `flags.raced_tracks`/`shown_venues`.
+- **Strip-to-fund loophole closed**: `owner_price` adds 2× the resale of every sold part, so chopping
+  her to afford the buy is a net loss (he won't title a shell, and it costs to undo).
+- **go_legit clears gun + wanted_armed** (was leaving 'draw' usable after redemption).
+- Stub: fixed stale "she's stolen" line after ownership. 105 tests. Prose draft.
 
 ## 1. Run it
 

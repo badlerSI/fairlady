@@ -321,13 +321,18 @@ def owner_turn(s: GameState, text: str) -> dict:
 
 
 def owner_price(s: GameState) -> float:
-    """What he needs to let her go — discounted by what you've shown him."""
+    """What he needs to let her go — discounted by what you've shown him, but every part you've
+    stripped off his build raises it (he won't hand a title to a shell, and it costs to undo).
+    That makes 'sell the car to fund buying the car' a losing trade, by design."""
     from config import OWNER_BUY_FLOOR, OWNER_BUY_MAYUMI_DISC, OWNER_BUY_RIZ_DISC
+    from engine import garage
     price = OWNER_BUY_FLOOR
     if s.flags.get("knows_mayumi") or s.flags.get("knows_truth"):
         price -= OWNER_BUY_MAYUMI_DISC
     if s.riz >= 20:
         price -= OWNER_BUY_RIZ_DISC
+    # he charges back roughly twice the resale of everything you pulled off her
+    price += sum(garage.PARTS[p]["value"] * 2 for p in garage.sold(s))
     return round(max(2000.0, price))
 
 

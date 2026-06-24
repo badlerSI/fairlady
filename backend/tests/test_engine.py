@@ -727,6 +727,77 @@ def test_race_and_show_require_ownership_then_reward():
     assert "SHOW:" in r2["events"][0]
 
 
+# ------------------------------------------------------------------ economy playtest-wave fixes
+def test_bare_buy_parses_but_deal_stays_prologue_word():
+    assert parse("buy")[0] == "buy"
+    assert parse("buy her")[0] == "buy"
+    assert parse("deal")[0] == "say"          # 'deal' must stay the prologue agreement, not buy
+
+
+def test_claim_is_a_one_time_wallet_not_a_faucet():
+    s = _at_town(cash=0.0)
+    game.handle(s, "i have $3000 cash")
+    assert s.cash == 3000.0
+    s.cash = 200.0                            # you spent it down
+    r = game.handle(s, "i have $3000 cash")   # re-claiming must NOT refill
+    assert s.cash == 200.0
+    assert "already told me" in r["events"][0]
+
+
+def test_glovebox_only_pays_the_broke():
+    rich = _at_town(cash=2000.0)
+    game.handle(rich, "explore")
+    assert rich.cash == 2000.0                # not broke → no stash
+    broke = _at_town(cash=0.0)
+    game.handle(broke, "explore")
+    assert broke.cash == 500.0
+
+
+def test_race_costs_time_and_fuel_and_pays_once_per_track():
+    s = _at_town(); s.flags["bought"] = True; s.fuel_l = 40.0
+    s.place = world.get_poi("laguna_seca")
+    clock0, fuel0, riz0 = s.clock, s.fuel_l, s.riz
+    game.handle(s, "race")
+    assert s.fuel_l < fuel0 and s.clock > clock0    # a session burns fuel + time
+    riz1 = s.riz
+    r = game.handle(s, "race")                        # repeat at the same track — no new purse
+    assert s.riz == riz1 and "one-time" in r["events"][0]
+
+
+def test_show_pays_once_per_venue():
+    s = _at_town(); s.flags["bought"] = True
+    s.place = world.get_poi("petersen")
+    game.handle(s, "show"); riz1 = s.riz
+    r = game.handle(s, "show")
+    assert s.riz == riz1 and "already" in r["events"][0].lower()
+
+
+def test_stripping_raises_the_owner_price_so_chopping_to_fund_is_a_loss():
+    from engine import encounters
+    s = _at_town(); s.flags["knows_mayumi"] = True; s.riz = 25
+    base = encounters.owner_price(s)                  # 2000 (floored, full discount)
+    game.handle(s, "sell the wheels")                 # +$2400 cash...
+    assert encounters.owner_price(s) >= base + 4000   # ...but ~+$4800 to his price — a losing trade
+
+
+def test_going_legit_clears_the_gun():
+    from engine import garage
+    s = _at_town()
+    s.flags["gun"] = True; s.flags["wanted_armed"] = True; s.flags["desperado"] = True
+    garage.go_legit(s)
+    assert not s.flags.get("gun") and not s.flags.get("wanted_armed") and not s.flags.get("desperado")
+
+
+def test_a_long_pitch_during_an_encounter_is_speech_not_a_command():
+    from engine import encounters
+    s = _at_town(); encounters.start_owner(s)
+    # this sentence contains 'drive her home' but must reach him as a pitch, not parse as movement
+    r = game.handle(s, "I'm the one who'll actually drive her home and put back every part I pulled")
+    assert encounters.owner_active(s)
+    assert s.flags["owner_scene"]["round"] == 1       # it was scored as an answer
+    assert any("OWNER" in e for e in r["events"])
+
+
 # ------------------------------------------------------------------ the gazetteer layer
 def test_gazetteer_towns_are_valid_and_beats_fire_once():
     from config import REGION_BBOX

@@ -100,7 +100,7 @@ tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes
 tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
-backend/tests/        97 deterministic-core tests
+backend/tests/        105 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -271,7 +271,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-97 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+105 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
 ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
 traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,

@@ -498,8 +498,12 @@ def handle(s: GameState, raw: str) -> dict:
             welcome = ("愛車 — SHE'S YOURS\nLegally, on paper, free and clear. The running is over."
                        if good else None)
             return _result(s, out["events"], scene, voice=audio, welcome=welcome)
-        if verb in ("drive", "home", "fuel", "sleep", "tow", "disarm", "draw",
-                    "atm", "sell", "claim", "explore", "race", "show", "parts"):
+        # A long sentence is a PITCH, even if it happens to contain a movement word
+        # ("I'll drive her home and put the parts back" must reach him, not parse as 'home').
+        # Only a TERSE command (≤4 words) that parses to an action verb is treated as one.
+        _action_verbs = ("drive", "home", "fuel", "sleep", "tow", "disarm", "draw",
+                         "atm", "sell", "claim", "explore", "race", "show", "parts")
+        if verb in _action_verbs and len(raw.split()) <= 4:
             events = ["LAW: not while the flashlight's on you. Talk first." if in_stop
                       else "OWNER: he's standing right there. Talk — or make an offer ('buy')."]
             save.save(s, "autosave")

@@ -91,18 +91,23 @@ def parts_text(s: GameState) -> str:
 
 # ---------------------------------------------------------------- claims / ATM / glovebox
 def claim_cash(s: GameState, amount: float) -> list:
+    """You declare the cash you brought — ONCE, up to the cap, total across the whole trip.
+    Re-claiming after you've spent it doesn't refill (it's what you walked out with, not a faucet)."""
     amt = round(max(0.0, amount), 2)
     if amt <= 0:                                   # claiming you're broke
         if s.cash >= 100.0:                        # ...but you're demonstrably not
             return [f"CASH: you're not broke, ace — there's ${s.cash:.0f} in your hand already."]
         s.cash = 0.0
         return ["CASH: you say you're carrying nothing. (Try 'explore' — check the car.)"]
-    capped = min(amt, CASH_CLAIM_CAP)
-    if capped <= s.cash:                           # claiming less than you already have is a no-op
-        return [f"CASH: you've already got ${s.cash:.0f} on you."]
-    s.cash = round(capped, 2)                       # a claim tops you up to the (capped) amount
-    note = "" if capped >= amt else f" (she raises an eyebrow — call it ${capped:.0f}, tops)"
-    return [f"CASH: you've got ${capped:.0f} on you{note}."]
+    claimed = s.flags.get("claimed_total", 0.0)
+    grant = round(min(amt, CASH_CLAIM_CAP) - claimed, 2)   # only the part above what you've already claimed
+    if grant <= 0:
+        return [f"CASH: you already told me what you walked out with — ${claimed:.0f}. "
+                "That's the wallet; the ATM's for the rest."]
+    s.cash = round(s.cash + grant, 2)
+    s.flags["claimed_total"] = round(claimed + grant, 2)
+    note = "" if min(amt, CASH_CLAIM_CAP) >= amt else " (she raises an eyebrow — that's the ceiling)"
+    return [f"CASH: ${grant:.0f} more from your pocket{note}. ${s.cash:.0f} on you."]
 
 
 def atm(s: GameState, amount: float | None) -> list:
@@ -125,15 +130,16 @@ def atm(s: GameState, amount: float | None) -> list:
 
 
 def explore(s: GameState) -> list:
-    found = []
-    if not s.flags.get("glovebox_found"):
+    if s.flags.get("glovebox_found"):
+        return ["EXPLORE: you've already been through the glovebox. Maps, a parking stub, lint."]
+    if s.cash >= 100.0:                            # the stash only matters when you're truly broke
         s.flags["glovebox_found"] = True
-        s.cash = round(s.cash + GLOVEBOX_CASH, 2)
-        found.append(f"EXPLORE: under the registration and a dead flashlight — a roll of bills. "
-                     f"${GLOVEBOX_CASH:.0f}. Somebody's emergency stash, yours now. Cash ${s.cash:.0f}.")
-    else:
-        found.append("EXPLORE: you've already been through the glovebox. Maps, a parking stub, lint.")
-    return found
+        return ["EXPLORE: glovebox, console, under the seats — maps, a parking stub, a cassette. "
+                "Nothing you need; you've already got cash in hand."]
+    s.flags["glovebox_found"] = True
+    s.cash = round(s.cash + GLOVEBOX_CASH, 2)
+    return [f"EXPLORE: under the registration and a dead flashlight — a roll of bills. "
+            f"${GLOVEBOX_CASH:.0f}. Somebody's emergency stash, yours now. Cash ${s.cash:.0f}."]
 
 
 def sell_part(s: GameState, pid: str) -> list:
@@ -166,14 +172,21 @@ def race(s: GameState) -> list:
     if not s.flags.get("bought"):
         return ["RACE: they tech-inspect and check the title at the gate. You can't run a car that's "
                 "still reported missing. (Come to terms with the owner first.)"]
-    perf = 70
-    if "carbs" not in sold(s):
-        perf += 12
-    if "coilovers" not in sold(s):
-        perf += 8
+    if s.fuel_l < 4.0:
+        return ["RACE: you can't run a race day on fumes — fuel up first."]
+    from engine import rules
+    rules.advance_clock(s, 1.0)                      # a session burns an hour and a few liters
+    s.fuel_l = round(max(0.0, s.fuel_l - 3.0), 2)
+    won_here = s.flags.setdefault("raced_tracks", [])
+    repeat = s.place.poi_id in won_here
+    perf = 70 + (12 if "carbs" not in sold(s) else 0) + (8 if "coilovers" not in sold(s) else 0)
     perf -= len(sold(s)) * 4
-    roll = _rng(s, 1).randint(-15, 18)
-    score = perf + roll
+    score = perf + _rng(s, 1).randint(-15, 18)
+    if repeat:                                       # you've run this circuit — still a thrill, no new purse
+        return [f"RACE: another run at {s.place.name} — quicker, cleaner, but the purse and the "
+                "trophy were a one-time thing. You burn an hour for the love of it. Worth it."]
+    if s.place.poi_id:
+        won_here.append(s.place.poi_id)
     if score >= 92:
         prize = 600 + _rng(s, 2).randint(0, 400)
         s.cash = round(s.cash + prize, 2)
@@ -201,7 +214,7 @@ def can_show(s: GameState) -> bool:
 
 def show(s: GameState) -> list:
     if not can_show(s):
-        return ["SHOW: no show field here. A museum lawn, Monterey, the hall she debuted in."]
+        return ["SHOW: no show field here — a museum lawn, Monterey, the hall she debuted in."]
     if not s.flags.get("bought"):
         return ["SHOW: every entry form wants a title and a name. Not while she's stolen. "
                 "(Buy her from the owner and you can show her anywhere.)"]
@@ -209,6 +222,12 @@ def show(s: GameState) -> list:
         return [f"SHOW: they walk the car and shake their heads — too much of the build is gone "
                 f"(show score {show_score(s)}/{SHOW_WIN_THRESHOLD}). Stock steel where the carbon was. "
                 "You can race her all day, but you can't win a lawn stripped."]
+    shown = s.flags.setdefault("shown_venues", [])
+    if s.place.poi_id in shown:
+        return [f"SHOW: she's already taken best in class at {s.place.name} — the plaque's on the "
+                "shelf. They wave you onto the field to enjoy it, not to judge it again."]
+    if s.place.poi_id:
+        shown.append(s.place.poi_id)
     prize = 800 + _rng(s, 3).randint(0, 700)
     s.cash = round(s.cash + prize, 2)
     s.riz = round(s.riz + RIZ_SHOW_WIN, 1)
@@ -219,10 +238,13 @@ def show(s: GameState) -> list:
 
 # ---------------------------------------------------------------- the good ending
 def go_legit(s: GameState) -> None:
-    """She's yours, on paper. Heat's gone for good; the law and the owner stop hunting."""
+    """She's yours, on paper. Heat's gone for good; the law and the owner stop hunting — and you
+    don't need the gun anymore. A clean slate is the whole point of the good ending."""
     s.flags["bought"] = True
     s.flags["no_heat"] = True
     s.flags["report_withdrawn"] = True
     s.flags.pop("owner_deadline_day", None)
     s.flags.pop("desperado", None)       # the title clears the car; the heat floor lifts
+    s.flags.pop("gun", None)             # you put it down — there's nothing left to point it at
+    s.flags.pop("wanted_armed", None)
     s.heat = 0.0
