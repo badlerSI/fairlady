@@ -128,6 +128,12 @@ const SPR = {
   mesa(s, x, y, w, h, c = I.d2) {
     s.poly([[x, y], [x + w*0.12, y - h], [x + w*0.88, y - h], [x + w, y]], c);
   },
+  cloud(s, x, y, sc = 1, c = I.d2) {       // puffy 1-bit daytime cloud (drifts)
+    const d = (dx, dy, r) => s.disc(x + dx*sc, y + dy*sc, Math.max(1, r*sc), c);
+    d(-9, 1, 4); d(-2, -2, 5); d(5, -3, 6); d(12, -1, 5); d(18, 1, 4);
+    s.rect(x - 11*sc, y + 1*sc, 31*sc, Math.max(1, 3*sc), c);   // flat base
+    s.disc(x + 4*sc, y - 4*sc, Math.max(1, 2*sc), I.d3);        // a lit crown
+  },
   ground(s, y, c = I.d3) { s.rect(0, y, s.W, s.H - y, I.bg); s.hline(0, s.W, y, c); },
   road(s, t, o = {}) {           // perspective road with marching dashes
     const horizon = o.horizon || 118, vx = o.vx || 160;
@@ -296,13 +302,16 @@ function drawAce(s, t, o = {}) {
 
   // ground shadow under the tires
   s.dither(x + Math.round(w * 0.10), baseY - 4, Math.round(w * 0.80), 5, 8, I.d1);
-  // road-speed streaks flanking her when rolling
+  // road-speed streaks flanking her — they RUSH DOWN AND OUTWARD past the car (forward motion),
+  // not inward (which read as reverse)
   if (moving) {
-    const m = (t * 280) % 26;
-    for (let k = 0; k < 4; k++) {
-      const ly = baseY - 2 - k * 4, off = (m + k * 26) % 46;
-      s.rect(x - 24 + off, ly, 9, 1, I.d2);
-      s.rect(x + w + 16 - off, ly, 9, 1, I.d2);
+    for (let k = 0; k < 5; k++) {
+      const sp = (t * 1.7 + k / 5) % 1;          // 0 = far/high behind her, 1 = near/low past her
+      const ly = baseY - 46 + sp * 54;            // travels downward toward the camera
+      const spread = 16 + sp * 34;                // fans outward as it nears
+      const len = 4 + sp * 11, th = Math.max(1, Math.round(sp * 2.2)), c = sp > 0.5 ? I.d2 : I.d1;
+      s.rect(x - spread - len, ly, len, th, c);   // left side, sweeping out + down
+      s.rect(x + w + spread, ly, len, th, c);     // right side
     }
   }
   // the car — OPAQUE, on the top layer (the road never shows through her)
@@ -316,12 +325,13 @@ function drawAce(s, t, o = {}) {
   if (!moving && s.blink(2.4, 0.3))
     s.dither(x + Math.round(w * 0.46), y + h - 7, 13, 8, 6, I.d2);
 
-  // rear-glass reflection — a bright sheen sweeps the back windshield as the world slides by
+  // rear-glass reflection — a sheen sweeps the back glass in the direction the world RECEDES
+  // (right → left as she drives forward), so it reads with the motion, not against it
   const rg = CAR_META.anchors.rearGlass;
   if (rg) {
     const gx = x + rg[0] * w, gy = y + rg[1] * h, gw = rg[2] * w, gh = rg[3] * h;
     const sweep = (moving ? (t * 0.42) : (t * 0.16)) % 1;
-    const sxx = gx - gh * 0.6 + sweep * (gw + gh * 0.8);   // diagonal, top-left → lower-right
+    const sxx = gx + gw + gh * 0.6 - sweep * (gw + gh * 0.8);   // travels right → left
     for (let i = 0; i < gh; i++) {
       const px = sxx + i * 0.55;
       if (px >= gx + 1 && px <= gx + gw - 1) { s.plot(px, gy + i, i & 1 ? I.hot : I.f); s.plot(px + 1, gy + i, I.f); }
@@ -366,49 +376,59 @@ const ENV_OBJ = {
   },
 };
 
+function _mod(v, m) { return ((v % m) + m) % m; }
+
 function _drawFar(s, env, hy, t) {
   const drift = (t * 7) % 48;
-  if (env === "desert") {
-    SPR.sun(s, 252, 34, 12, t);
-    for (let i = -1; i < 8; i++) { const x = i * 48 - drift; SPR.mesa(s, x, hy + 2, 40, 16 + (i & 1) * 10, I.d1); }
-  } else if (env === "city") {
+  if (env === "city") {                  // NIGHT skyline — rectangle bars belong here, and only here
     SPR.stars(s, t, 50, 5, 0, hy - 6);
-    const r = s.rng(3);
-    for (let i = -1; i < 14; i++) { const x = i * 26 - drift; const h = 14 + ((i * 7) % 22); s.rect(x, hy - h, 22, h, I.d1);
-      for (let wy = hy - h + 3; wy < hy - 3; wy += 6) if (((i + wy) & 3) === 0) s.plot(x + 4 + ((i * 3) % 12), wy, I.d3); }
-  } else { // mountain
-    SPR.stars(s, t, 22, 5, 0, hy - 8);
+    for (let i = -1; i < 14; i++) {
+      const x = i * 26 - drift, h = 14 + ((i * 7) % 22);
+      s.rect(x, hy - h, 22, h, I.d1);
+      for (let wy = hy - h + 3; wy < hy - 3; wy += 6)
+        if (((i + wy) & 3) === 0) s.plot(x + 4 + ((i * 3) % 12), wy, I.d3);
+    }
+    return;
+  }
+  // DAYTIME sky: sun + drifting clouds over the far land
+  SPR.sun(s, env === "mountain" ? 64 : 252, 28, 11, t);
+  const cdrift = (t * 4) % (s.W + 100);
+  for (let i = 0; i < 4; i++) {
+    const x = _mod(i * 104 + 30 - cdrift, s.W + 100) - 50;
+    SPR.cloud(s, x, 18 + (i & 1) * 13, 0.85 + (i & 1) * 0.45, I.d2);
+  }
+  if (env === "desert") {
+    for (let i = -1; i < 8; i++) { const x = i * 48 - drift; SPR.mesa(s, x, hy + 2, 40, 16 + (i & 1) * 10, I.d1); }
+  } else { // mountain — daytime peaks
     for (let i = -1; i < 7; i++) { const x = i * 56 - drift * 0.6; s.poly([[x, hy + 2], [x + 28, hy - 30 - (i & 1) * 12], [x + 56, hy + 2]], I.d1); }
   }
 }
 
 function drawHighway(s, t, env) {
-  // DIAGONAL road: the car (rear-3/4) is heading up-and-to-the-left, so the vanishing point
-  // sits left of centre and the band sweeps from the lower-right foreground up to it.
-  const hy = 66, H = s.H, topW = 9, botW = s.W * 0.66;
-  const vpx = s.W * 0.36, nearCx = s.W * 0.60;
-  const frac = (p) => (_roadY(p, hy, H) - hy) / (H - hy);       // screen fraction at depth p
-  const cx = (p) => vpx + frac(p) * (nearCx - vpx);             // road centre slides right as it nears
+  // CENTERED straight road: the car sits centered and heads INTO the screen toward a vanishing
+  // point dead ahead — so it always reads as "on the road, going forward," no left/right mismatch.
+  const hy = 70, H = s.H, topW = 7, botW = s.W * 0.5, cx = s.W * 0.5;
   s.rect(0, 0, s.W, hy, I.bg);
   _drawFar(s, env, hy, t);
-  // the road wedge
-  s.poly([[vpx, hy], [nearCx - botW, H], [nearCx + botW, H]], I.d1);
-  s.line(vpx, hy, nearCx - botW, H, I.d3); s.line(vpx, hy, nearCx + botW, H, I.d3);
+  // the road wedge (symmetric)
+  s.poly([[cx - topW, hy], [cx + topW, hy], [cx + botW, H], [cx - botW, H]], I.d1);
+  s.line(cx - topW, hy, cx - botW, H, I.d3);
+  s.line(cx + topW, hy, cx + botW, H, I.d3);
   const ph = (t * 0.85) % 1;
-  // centre dashes rushing toward camera along the diagonal
-  for (let k = 0; k < 10; k++) { const p = ((k / 10) + ph) % 1; const y = _roadY(p, hy, H); const w = 1 + p * 7; s.rect(cx(p) - w / 2, y, w, 2 + p * 16, I.f); }
+  // centre dashes rushing toward the camera (down the screen) — the forward-motion cue
+  for (let k = 0; k < 10; k++) { const p = ((k / 10) + ph) % 1; const y = _roadY(p, hy, H); const w = 1 + p * 7; s.rect(cx - w / 2, y, w, 2 + p * 16, I.f); }
   // rumble strips
   for (let k = 0; k < 14; k++) {
-    const p = ((k / 14) + ph) % 1; const y = _roadY(p, hy, H); const hw = _roadHalf(p, topW, botW);
+    const p = ((k / 14) + ph) % 1, y = _roadY(p, hy, H), hw = _roadHalf(p, topW, botW);
     const lit = (k + Math.floor(ph * 14)) & 1, c = lit ? I.f : I.d2, tk = 1 + p * 4;
-    s.rect(cx(p) - hw, y, tk, Math.max(1, p * 9), c); s.rect(cx(p) + hw - tk, y, tk, Math.max(1, p * 9), c);
+    s.rect(cx - hw, y, tk, Math.max(1, p * 9), c); s.rect(cx + hw - tk, y, tk, Math.max(1, p * 9), c);
   }
-  // roadside objects spawning at the horizon, sweeping past on the diagonal
+  // roadside objects spawning at the horizon, sweeping outward toward the camera
   const obj = ENV_OBJ[env] || ENV_OBJ.desert;
   for (let i = 0; i < 6; i++) {
     const p = ((i / 6) + ph * 0.9) % 1; if (p < 0.05) continue;
     const side = (i & 1) ? 1 : -1, hw = _roadHalf(p, topW, botW);
-    obj(s, cx(p) + side * (hw + 4 + p * 46), _roadY(p, hy, H), 0.2 + p * 2.0, t, side);
+    obj(s, cx + side * (hw + 4 + p * 46), _roadY(p, hy, H), 0.2 + p * 2.0, t, side);
   }
 }
 
