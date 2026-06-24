@@ -58,6 +58,9 @@ i have $300 cash | withdraw $2000 | explore   claim what you carry · ATM (<$10k
 parts / sell the carbon hood   strip the build off her for cash (a cheap stock part goes on)
 buy her | offer $5000   come to terms with the owner — the GOOD ending; unlocks legal race / show
 race | show            once she's yours: run a real track, or enter the show field — legal, by name
+heat | heat report     pull the credit-karma dashboard: your band, your marks, what's helping
+lie low | untag        cool off at a quiet spot · scrub a fresh Instagram tag
+book an airbnb         a private stay, cash, off the record (vs a traceable motel)
 disarm / draw          (Desperado) go for an armed clerk's gun; once you're armed, force your way out
 rewind                 back to the last checkpoint (twice in a row reaches one deeper) — she keeps the saves
 map / look / tow / new
@@ -79,6 +82,7 @@ backend/
     commands.py       intent parser (the LLM never decides what happens)
     prologue.py       the favor — the SEMA show-floor opening; she asks, then begs
     encounters.py     talk-your-way-out: stops, the owner, the standoff (Desperado), the buyout
+    heat.py           the heat-as-credit-score model: factors dashboard, Instagram tags, visibility
     garage.py         the economy: cash claims, ATM, glovebox, parts, racing, shows, going legit
     game.py           orchestration: new game, snapshots, suggested moves, turns
     save.py           JSON save/load
@@ -100,7 +104,7 @@ tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes
 tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
-backend/tests/        105 deterministic-core tests
+backend/tests/        116 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -142,6 +146,31 @@ wave-off to a ticket to a BOLO to busted — and fleeing is exactly as smart as 
 waiting at the next pump island. He's not there to fight; he's there to ask *why her*. He knows true
 love with cars — and what you two have is it, if you can say so out loud. (He's pining for someone
 else entirely. It all comes out in due course, like the best early-90s light novel games.)
+
+### Heat is a credit score — learn to read it
+
+HEAT is your notoriety, and it works like Credit Karma. Pull the dashboard any time (`heat report`)
+and it reads like a credit report: a band (**GHOST → NOTICED → TRENDING → FLAGGED → MOST WANTED**),
+your **derogatory marks** (each one showing how many clean miles until it ages off) against what's
+**in your favor**, a what-if line, and a "do this" lever. Every point is attributable to a choice —
+nothing drips on a timer.
+
+- **A credit card swipe is a derogatory mark** — traceable, it ages off over about a tank of clean
+  miles. Paying **cash** is clean (but cash is finite — that's the squeeze). An **alias `airbnb`**
+  (cash, no front desk) lies you low; a **motel on the card** is another mark.
+- **It's a visibility problem, not abstract crime.** Park the flashy show car somewhere
+  **paparazzi-bright** — the Strip, Hollywood, SF — and exposure climbs. **The car watches her own
+  Instagram**, and a stranger geotagging her (`@coffee_and_cars_no_filter` and friends) is a big
+  spike — *"we went viral, NOT the good kind."* It's always telegraphed ("phones everywhere") and
+  dodgeable (keep moving), with counterplay (`untag` to DM the poster), and it never fires anywhere
+  low-key. **The curious gas-station clerk** is the same in miniature: play it humble and slide by,
+  show off and he posts you.
+- **There's always an active way down** — pay cash, `lie low` at a quiet spot, book under an alias,
+  cross a state line and run clean miles. Waiting is the worst option, not the only one.
+
+The design is grounded in a research pass on what makes notoriety mechanics fun vs tiresome (Sid
+Meier's interesting-decisions, NFS Heat's risk/reward, GTA's readable bands, Credit Karma's factor
+dashboards) — see `TRANSFER.md`.
 
 ### Coming to terms — buy her, and go legit
 
@@ -271,7 +300,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-105 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+116 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
 ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
 traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,

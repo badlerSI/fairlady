@@ -214,6 +214,33 @@ section) + wiring:
 - **go_legit clears gun + wanted_armed** (was leaving 'draw' usable after redemption).
 - Stub: fixed stale "she's stolen" line after ownership. 105 tests. Prose draft.
 
+## 0.96 Heat as Credit Karma (2026-06-10, Ben's request, research-grounded)
+
+`engine/heat.py` is the heat model. Built from a research pass (workflow) on fun-vs-tiresome
+notoriety mechanics — the load-bearing rules: attribute every delta, never drip on a timer,
+telegraph before commit, gate the Instagram spike behind visible exposure with a dodge window,
+always an active way down, marks age off (grace), car as deadpan straight-man.
+- `heat.add(s, delta, reason, kind)` is the ONE mutator: clamps (respects no_heat/desperado floor)
+  + logs a factor {d, r, k, day, odo} to flags.heat_log (kept 16). All the heat sites in rules.py
+  (card swipe via `_card_mark`, push, rough sleep, state-line, decay, lodging, linger, tow) route
+  through it now. `kind`: mark / spike / lower.
+- `dashboard(s)` = the 'heat report'/'score' command (game.heatreport verb): band + bar, DEROGATORY
+  MARKS vs IN YOUR FAVOR (marks show 'fades in ~N mi' via MARK_FADE_MI=260 clean miles; fully-aged
+  marks are pruned from the view), a WHAT-IF simulator line, and contextual DO-THIS levers.
+- `band()`/`label()` = 5 readable bands (GHOST<25 / NOTICED / TRENDING≥45 / FLAGGED≥70 / MOST
+  WANTED≥90), replacing the old warm/hot labels everywhere (game._heat_label delegates to it).
+- `visibility(place)` 0-3 from _FLASHY/_BUSY/_REMOTE sets + kind. Drives exposure.
+- INSTAGRAM: `social_arrival(s)` on a clean flashy arrival (vis≥2) → telegraph + a gated tag roll
+  (0.11*vis, ×0.35 cooldown within 3 turns) → +12-24 spike 'tagged by @handle', a 'hard inquiry';
+  `untag(s)` claws back 6 if fresh. `social_fuel(s)` = the curious clerk at flashy pumps (sets
+  flags.clerk_curious; game.handle resolves on the next action: drive/humble-say = slide by,
+  showoff/linger = `clerk_resolve` posts you). `lie_low(s)` = active cooldown (−4/−7, costs 1.5h,
+  refuses at vis≥2).
+- Airbnb: economy.lodging_options adds 'airbnb' ($110); rules.sleep special-cases it (cash-preferred
+  alias booking, AIRBNB_HEAT −8, no card mark). commands parses airbnb/private/rental.
+- New verbs: heatreport, lielow, untag (commands.py). Stub has SOCIAL/CLERK/LIE LOW/UNTAG lines.
+- 116 tests. Full research spec + findings in the workflow output. Prose draft.
+
 ## 1. Run it
 
 ```bash
