@@ -62,7 +62,10 @@ heat | heat report     pull the credit-karma dashboard: your band, your marks, w
 lie low | untag        cool off at a quiet spot · scrub a fresh Instagram tag
 book an airbnb         a private stay, cash, off the record (vs a traceable motel)
 disarm / draw          (Desperado) go for an armed clerk's gun; once you're armed, force your way out
-rewind                 back to the last checkpoint (twice in a row reaches one deeper) — she keeps the saves
+bet $1000 on <team>    gamble at the Vegas/Reno tables (rewind a loss and re-roll — the cheat)
+rob the bank           (armed only) a Desperado heist — big take, big heat
+flirt / compliment her  pick up a date anywhere there's a crowd; she gets jealous
+rewind | branches | branch N   fold the timeline back; list checkpoints; jump to any one
 map / look / tow / new
 ```
 
@@ -104,7 +107,7 @@ tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes
 tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
-backend/tests/        116 deterministic-core tests
+backend/tests/        126 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -146,6 +149,35 @@ wave-off to a ticket to a BOLO to busted — and fleeing is exactly as smart as 
 waiting at the next pump island. He's not there to fight; he's there to ask *why her*. He knows true
 love with cars — and what you two have is it, if you can say so out loud. (He's pining for someone
 else entirely. It all comes out in due course, like the best early-90s light novel games.)
+
+### The timeline — branch like code, but the loop has limits
+
+She keeps the saves, so a dead end is rarely final — but you can't brute-force *everything* anymore.
+Checkpoints land on a **navigable timeline** (`branches` lists them; `branch 3` or `rewind to mesquite`
+jumps to any). Plain `rewind` folds to the most recent. Batter the **same** wall over and over and the
+cost climbs (−2, −3, −4 Riz…) until the loop simply **won't fold there** — *"same wall, same wreck; the
+thing that doomed us happened further back."* Sometimes you genuinely are too screwed, and the way out
+isn't hammering one minute — it's branching back to a decision that still had a choice in it.
+
+### Raising the $80k — gamble, strip, or rob
+
+She's insured for **$100k**, and the owner won't sell under an **$80k** floor (knowing Mayumi and real
+Riz bring his number down toward it; stripping the build pushes it up). So buying her is a heist-scale
+goal — you have to *plausibly raise it.* The honest scraps (claim cash, ATM under $10k, sell parts off
+her) don't get you there alone. The fun way: **gamble** at the Vegas/Reno tables (`bet $2000 on the
+raiders`) — and since a losing bet is the one thing the loop can take back, you `rewind` losses and
+re-roll. It's the sanctioned cheat on sports betting: grind $5k → $80k in a handful of all-in bets, at
+the cost of all your Riz. *Money for style.* There's also a number, if you ever find it, that the owner
+can't refuse. And if you went **Desperado**, you don't buy cars — you `rob the bank` (armed only; big
+take, the whole county hunting you, each bank readier than the last).
+
+### Dating — and a jealous car
+
+You can `flirt` and pick up a date of any gender wherever there's a crowd — it's good for your Riz. But
+the car is a stack of compute that never sleeps, and she gets **jealous**, escalating from *"don't mind
+me, I'll just idle here and witness"* to a loud, conspicuous rev right when you don't want eyes on the
+plate. `kill the engine` to do it where she can't watch; `compliment her` to cool it down; driving turns
+her right back on.
 
 ### Heat is a credit score — learn to read it
 
@@ -300,7 +332,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-116 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+126 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
 ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
 traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,

@@ -241,6 +241,30 @@ always an active way down, marks age off (grace), car as deadpan straight-man.
 - New verbs: heatreport, lielow, untag (commands.py). Stub has SOCIAL/CLERK/LIE LOW/UNTAG lines.
 - 116 tests. Full research spec + findings in the workflow output. Prose draft.
 
+## 0.97 Timeline/branches, $80k buyout, gambling, robbery, dating (2026-06-10, Ben's riff)
+
+- TIMELINE / BRANCH SELECTOR (game.py): replaced the chk1/chk2 ring with a labeled timeline.
+  `checkpoint(s, label)` saves cp_<sid>_<seq> + appends flags.timeline (kept TIMELINE_KEEP=8).
+  `branches_text` lists; `rewind(s, target)` resolves None=newest / int=Nth-from-newest / str=fuzzy
+  label/place match. Stakes: rewinds_here escalates the Riz cost on the SAME seq (RIZ_REWIND_COST+here);
+  at here>=4 the loop refuses (REWIND_STUCK_MOMENT). META_PERSIST (timeline/cp_seq/rewinds/...) +
+  DESPERADO_PERSIST carry across the fold. Verbs: branches, branch N, 'rewind to X'. Old double-rewind
+  removed. All checkpoint() calls now pass labels.
+- $80k BUYOUT (config + encounters.owner_price/owner_buy): INSURED_VALUE 100k, OWNER_BUY_BASE 95k,
+  FLOOR 80k, Mayumi disc 10k, riz disc 5k (floored). LUCKY_SEVENS=77777.77: offering exactly that (or
+  'seven sevens') breaks the floor + instant go_legit, even near-broke (the easter-egg hack). Old buy
+  tests updated (price 2k -> 80k).
+- GAMBLING (garage.gamble): GAMBLE_POIS, ~47% even money, rng seeded with flags.rewins so it re-rolls
+  after a fold. A WIN -> game.py checkpoints (banks it); a loss -> no checkpoint, so rewind folds to
+  before the bet. The intended cheat: all-in + rewind losses -> $5k to $80k in ~9 bets, draining Riz.
+  Verb 'bet $X on <team>'.
+- BANK ROBBERY (encounters.rob_bank, can_rob): armed-only (flags.gun), city POI; take $8-25k, heat->90,
+  botch chance 0.18 + 0.12*hits (busted, rewindable). Verb 'rob the bank'.
+- DATING (engine/dating.py): 'flirt' at populated POIs (+riz*0.6), DATES list (any gender), ace_jealousy
+  ladder (rev draws heat at lvl 3+). 'kill the engine' sets ace_off (flirt unseen); 'compliment her'
+  cools jealousy; rules.drive clears ace_off (key turns her back on). Verbs flirt/killengine/compliment.
+- 126 tests. Verified live (branches, gambling, dating). Prose draft. Playtest launched.
+
 ## 1. Run it
 
 ```bash
