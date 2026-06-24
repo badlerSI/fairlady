@@ -855,27 +855,33 @@ def _help_text() -> str:
 
 
 def _range_text(s: GameState) -> str:
-    """'Where can we get to on one tank?' — answered with the real numbers, like everything else."""
+    """'Where can we get to on one tank?' — answered with real numbers. Shows the FAR EDGE of
+    your reach (real destinations, not the casino next door), which is what the question means."""
     p = s.place
     now_mi = s.range_mi
     full_mi = (s.tank_l / LITERS_PER_GALLON) * s.mpg
+    DEST_KINDS = ("city", "park", "track", "amusement", "gas")
     rows = sorted(((world.haversine_mi(p.lat, p.lon, q.lat, q.lon) * ROAD_WINDING_FACTOR, q)
-                   for q in world.all_pois() if q.poi_id != p.poi_id), key=lambda t: t[0])
+                   for q in world.all_pois()
+                   if q.poi_id != p.poi_id and q.kind in DEST_KINDS), key=lambda t: t[0])
     reach_now = [(d, q) for d, q in rows if d <= now_mi]
     reach_fill = [(d, q) for d, q in rows if now_mi < d <= full_mi]
-    lines = [f"ON THIS TANK (~{now_mi:.0f} mi of road):"]
+
+    def fmt(d, q):
+        svc = "".join(c[0] for c in ("gas", "lodging", "food") if c in q.services).upper()
+        return f"  {d:>5.0f} mi  {q.name}  [{q.region}] {svc}"
+
+    lines = [f"ON THIS TANK (~{now_mi:.0f} mi of road) — {len(reach_now)} places in reach; the far edge:"]
     if reach_now:
-        for d, q in reach_now[:10]:
-            svc = "".join(c[0] for c in ("gas", "lodging", "food") if c in q.services).upper()
-            lines.append(f"  {d:>5.0f} mi  {q.name}  [{q.region}] {svc}")
-        if len(reach_now) > 10:
-            lines.append(f"  …and {len(reach_now) - 10} more in range.")
+        for d, q in reversed(reach_now[-10:]):          # farthest-first: what 'how far' really asks
+            lines.append(fmt(d, q))
     else:
-        lines.append("  nowhere. The shoulder is not a destination — buy gas first.")
-    lines.append(f"AFTER A FILL (~{full_mi:.0f} mi on 40 L):")
-    for d, q in reach_fill[:8]:
-        lines.append(f"  {d:>5.0f} mi  {q.name}  [{q.region}]")
-    lines.append("  (mountain legs burn more — Zion, Tioga, Bryce eat the margin)")
+        lines.append("  nowhere worth the name. Buy gas first.")
+    if reach_fill:
+        lines.append(f"WITH A FULL TANK (~{full_mi:.0f} mi) you'd also reach, out to:")
+        for d, q in reversed(reach_fill[-8:]):
+            lines.append(fmt(d, q))
+    lines.append("  (mountain legs burn more — Zion, Tioga, Bryce eat the margin; G=gas L=lodging F=food)")
     return "\n".join(lines)
 
 

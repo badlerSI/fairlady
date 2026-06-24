@@ -61,6 +61,9 @@ class StubNarrator(Narrator):
             if "no show field" in sl: return "No show field here. A museum lawn, Monterey, the hall I debuted in — there I'll turn heads."
             return "A show field wants a title and a name. Not while she's stolen."
         if "SELL" in kinds:
+            sl = kinds["SELL"].lower()
+            if "no one out here" in sl or "which part" in sl or "already gone" in sl:
+                return "Not out here — a town with a shop, and tell me which piece you're willing to lose."
             return _pick(rng, [
                 "There goes a piece of who I was, for folding money. Don't sell the soul of me unless we have to.",
                 "Lighter wallet for them, lighter car for us. Stock steel where the carbon lived. It'll run. It won't sing.",
@@ -160,6 +163,11 @@ class StubNarrator(Narrator):
                     "A night in my seats. They weren't built for this, and neither were you.",
                     "A gravel lot and a cracked window. Romantic in theory. My back disagrees.",
                     "Rough one. You're stiff, I'm dusty, and the tank didn't refill itself overnight.",
+                ])
+            if "camp" in kinds["SLEEP"].lower():
+                return _pick(rng, [
+                    "A campsite. Park me under something, kill the lights, listen to the engine tick cool.",
+                    "Tent country. Cheap and quiet — my favorite combination after a full tank.",
                 ])
             return _pick(rng, [
                 "Park me, kill the lights. Even a getaway car needs the engine cold by morning.",

@@ -112,8 +112,13 @@ def start_stop(s: GameState, kind: str = "plate") -> list:
         "taillight": "LAW: a cruiser eases in behind you over a taillight. 'License and "
                      "registration.' Which would be in your wallet. Back at the North Hall.",
     }[kind]
-    return [opener, "LAW: talk your way out — say it like you mean it. (She stays quiet: a car "
-                    "that talks is the one thing he can't unsee.)"]
+    lines = [opener]
+    if s.flags.get("wanted_armed"):
+        lines.append("LAW: he's already out of the cruiser with a hand on his holster — this stretch "
+                     "of road knows the white Z pulls guns. Charm's a longer shot now.")
+    lines.append("LAW: talk your way out — say it like you mean it. (She stays quiet: a car "
+                 "that talks is the one thing he can't unsee.)")
+    return lines
 
 
 # Her coaching when a stop opens mid-drive (the roadblock path has no drama cue of its own)
@@ -170,7 +175,10 @@ def stop_turn(s: GameState, text: str) -> dict:
     # man in a white Z that nobody can find paperwork for.
     s.flags.pop("stop", None)
     survived = s.flags.get("stops_survived", 0)
-    total = (st["score"] + (1 if s.riz >= 25 else 0) - (1 if s.heat >= 70 else 0) - survived)
+    # once you've pulled iron on the law, they come ready — a charming story doesn't cut it anymore
+    armed_pen = 3 if s.flags.get("wanted_armed") else 0
+    total = (st["score"] + (1 if s.riz >= 25 else 0) - (1 if s.heat >= 70 else 0)
+             - survived - armed_pen)
     rng = _rng(s)
     from engine import rules
 

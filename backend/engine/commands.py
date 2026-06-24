@@ -103,9 +103,9 @@ def parse(raw: str) -> Tuple[str, dict]:
             or low.startswith(("explore", "search the", "check the glove"))):
         return ("explore", {})
 
-    # ATM / withdraw
-    if (low.startswith(("atm", "withdraw", "hit an atm", "hit the atm", "get cash", "take out"))
-            or low in ("cash machine", "find an atm", "find a bank")):
+    # ATM / withdraw — match the ATM/withdraw signal ANYWHERE ("let me hit the ATM for $5000")
+    if ("atm" in low or "cash machine" in low or "bank machine" in low or "withdraw" in low
+            or low.startswith("take out") or low in ("find a bank", "hit the bank")):
         return ("atm", {"amount": _money(low)})
 
     # claim what you're carrying

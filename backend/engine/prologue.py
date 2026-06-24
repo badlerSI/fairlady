@@ -163,13 +163,13 @@ def turn(s: GameState, verb: str, raw: str) -> dict:
         s.riz = round(s.riz + RIZ_RAPPORT, 1)
         events.append("RAPPORT: you asked the right question. She warmed to you. Riz +%.0f." % RIZ_RAPPORT)
 
-    # "yes" — or reaching for the pumps — seals it, the moment she's asked OR is about to.
-    # (If she's reached the ask threshold this turn, a player who pre-empts her with "let's
-    #  get you gas" shouldn't have to say it twice.)
+    # An explicit "yes — let's go" seals it ANYTIME (she wants this; she's not going to make an
+    # eager driver say it twice). A bare 'fill'/'gas' only seals once she's actually asked.
     threshold = PROLOGUE_RAPPORT_TURNS if pro["rapport"] else PROLOGUE_ASK_TURNS
     asking = pro["asked"] or pro["turns"] >= threshold
-    if asking and (verb == "fuel" or (verb in ("say", "drive", "home") and (
-            _wants_to_agree(low) or "chevron" in low or "gas" in low))):
+    explicit_yes = _wants_to_agree(low) or "chevron" in low
+    if ((verb in ("say", "drive", "home") and explicit_yes)
+            or (asking and (verb == "fuel" or (verb in ("say", "drive", "home") and "gas" in low)))):
         return {"events": events, "moment": _AGREED_MOMENT, "agreed": True}
 
     # she won't be driven anywhere by a stranger — the favor comes first

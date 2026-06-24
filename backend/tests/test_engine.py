@@ -455,7 +455,8 @@ def test_range_question_lists_what_the_tank_can_reach():
     r = game.handle(s, "where can we get to on this tank?")
     assert "ON THIS TANK" in r["info"]
     assert "Las Vegas" in r["info"]                    # the strip is in reach even on fumes
-    assert "AFTER A FILL" in r["info"]
+    assert "WITH A FULL TANK" in r["info"]             # the far edge, after a fill
+    assert "Cedar City" in r["info"] or "St. George" in r["info"]   # a real far destination shows
 
 
 def test_berlin_nv_exists_and_tells_its_story():
@@ -796,6 +797,47 @@ def test_a_long_pitch_during_an_encounter_is_speech_not_a_command():
     assert encounters.owner_active(s)
     assert s.flags["owner_scene"]["round"] == 1       # it was scored as an answer
     assert any("OWNER" in e for e in r["events"])
+
+
+# ------------------------------------------------------------------ beta-test (my own playthroughs)
+def test_atm_parses_from_natural_phrasing():
+    assert parse("let me hit the ATM for $5000") == ("atm", {"amount": 5000.0})
+    assert parse("I'll grab $2000 from an atm")[0] == "atm"
+    assert parse("withdraw 3 grand")[0] == "atm"
+    assert parse("i have $300 cash")[0] == "claim"     # still a claim, not an ATM
+
+
+def test_explicit_yes_seals_the_favor_early():
+    s = game.new_game(seed=7)
+    game.handle(s, "how much torque?")                  # turn 1, rapport
+    r = game.handle(s, "nice, let's go fill you up")     # an eager yes on turn 2 — must land now
+    assert s.flags.get("prologue_done") and s.place.poi_id == "sema_chevron"
+    assert r["welcome"] and "RIDE OR DIE" in r["welcome"]
+
+
+def test_drawing_on_a_cop_makes_future_stops_harder():
+    from engine import encounters
+    pitch = ("Evening officer, sorry — wallet's at the SEMA show. It's the show car on a transport "
+             "run, 250 lb-ft of torque, happy to pop the hood.")
+    # same strong pitch: a clean driver waves off; a gun-puller does not
+    clean = fresh(); clean.fuel_l = 40.0; clean.heat = 30.0
+    encounters.start_stop(clean, "plate")
+    game.handle(clean, pitch); game.handle(clean, pitch)
+    waved = clean.status == "playing" and clean.flags.get("stops_survived")
+    armed = fresh(); armed.fuel_l = 40.0; armed.heat = 30.0; armed.flags["wanted_armed"] = True
+    opener = encounters.start_stop(armed, "plate")      # the opener warns they come ready
+    assert any("holster" in e for e in opener)
+    game.handle(armed, pitch); game.handle(armed, pitch)
+    assert waved                                         # the clean run got the wave-off
+    assert armed.riz <= clean.riz                        # the armed run did strictly worse
+
+
+def test_sell_failure_does_not_play_the_success_line():
+    s = fresh()
+    s.place = world.get_poi("area51_gate")              # no shop out here
+    r = game.handle(s, "sell the seats")
+    assert any("no one out here" in e.lower() for e in r["events"])
+    assert "won't sing" not in (r["scene"] or "")       # the sell-success flavor must not fire
 
 
 # ------------------------------------------------------------------ the gazetteer layer
