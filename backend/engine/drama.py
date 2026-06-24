@@ -7,7 +7,7 @@ import random
 from datetime import datetime
 
 from engine.state import GameState
-from engine import rules, economy, world, encounters
+from engine import rules, economy, world, encounters, heat as _heat
 
 ADV_KINDS = ("city", "track", "amusement", "encounter", "museum", "park")
 
@@ -35,7 +35,7 @@ def _miles_home(s) -> float | None:
 def _e_overheat(s, rng):
     extra = round(0.6 + rng.random() * 0.7, 2)
     rules.advance_clock(s, extra)
-    s.heat -= 1.5; _clamp_heat(s)
+    _heat.add(s, -1.5, "pulled over to cool an overheat — off the road", "lower")
     return {
         "tag": "DRAMA", "id": "overheat",
         "lines": [f"DRAMA: the temp needle buried itself in the red on the grade — you pulled over "
@@ -49,7 +49,7 @@ def _e_overheat(s, rng):
 
 
 def _e_plate(s, rng):
-    s.heat += 6; _clamp_heat(s)
+    _heat.add(s, 6, "a cruiser ran the plate", "spike")
     return {
         "tag": "DRAMA", "id": "plate",
         "lines": [f"DRAMA: a cruiser ran the plate; you slid onto a frontage road just in time. Heat {s.heat:.0f}."],
@@ -64,7 +64,7 @@ def _e_plate(s, rng):
 def _e_owner(s, rng):
     lvl = s.flags.get("owner_revealed", 0)
     s.flags["owner_revealed"] = lvl + 1
-    s.heat -= 3; _clamp_heat(s)        # she slows, goes quiet — but says nothing she shouldn't
+    _heat.add(s, -3, "drove slow and quiet, lost in it", "lower")  # says nothing she shouldn't
     weekday = s.clock.strftime("%A")   # she knows what day it is — the dash clock is stuck, she isn't
     pieces = [
         f"someone used to drive this exact road. I'm not telling you who. Not on a {weekday} with you.",
@@ -96,7 +96,7 @@ def _e_recognized(s, rng):
                 "stub": [f"That kid knew exactly what I am. Slipped you ${gift} 'for fuel' and walked off "
                          f"grinning. People love a legend. Hope he doesn't post it.",
                          f"He recognized me. Of course he did. ${gift} richer and a witness poorer — drive."]}
-    s.heat += 5; _clamp_heat(s)
+    _heat.add(s, 5, "a witness recognized the car and filmed it", "spike")
     return {"tag": "DRAMA", "id": "recognized_bad",
             "lines": [f"DRAMA: someone recognized the car — and you. A phone came up. Heat {s.heat:.0f}."],
             "cue": "someone recognized the car — and that it shouldn't be here, with you — and lifted a phone "
@@ -112,7 +112,7 @@ def _e_gremlin(s, rng):
         paid = economy.pay(s, cost)
         if paid["method"] == "card":               # a roadside swipe is a record like any other
             s.flags["card_swipes"] = s.flags.get("card_swipes", 0) + 1
-            s.heat += 2; _clamp_heat(s)
+            _heat.add(s, 2, "paid a roadside mechanic on the card", "mark")
         return {"tag": "DRAMA", "id": "gremlin_fix",
                 "lines": [f"DRAMA: a misfire forced a roadside fix — ${cost} ({paid['method']})."],
                 "cue": f"the inline-six developed a hard misfire and you had to pay a roadside mechanic ${cost} "

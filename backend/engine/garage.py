@@ -123,7 +123,8 @@ def atm(s: GameState, amount: float | None) -> list:
         return ["ATM: nothing to withdraw."]
     s.cash = round(s.cash + want, 2)
     s.flags["atm_pulled"] = round(pulled + want, 2)
-    s.heat = min(100.0, s.heat + ATM_HEAT)
+    from engine import heat as _heat
+    _heat.add(s, ATM_HEAT, "an ATM camera got a frame of you", "mark")
     return [f"ATM: withdrew ${want:.0f} (the camera gets a frame of you — heat +{ATM_HEAT:.0f} → "
             f"{s.heat:.0f}). Cash ${s.cash:.0f}. ${ATM_ACCOUNT_LIMIT - s.flags['atm_pulled']:.0f} "
             "left in the account."]

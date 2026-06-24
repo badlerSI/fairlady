@@ -892,6 +892,54 @@ def test_curious_clerk_humble_slides_by_showoff_posts():
     assert s2.heat > h0 and s2.flags.get("instagram_tags")
 
 
+# ------------------------------------------------------------------ heat dashboard reconciles
+def test_the_dashboard_ledger_reconciles_to_the_score():
+    # the credit-score conceit only works if the marks sum to the number — ATM, drama, and the
+    # starting baseline all route through the ledger now
+    s = game.new_game(seed=909, prologue_on=False); s.fuel_l = 40.0; s.cash = 80.0
+    game.handle(s, "withdraw $2000")                  # ATM mark (was bypassing the ledger)
+    game.handle(s, "drive to st_george fast")         # push + state line + decay
+    game.handle(s, "pay card"); game.handle(s, "fill")
+    log_sum = sum(e["d"] for e in s.flags["heat_log"])
+    assert abs(s.heat - log_sum) < 0.3                 # reconciles
+    info = game.handle(s, "heat report")["info"]
+    assert "baseline" in info and "an ATM camera" in info   # both now attributed
+
+
+def test_drama_heat_is_attributed():
+    from engine import drama, heat
+    s = fresh(); s.heat = 40.0
+    drama._e_plate(s, __import__("random").Random(1))  # a plate-run spike
+    assert any("ran the plate" in e["r"] for e in s.flags.get("heat_log", []))
+
+
+def test_lie_low_diminishes_and_resets_on_a_drive():
+    s = fresh(); s.heat = 40.0; s.fuel_l = 40.0
+    s.place = world.get_poi("berlin_nv")               # remote
+    drops = []
+    for _ in range(3):
+        h = s.heat; game.handle(s, "lie low"); drops.append(round(h - s.heat, 1))
+    assert drops[0] > drops[1] > drops[2]              # each cools less
+    s.place = world.get_poi("berlin_nv"); s.fuel_l = 40.0
+    game.handle(s, "drive to tonopah")                 # a real drive resets the streak
+    assert s.flags.get("lielow_streak") == 0
+
+
+def test_favor_fill_leaves_no_heat_mark():
+    s = game.new_game(seed=1)                           # prologue
+    game.handle(s, "how much torque?"); game.handle(s, "let's go fill you up")
+    h = s.heat
+    game.handle(s, "fill")                              # the innocent favor errand
+    assert s.heat == h                                  # no mark — but still a card record:
+    assert s.flags.get("card_swipes", 0) >= 1
+
+
+def test_pay_toggle_confirms():
+    s = fresh()
+    r = game.handle(s, "pay cash")
+    assert "cash" in (r["scene"] or "").lower() and r["info"]
+
+
 # ------------------------------------------------------------------ beta-test (my own playthroughs)
 def test_atm_parses_from_natural_phrasing():
     assert parse("let me hit the ATM for $5000") == ("atm", {"amount": 5000.0})

@@ -184,6 +184,12 @@ def new_game(seed: int | None = None, prologue_on: bool = True) -> GameState:
     s.visited = [start.poi_id] if start.poi_id else []
     s.last_sleep_iso = AWAKE_START_ISO     # you've already been up all day at the show
     s.flags = {"sid": f"{seed}", "states_seen": [start.region] if start.region else []}
+    # seed the starting heat AS a ledger entry, so the dashboard's marks sum to the score from
+    # turn one (it's the original derogatory mark: she's a stolen show car).
+    from engine import heat as _heat
+    base = s.heat
+    s.heat = 0.0
+    _heat.add(s, base, "she's a stolen SEMA show car — the baseline", "spike")
     save.delete(f"chk1_{seed}")            # a fresh game owns a fresh checkpoint ring
     save.delete(f"chk2_{seed}")
     if prologue_on:
@@ -537,7 +543,10 @@ def handle(s: GameState, raw: str) -> dict:
         return _result(s, events, scene, voice=audio)
     if verb == "pay":
         s.pay_method = args["method"]
-        return _result(s, [], "", info=f"Paying with {s.pay_method} now.")
+        line = ("Cash from here on — no trail, no marks. Watch the wad, though; it runs out."
+                if s.pay_method == "cash"
+                else "Card it is. Fast and easy, and every swipe's a mark on the record. Your call.")
+        return _result(s, [], line, info=f"Paying with {s.pay_method} now.")
     if verb == "origin":
         if prologue.active(s):
             prologue.note_turn(s)     # her story counts as a turn of conversation

@@ -187,6 +187,7 @@ def drive(state: GameState, dest: Place, push: bool = False) -> list:
             _heat.add(state, -HEAT_DECAY_PER_HOUR * drive_h, "miles and time, lying low", "lower")
         if push:
             _heat.add(state, HEAT_PUSH_DRIVE, "drove flashy — pushing hard", "mark")
+        state.flags["lielow_streak"] = 0          # real miles reset the lie-low diminishing returns
         _clamp_heat(state)
 
         _register_arrival(state, dest, events)
@@ -286,7 +287,13 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
     elif q["capped_by"] == "money":
         events.append("FUEL: that's all the money would buy.")
     if paid["method"] == "card":
-        _card_mark(state, place, events, "gas")
+        # the favor fill is an innocent errand on day one — no mark yet (you're not a fugitive
+        # until you decide not to load out). It still leaves a card record for the owner's trail.
+        favor_errand = state.flags.get("prologue_done") and not state.flags.get("favor_filled")
+        if favor_errand:
+            state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1
+        else:
+            _card_mark(state, place, events, "gas")
     return events
 
 

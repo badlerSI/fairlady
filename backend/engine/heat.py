@@ -155,7 +155,12 @@ def dashboard(s: GameState) -> str:
     if hurts:
         lines.append("  DEROGATORY MARKS:")
         for r, v in sorted(hurts.items(), key=lambda kv: -kv[1]["pts"])[:5]:
-            tag = "  ⚡hard inquiry" if v["k"] == "spike" else f"  ({fade(v['odo'])})"
+            if "baseline" in r:
+                tag = "  (until she's yours)"
+            elif v["k"] == "spike":
+                tag = "  ⚡hard inquiry"
+            else:
+                tag = f"  ({fade(v['odo'])})"
             lines.append(f"    +{v['pts']:>4.0f}  {r}" + (f" x{v['n']}" if v["n"] > 1 else "") + tag)
     if helps:
         lines.append("  IN YOUR FAVOR:")
@@ -165,14 +170,20 @@ def dashboard(s: GameState) -> str:
     # the what-if simulator — planning IS the fun (Credit Karma's score simulator)
     lines.append("  WHAT IF: pay cash +0 · swipe the card ~+4 · push hard +6 · "
                  "park somewhere flashy +risk · lie low / clean miles −")
-    # 1-2 contextual levers — the panel is a control surface, not a report card
+    # 1-2 contextual levers — the panel is a control surface, not a report card. Keyed off LIVE
+    # state (a mark that's still on the books), never a stale lifetime flag that nags forever.
+    live_card_mark = any(k.startswith(("credit card", "the gas-station", "an ATM", "paid a roadside",
+                                       "the front desk", "the campground"))
+                         for k in hurts)
     levers = []
-    if s.flags.get("card_swipes"):
-        levers.append("pay CASH to stop the bleed")
+    if live_card_mark:
+        levers.append("pay CASH from here on to stop the bleed")
     if h >= 45:
         levers.append("cross a state line and run clean miles — marks age off")
     if visibility(s.place) >= 2:
         levers.append("you're parked somewhere bright — keep moving")
+    if not levers and h <= 12:
+        levers.append("nothing to do — you're a ghost, enjoy it")
     if levers:
         lines.append("  DO THIS: " + "; ".join(levers) + ".")
     return "\n".join(lines)
@@ -291,17 +302,25 @@ def untag(s: GameState) -> list:
 
 
 def lie_low(s: GameState) -> list:
-    """An ACTIVE way down — cool off deliberately at a low-key spot. Better than waiting; useless
-    where everyone can see you."""
+    """An ACTIVE way down — cool off deliberately at a low-key spot. Better than waiting, but with
+    diminishing returns: the first hour out of sight does the work, the fifth does nothing. You have
+    to actually MOVE (put real miles down) to reset it — you can't grind a meter sitting still."""
     if s.flags.get("no_heat"):
         return ["LIE LOW: nothing to hide from — she's yours, free and clear."]
     vis = visibility(s.place)
     if vis >= 2:
         return [f"LIE LOW: you can't disappear in plain sight — {VIS_WORD[vis]}. Get to a back road "
                 "or a quiet town first."]
-    cool = 7.0 if vis == 0 else 4.0
+    streak = s.flags.get("lielow_streak", 0)
+    base = 7.0 if vis == 0 else 4.0
+    cool = round(base * (0.45 ** streak), 1)     # 1st full, then ~45% each time without moving
     from engine import rules
-    rules.advance_clock(s, 1.5)                  # it costs you an hour and a half of daylight
+    rules.advance_clock(s, 1.5)                  # always costs you 90 minutes of daylight
+    s.flags["lielow_streak"] = streak + 1
+    if cool < 0.5:
+        return ["LIE LOW: you've already gone as quiet as a parked car can. Sitting here longer just "
+                "burns daylight — put some real road behind you to shake the rest."]
     add(s, -cool, "laid low, out of sight", "lower")
     return [f"LIE LOW: you tuck her behind {('a derelict barn' if vis == 0 else 'the building')} "
-            f"and wait it out an hour. Nobody comes. −{cool:.0f} → {s.heat:.0f}."]
+            f"and wait it out an hour. Nobody comes. −{cool:.0f} → {s.heat:.0f}."
+            + ("" if streak == 0 else "  (diminishing — drive to reset.)")]
