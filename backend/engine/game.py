@@ -181,10 +181,20 @@ def _state_welcome(s: GameState):
     return f"WELCOME TO {STATE_NAME[reg].upper()} · THE {nick.upper()}\n{fact}"
 
 
+# --------------------------------------------------------------------- persistence
+def _autosave(s: GameState) -> None:
+    """Persist the game to its own slot. Single-player (CLI/tests) → 'autosave'; the multi-user web
+    server stamps each session's own slot in flags['save_slot'] so visitors never share a file."""
+    save.save(s, s.flags.get("save_slot", "autosave"))
+
+
 # --------------------------------------------------------------------- new game
-def new_game(seed: int | None = None, prologue_on: bool = True) -> GameState:
+def new_game(seed: int | None = None, prologue_on: bool = True, sid: str | None = None) -> GameState:
     """prologue_on=True opens on the show floor (the favor). False starts at the Chevron,
-    favor already done — the pre-Ride-or-Die behavior, kept for tests and old saves."""
+    favor already done — the pre-Ride-or-Die behavior, kept for tests and old saves.
+    sid: an opaque session token (the web server passes one per visitor) — it namespaces this
+    game's checkpoint files, its save slot, and its Ace voice-memory, so concurrent players are
+    fully isolated. Defaults to the seed (single-player)."""
     if seed is None:
         seed = random.randint(1, 2_000_000_000)
     start = world.start_place() if prologue_on else world.get_poi("sema_chevron")
@@ -197,7 +207,9 @@ def new_game(seed: int | None = None, prologue_on: bool = True) -> GameState:
     s.place = start
     s.visited = [start.poi_id] if start.poi_id else []
     s.last_sleep_iso = AWAKE_START_ISO     # you've already been up all day at the show
-    s.flags = {"sid": f"{seed}", "states_seen": [start.region] if start.region else []}
+    s.flags = {"sid": sid or f"{seed}", "states_seen": [start.region] if start.region else []}
+    if sid:                                # a web session: its own save slot, keyed by the token
+        s.flags["save_slot"] = f"web_{sid}"
     # seed the starting heat AS a ledger entry, so the dashboard's marks sum to the score from
     # turn one (it's the original derogatory mark: she's a stolen show car).
     from engine import heat as _heat
@@ -212,7 +224,7 @@ def new_game(seed: int | None = None, prologue_on: bool = True) -> GameState:
         s.flags["prologue_done"] = True
         s.flags["favor_filled"] = True
         checkpoint(s, "at the Chevron, favor done")
-    save.save(s, "autosave")
+    _autosave(s)
     return s
 
 
@@ -325,7 +337,7 @@ def rewind(s: GameState, target=None):
         from engine import heat as _heat
         _heat.add(s, overflow, "the loop strained — you came back sloppy, more noticed", "mark")
         strain = f"  Style's spent — the strain bleeds into heat (+{overflow:.0f} → {s.heat:.0f})."
-    save.save(s, "autosave")
+    _autosave(s)
     far = "" if same_wall else "  (a different branch)"
     events = [f"REWIND: the world folds back to {s.place.name}, Day {s.day}. "
               f"Riz −{step:.0f} → {s.riz:.0f}.{far}{strain}  "
@@ -606,7 +618,7 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "help":
         return _result(s, [], "", info=_help_text())
     if verb == "save":
-        save.save(s, "autosave")
+        _autosave(s)
         return _result(s, [], "", info="Saved.")
     if verb == "branches":            # the git-like timeline selector
         return _result(s, [], "", info=branches_text(s))
@@ -632,7 +644,7 @@ def handle(s: GameState, raw: str) -> dict:
         if in_standoff:               # the clerk with the gun — its own ruleset (talk/disarm/draw)
             if verb in ("drive", "home", "fuel", "sleep", "tow"):
                 events = ["STANDOFF: not with a pistol pointed at you. Talk him down, or take it."]
-                save.save(s, "autosave")
+                _autosave(s)
                 scene, voice, audio = _narrate(s, events, "", drama={
                     "cue": "the driver tried to leave while the clerk held a gun on them; she "
                            "snaps them back — you don't move with a barrel on you",
@@ -644,13 +656,13 @@ def handle(s: GameState, raw: str) -> dict:
                 checkpoint(s, "walked out armed — Desperado")  # the special checkpoint
             elif out["done"] and s.status == "playing":
                 checkpoint(s, "survived the standoff")
-            save.save(s, "autosave")
+            _autosave(s)
             scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
             return _result(s, out["events"], scene, voice=audio)
 
         if verb == "draw" and s.flags.get("gun"):     # Desperado's nuclear option
             out = encounters.draw_in_stop(s, in_owner=encounters.owner_active(s))
-            save.save(s, "autosave")
+            _autosave(s)
             scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
             return _result(s, out["events"], scene, voice=audio)
         if verb == "buy" and encounters.owner_active(s):   # come to terms — the good ending
@@ -658,7 +670,7 @@ def handle(s: GameState, raw: str) -> dict:
             good = out.get("moment", {}).get("good_ending")
             if good:
                 checkpoint(s, "bought her — she's yours")
-            save.save(s, "autosave")
+            _autosave(s)
             scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
             welcome = ("愛車 — SHE'S YOURS\nLegally, on paper, free and clear. The running is over."
                        if good else None)
@@ -671,7 +683,7 @@ def handle(s: GameState, raw: str) -> dict:
         if verb in _action_verbs and len(raw.split()) <= 4:
             events = ["LAW: not while the flashlight's on you. Talk first." if in_stop
                       else "OWNER: he's standing right there. Talk — or make an offer ('buy')."]
-            save.save(s, "autosave")
+            _autosave(s)
             scene, voice, audio = _narrate(s, events, "", drama={
                 "cue": "the driver tried to do anything except talk while "
                        + ("an officer" if in_stop else "the man who built her")
@@ -680,7 +692,7 @@ def handle(s: GameState, raw: str) -> dict:
                          "No. Mouth, then pedals. That's the whole play here."]})
             return _result(s, events, scene, voice=audio)
         if verb == "look":            # taking stock doesn't burn a round
-            save.save(s, "autosave")
+            _autosave(s)
             scene, voice, audio = _narrate(s, [], "(takes stock)", drama={
                 "cue": "the driver glances over the dash mid-encounter — she answers in a "
                        "near-soundless whisper, staying furniture",
@@ -691,7 +703,7 @@ def handle(s: GameState, raw: str) -> dict:
         events = out["events"]
         if out["done"] and s.status == "playing":
             checkpoint(s, "talked your way clear")  # survived it
-        save.save(s, "autosave")
+        _autosave(s)
         scene, voice, audio = _narrate(s, events, "", drama=out["moment"])
         return _result(s, events, scene, voice=audio)
 
@@ -710,7 +722,7 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "untag":
         from engine import heat as _heat
         events = _heat.untag(s)
-        save.save(s, "autosave")
+        _autosave(s)
         scene, voice, audio = _narrate(s, events, "")
         return _result(s, events, scene, voice=audio)
     if verb == "pay":
@@ -723,7 +735,7 @@ def handle(s: GameState, raw: str) -> dict:
         if prologue.active(s):
             prologue.note_turn(s)     # her story counts as a turn of conversation
         beat = _origin_beat(s, args["which"])
-        save.save(s, "autosave")
+        _autosave(s)
         return _result(s, [], beat)
 
     # ---- the favor — the prologue owns every turn until you say yes ----
@@ -736,10 +748,10 @@ def handle(s: GameState, raw: str) -> dict:
             s.flags["prologue_done"] = True
             events += rules.drive(s, world.get_poi("sema_chevron"))   # down the block
             checkpoint(s, "the favor — down the block")
-            save.save(s, "autosave")
+            _autosave(s)
             scene, voice, audio = _narrate(s, events, "", drama=out["moment"])
             return _result(s, events, scene, voice=audio, welcome=TITLE_DROP)
-        save.save(s, "autosave")
+        _autosave(s)
         scene, voice, audio = _narrate(s, events, raw, drama=out["moment"])
         return _result(s, events, scene, voice=audio)
 
@@ -787,7 +799,7 @@ def handle(s: GameState, raw: str) -> dict:
         if dest is None:
             events = [f"NAV: I don't have '{args['dest']}' on my maps. Nevada, California, "
                       "Arizona, Utah only — try the town name the way the sign reads."]
-            save.save(s, "autosave")
+            _autosave(s)
             scene, voice, audio = _narrate(s, events, raw)
             return _result(s, events, scene, voice=audio)
         before_odo = s.odometer_mi
@@ -970,7 +982,7 @@ def handle(s: GameState, raw: str) -> dict:
             if payoff:
                 story_beat = payoff
 
-    save.save(s, "autosave")
+    _autosave(s)
     welcome = _state_welcome(s) if s.status == "playing" else None  # no 'welcome' as you leave for good
     if story_beat:
         scene, audio = story_beat, None         # the authored reveal, verbatim

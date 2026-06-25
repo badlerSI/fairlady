@@ -34,6 +34,11 @@ FAIRLADY_ADAPTER=ace ./run.sh  # FAIRLADY's real voice: Nemotron Nano + Kokoro v
 
 Open **http://127.0.0.1:8739/**. Type commands, or just talk to her.
 
+**Putting it on the web** is one step: it's a single FastAPI app that serves both the API and the
+UI on one origin, and it's **multi-user** — every browser gets a session cookie keying its own game
+(own save slot, rewind checkpoints, and Ace voice-memory), so it's safe behind `uvicorn --workers N`.
+See [`deploy/`](deploy/README.md) for the rop1 kit (systemd unit, Caddy/cloudflared + TLS, env).
+
 > Live OSM routing needs Python built against **OpenSSL 3.x**. macOS system Python ships LibreSSL 2.8
 > and fails the TLS handshake to the OSRM/Nominatim demo servers — use Homebrew `python@3.12+`
 > (`PYTHON=/opt/homebrew/bin/python3.12 ./run.sh`). On Linux (rop1) the default Python is fine.
@@ -118,7 +123,8 @@ tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes
 tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
-backend/tests/        145 deterministic-core tests
+deploy/               rop1 production kit: systemd unit, Caddy/cloudflared proxy, env, README
+backend/tests/        151 tests (engine + web)
 ```
 
 ### The one rule that makes it work
@@ -383,7 +389,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-145 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+151 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
 ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
 traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,
