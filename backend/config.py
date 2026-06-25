@@ -144,6 +144,22 @@ RIZ_BOUGHT = 25.0
 RIZ_RACE_WIN = 12.0
 RIZ_SHOW_WIN = 15.0
 
+# --- Endgame: escapes & the scorecard --------------------------------------------
+# The game has to be able to end WELL. Buy her (free roam after), flee south, ship out in a
+# container, or bribe a pardon — each rolls a final scorecard. (Most knobs live in endings.py.)
+PARDON_COST = 50000.0            # the farcical going rate to make the state forget your face
+CONTAINER_COST = 5000.0          # a no-questions container + a forged manifest
+SELFDRIVE_UPGRADE_COST = 15000.0 # the secret: the AiSha cats wake her up to drive herself
+
+# --- Seasons: the mountains close ------------------------------------------------
+# The clock starts Nov 7. As winter rolls in, the snow line descends and high passes shut —
+# Tioga first, then the Sierra high country, then the Wasatch and the rim. A Desperado who has
+# to lie low watches the days burn and the map close around them.
+SEASON_SNOW_START = "2025-11-01"   # day 0 of the descending snow line
+SNOW_LINE_HIGH = 1.40              # terrain threshold open in early Nov (nothing closed)
+SNOW_LINE_LOW = 1.10               # by deep winter, even the 1.15 passes shut
+SNOW_LINE_DESCENT = 0.005          # per day the snow line drops this much in terrain-units
+
 # --- Clock ---------------------------------------------------------------------
 # Pacific Standard Time (Nov 7 2025 is after DST end). Stored as naive local.
 START_ISO = "2025-11-07T17:37:00"

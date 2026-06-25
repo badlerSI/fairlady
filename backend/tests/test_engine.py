@@ -1238,3 +1238,200 @@ def test_homecoming_beats_exist():
     r = game.handle(s, "drive to oakland_aisha")
     assert s.flags.get("seen_home_garage")
     assert "aisha" in r["scene"].lower() or "1926" in r["scene"]
+
+
+# ============================================================ THE ENDGAME
+# Ways the road ends WELL — border, container, pardon, retire — each rolling a scorecard;
+# the seasons closing the high passes; Z camo; and the secret self-driving Ace.
+
+def test_parser_routes_endgame_and_gadget_verbs():
+    cases = {
+        "cross the border": "cross", "flee to mexico": "cross", "go south": "cross",
+        "ship out": "ship", "the container": "ship", "buy a pardon": "pardon",
+        "bribe the governor": "pardon", "retire": "retire", "roll the credits": "retire",
+        "scorecard": "scorecard", "camo": "camo", "dress her down": "camo", "uncamo": "uncamo",
+        "flash the lights": "flash", "play some johnny cash": "stereo", "play music": "stereo",
+        "text my contact": "text", "upgrade her": "upgrade", "make her drive herself": "upgrade",
+        "let her drive": "autodrive", "let her drive to zion": "autodrive", "passes": "closures",
+    }
+    for text, verb in cases.items():
+        assert parse(text)[0] == verb, (text, parse(text)[0])
+    # don't collide with gambling or driving
+    assert parse("bet $1000 on the raiders")[0] == "bet"
+    assert parse("play the tables")[0] == "bet"
+    assert parse("drive to reno")[0] == "drive"
+    assert parse("let her drive to zion")[1]["dest"] == "zion"
+
+
+def test_border_crossing_is_a_win_with_a_scorecard():
+    s = fresh(); s.place = world.get_poi("nogales"); s.fuel_l = 20.0
+    r = game.handle(s, "cross the border")
+    assert s.status == "won" and s.flags["ending_key"] == "border"
+    assert any("THE RIDE" in e for e in r["events"])         # the scorecard rolled
+    # can't cross from a non-border town
+    s2 = fresh(); s2.place = world.get_poi("reno"); s2.fuel_l = 20.0
+    r2 = game.handle(s2, "cross the border")
+    assert s2.status == "playing"
+
+
+def test_border_needs_fuel():
+    s = fresh(); s.place = world.get_poi("nogales"); s.fuel_l = 1.0
+    game.handle(s, "cross the border")
+    assert s.status == "playing"                              # can't coast across on fumes
+
+
+def test_container_ends_desperado_and_costs_cash():
+    s = fresh(); s.place = world.get_poi("long_beach"); s.cash = 6000.0
+    s.flags["desperado"] = True; s.flags["gun"] = True; s.flags["wanted_armed"] = True
+    r = game.handle(s, "ship out")
+    assert s.status == "won" and s.flags["ending_key"] == "container"
+    assert "desperado" not in s.flags and "wanted_armed" not in s.flags
+    assert s.cash < 6000.0
+    # too broke to ship
+    s2 = fresh(); s2.place = world.get_poi("long_beach"); s2.cash = 100.0
+    game.handle(s2, "ship out")
+    assert s2.status == "playing"
+
+
+def test_pardon_clears_at_a_capital_for_the_fee():
+    from config import PARDON_COST
+    s = fresh(); s.place = world.get_poi("sacramento"); s.cash = PARDON_COST + 10000
+    r = game.handle(s, "buy a pardon")
+    assert s.status == "won" and s.flags["ending_key"] == "pardon"
+    assert abs(s.cash - 10000) < 1.0
+    # not at a county town, and not when broke
+    s2 = fresh(); s2.place = world.get_poi("mesquite"); s2.cash = PARDON_COST + 1
+    game.handle(s2, "buy a pardon"); assert s2.status == "playing"
+    s3 = fresh(); s3.place = world.get_poi("phoenix"); s3.cash = 100.0
+    game.handle(s3, "buy a pardon"); assert s3.status == "playing"
+
+
+def test_retire_needs_a_clean_car_then_rolls_credits():
+    s = fresh()
+    game.handle(s, "retire")
+    assert s.status == "playing"                              # still stolen — can't call it clean
+    s.flags["bought"] = True; s.flags["no_heat"] = True; s.heat = 0.0
+    r = game.handle(s, "retire")
+    assert s.status == "won" and s.flags["ending_key"] == "owned"
+    assert any("THE RIDE" in e for e in r["events"])
+
+
+def test_scorecard_awards_reflect_the_run():
+    from engine import endings
+    s = fresh()
+    s.flags.update({"bought": False, "ending_key": "container", "desperado": True,
+                    "robbed_banks": 3, "used_sevens": True, "peak_heat": 95})
+    s.odometer_mi = 2100; s.adventures = ["a", "b", "c", "d", "e", "f"]
+    card = endings.scorecard(s)
+    for award in ("RIDE OR DIE", "MOST WANTED", "DESPERADO", "3-TIME BANK ROBBER",
+                  "THE SEVENS", "CROSS-COUNTRY", "TOURIST"):
+        assert award in card, award
+    assert "FINAL SCORE" in card and "RANK" in card
+
+
+def test_won_status_allows_scorecard_and_new_not_other_verbs():
+    s = fresh(); s.place = world.get_poi("nogales"); s.fuel_l = 20.0
+    game.handle(s, "cross the border")
+    assert s.status == "won"
+    r = game.handle(s, "scorecard")                          # readable after the end
+    assert r["info"] and "FINAL SCORE" in r["info"]
+    r2 = game.handle(s, "drive to reno")                     # the trip's over
+    assert "ride" in r2["scene"].lower() or "scorecard" in r2["scene"].lower()
+
+
+# ------------------------------------------------------------------ seasons
+def test_snow_line_descends_through_the_season():
+    from engine import season
+    def line(iso):
+        s = GameState(); s.clock_iso = iso
+        return season.snow_line(s)
+    assert line("2025-11-07T12:00:00") > 1.30                 # early Nov: a window, nothing shut
+    assert line("2025-12-01T12:00:00") < line("2025-11-15T12:00:00")
+    assert abs(line("2026-02-01T12:00:00") - 1.10) < 0.001    # floors in deep winter
+
+
+def test_high_pass_closes_in_december_but_open_in_november():
+    s = fresh(); s.place = world.get_poi("bakersfield") or world.get_poi("fresno")
+    s.fuel_l = 40.0; s.clock_iso = "2025-12-20T10:00:00"
+    r = game.handle(s, "drive to yosemite")                   # 1.25 terrain, well above the Dec snow line
+    assert any(e.startswith("SNOW") for e in r["events"])
+    assert s.odometer_mi == 0.0
+    s2 = fresh(); s2.place = world.get_poi("bakersfield") or world.get_poi("fresno")
+    s2.fuel_l = 40.0; s2.clock_iso = "2025-11-08T10:00:00"
+    r2 = game.handle(s2, "drive to yosemite")                 # early Nov — open
+    assert not any(e.startswith("SNOW") for e in r2["events"])
+
+
+def test_desert_high_terrain_is_not_a_snow_pass():
+    from engine import season
+    s = fresh(); s.clock_iso = "2025-12-31T10:00:00"
+    assert season.pass_closed(s, world.get_poi("death_valley")) is None  # 1.15 but not in the set
+    assert season.pass_closed(s, world.get_poi("lee_vining")) is not None
+
+
+# ------------------------------------------------------------------ Z camo
+def test_camo_drops_exposure_one_notch_and_a_push_blows_it():
+    from engine import heat
+    s = fresh(); s.place = world.get_poi("las_vegas")
+    assert heat.exposure(s) == 3
+    game.handle(s, "camo")
+    assert s.flags.get("camo") and heat.exposure(s) == 2
+    game.handle(s, "uncamo")
+    assert "camo" not in s.flags and heat.exposure(s) == 3
+    # a flashy push shakes it loose
+    s2 = fresh(); s2.place = world.get_poi("primm"); s2.fuel_l = 40.0; s2.flags["camo"] = True
+    rules.drive(s2, world.get_poi("las_vegas"), push=True)
+    assert "camo" not in s2.flags
+
+
+def test_camo_is_inert_once_she_is_yours():
+    s = fresh(); s.flags["no_heat"] = True
+    r = game.handle(s, "camo")
+    assert not s.flags.get("camo")
+
+
+# ------------------------------------------------------------------ connectivity
+def test_stereo_cools_jealousy_text_needs_wifi():
+    from engine import gadgets
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.flags["ace_jealousy"] = 3
+    game.handle(s, "play some music")
+    assert s.flags["ace_jealousy"] == 2
+    s2 = fresh(); s2.place = world.get_poi("racetrack_playa")     # remote, no services
+    r = game.handle(s2, "text my contact")
+    assert "no signal" in r["events"][0].lower()
+
+
+def test_flash_costs_heat_in_a_crowd_free_in_the_dark():
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.heat = 20.0
+    game.handle(s, "flash the lights"); assert s.heat > 20.0
+    s2 = fresh(); s2.place = world.get_poi("berlin_nv"); s2.heat = 20.0
+    game.handle(s2, "flash the lights"); assert s2.heat == 20.0
+
+
+# ------------------------------------------------------------------ self-driving secret
+def test_self_driving_requires_owned_home_and_money():
+    from engine import gadgets
+    s = fresh()
+    r = game.handle(s, "let her drive to reno")
+    assert not s.flags.get("self_driving") and "WHEEL" in r["events"][0]
+    s.flags["bought"] = True; s.flags["no_heat"] = True; s.heat = 0.0
+    # owned but not at the garage — no dice
+    s.place = world.get_poi("reno"); s.cash = 20000
+    assert not gadgets.can_upgrade_selfdrive(s)
+    game.handle(s, "upgrade her"); assert not s.flags.get("self_driving")
+    # at the garage with the money — the secret opens
+    s.place = world.get_poi("oakland_aisha")
+    assert gadgets.can_upgrade_selfdrive(s)
+    game.handle(s, "upgrade her")
+    assert s.flags.get("self_driving") and s.cash < 20000
+
+
+def test_self_driving_leg_skips_the_fatigue_gate():
+    s = fresh(); s.flags["bought"] = True; s.flags["no_heat"] = True; s.heat = 0.0
+    s.flags["self_driving"] = True
+    s.place = world.get_poi("oakland_aisha"); s.fuel_l = 40.0
+    s.fatigue = 130.0                                          # bone-tired — a human can't drive
+    before = s.odometer_mi
+    r = game.handle(s, "let her drive to san_francisco")
+    assert s.odometer_mi > before                             # she drove anyway
+    assert s.fatigue <= 130.0                                 # you dozed; no new fatigue

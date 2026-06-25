@@ -370,6 +370,7 @@ def owner_buy(s: GameState, amount):
                                "$77,777.77, ace, and that exact number walks her out the door."]},
                     "done": False}
         s.flags.pop("owner_scene", None)
+        s.flags["used_sevens"] = True
         economy.pay(s, LUCKY_SEVENS, prefer="cash")
         s.riz = round(s.riz + RIZ_BOUGHT, 1)
         garage.go_legit(s)

@@ -128,16 +128,26 @@ def _register_arrival(state: GameState, place: Place, events: list) -> None:
 
 
 # --------------------------- driving ------------------------------------------
-def drive(state: GameState, dest: Place, push: bool = False) -> list:
-    """Resolve a drive to `dest`. Consumes fuel and time; may strand you mid-route."""
+def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = False) -> list:
+    """Resolve a drive to `dest`. Consumes fuel and time; may strand you mid-route.
+    selfdrive=True: Ace has the wheel (the secret upgrade) — no fatigue on you, no awake-gate,
+    and a careful autonomous classic draws a little less heat per leg."""
     events: list = []
     if state.status != "playing":
         events.append("STATE: the trip is already over.")
         return events
 
-    if hours_awake(state) >= AWAKE_FORCE_HOURS:
+    # the season can shut the high passes — you can't drive TO a snowed-in one
+    from engine import season
+    closed = season.pass_closed(state, dest)
+    if closed:
+        events.append(closed)
+        return events
+
+    if not selfdrive and hours_awake(state) >= AWAKE_FORCE_HOURS:
         events.append("FATIGUE: you can't keep your eyes open — you have to stop for the night before "
-                      "driving on. Try 'sleep' where there are rooms, or 'pull over' to sleep rough.")
+                      "driving on. Try 'sleep' where there are rooms, 'pull over' to sleep rough"
+                      + (", or 'let her drive'." if state.flags.get("self_driving") else "."))
         return events
 
     origin = state.place
@@ -174,7 +184,10 @@ def drive(state: GameState, dest: Place, push: bool = False) -> list:
         drive_h = dur * push_time
         advance_clock(state, drive_h)
         state.odometer_mi = round(state.odometer_mi + dist, 1)
-        state.fatigue = min(140.0, state.fatigue + drive_h * FATIGUE_PER_HOUR)
+        if selfdrive:
+            state.fatigue = max(0.0, state.fatigue - drive_h * 2.0)   # you doze; she drives
+        else:
+            state.fatigue = min(140.0, state.fatigue + drive_h * FATIGUE_PER_HOUR)
 
         # heat: state line muddies the trail; distance cools you; pushing heats you. Each is a
         # factor on the dashboard (heat.add records WHY), so the player can read the system.
@@ -187,6 +200,9 @@ def drive(state: GameState, dest: Place, push: bool = False) -> list:
             _heat.add(state, -HEAT_DECAY_PER_HOUR * drive_h, "miles and time, lying low", "lower")
         if push:
             _heat.add(state, HEAT_PUSH_DRIVE, "drove flashy — pushing hard", "mark")
+            if state.flags.pop("camo", None):     # you can't hide a car you're driving like that
+                events.append("CAMO: pushing her that hard shook the tarp loose and the grime off "
+                              "the spade — the disguise is blown.")
         state.flags["lielow_streak"] = 0          # real miles reset the lie-low diminishing returns
         state.flags["rewind_tax"] = 0.0           # ...and clear the rewind strain — you've moved on
         state.flags.pop("ace_off", None)          # turn the key and she's watching again
@@ -200,6 +216,9 @@ def drive(state: GameState, dest: Place, push: bool = False) -> list:
         )
         if push:
             events.append("DRIVE: you pushed hard. Faster, thirstier, and more eyes on you.")
+        if selfdrive:
+            events.append("DRIVE: she had the wheel the whole way — smooth, legal, every limit "
+                          "obeyed, you half-dozing in the passenger seat. No hands. No tickets.")
         if crossed:
             events.append(f"DRIVE: crossed into {dest.region}. New jurisdiction; heat eased to {state.heat:.0f}.")
         if state.fatigue >= 100:

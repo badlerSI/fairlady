@@ -28,6 +28,8 @@ FLAGS_OF_INTEREST = (
     "desperado", "gun", "wanted_armed", "desperado_tries", "robbed_banks", "rob_attempts",
     "bought", "no_heat", "instagram_tags", "ace_jealousy", "ace_off", "dates", "gambled_up",
     "rewind_tax", "rewinds_here", "last_rewind_seq", "cp_seq",
+    # the endgame layer
+    "camo", "self_driving", "ending_key", "peak_heat", "used_sevens", "seen_home_garage",
 )
 
 

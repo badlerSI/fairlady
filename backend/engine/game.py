@@ -10,7 +10,8 @@ from config import (
     OWNER_MIN_DAY, OWNER_MIN_SWIPES,
 )
 from engine.state import GameState
-from engine import world, rules, economy, save, drama, prologue, encounters, garage
+from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
+                    endings, gadgets, season)
 from engine.commands import parse
 from adapters import get_narrator
 from adapters.base import voices
@@ -387,6 +388,8 @@ def choices(s: GameState) -> list:
         return c
     if s.status != "playing":
         c = []
+        if s.status == "won":
+            c.append({"cmd": "scorecard", "note": "the final tally + awards"})
         if can_rewind:
             c.append({"cmd": "rewind", "note": "back to the last checkpoint — try again"})
         c.append({"cmd": "new", "note": "drive again"})
@@ -428,6 +431,19 @@ def choices(s: GameState) -> list:
             out.append({"cmd": "race", "note": "run her, legal, in the daylight"})
         if garage.can_show(s):
             out.append({"cmd": "show", "note": "enter the show field"})
+        if gadgets.can_upgrade_selfdrive(s):       # the secret, only at the garage she was built in
+            out.append({"cmd": "upgrade her", "note": "the AiSha cats can wake her up the rest of the way…"})
+        if s.flags.get("self_driving"):
+            out.append({"cmd": "let her drive to <place>", "note": "she takes the wheel — you rest"})
+        out.append({"cmd": "retire", "note": "roll the credits — the final tally"})
+    # the ways OUT, when you're still hot (each ends the run with a scorecard)
+    if not s.flags.get("bought") and s.status == "playing":
+        if endings.can_cross_border(s):
+            out.append({"cmd": "cross the border", "note": "flee south — gone for good"})
+        if endings.can_ship_out(s):
+            out.append({"cmd": "ship out", "note": "a container, a forged life (~$5k cash)"})
+        if endings.can_pardon(s) and s.cash >= 1000:
+            out.append({"cmd": "buy a pardon", "note": f"bribe the state clean (${endings.PARDON_COST/1000:.0f}k)"})
     if (p.has("gas") or p.kind == "city") and not s.flags.get("bought"):
         if garage.sold(s) != list(garage.PARTS):
             out.append({"cmd": "parts", "note": "the build — sell bits for cash"})
@@ -513,6 +529,67 @@ def _encounter(s, force=False):
     npc["label"] = vinfo.get("label", p.language)
     npc["who"] = p.npc or "a local"
     return npc
+
+
+def _after_arrival(s: GameState, events: list):
+    """Everything that can happen the moment the wheels stop somewhere new — a roadblock, an NPC,
+    the owner, a set-piece reveal, a random beat, the Instagram exposure roll — plus the clean-
+    arrival checkpoint. Shared by a normal drive and a self-driven (autopilot) leg. Mutates
+    `events`; returns (npc, drama_ev, story_beat)."""
+    npc = drama_ev = story_beat = None
+    if encounters.stop_active(s):            # law_check opened a roadblock stop mid-drive
+        return None, encounters.WHISPER_MOMENT, None
+    npc = _encounter(s)
+    if npc:
+        events.append(f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
+                      "not switching to English.")
+    # he said he'd wait at the Oakland garage to make the deal — and he's there, ahead of the
+    # homecoming tour and the dice
+    if (s.place.poi_id == "oakland_aisha" and s.flags.get("owner_met")
+            and not s.flags.get("bought")):
+        events += encounters.start_owner(s)
+        events.append(f"OWNER: he's leaning on the roll-up, waiting. 'You came back. "
+                      f"${encounters.owner_price(s):.0f} and she's yours — or talk, "
+                      f"if you'd rather. Your call.'")
+        drama_ev = OWNER_ARRIVAL_MOMENT
+    else:
+        story_beat = _story_on_arrival(s)        # a set-piece reveal takes the moment
+        if not story_beat and not s.place.poi_id:
+            fact = world.wiki_fact(s.place.lat, s.place.lon)   # ANY town brings something up
+            if fact:
+                events.append(f"FACT: {fact}")
+        if not story_beat:
+            if _owner_should_appear(s):          # the man who built her finds you first
+                events += encounters.start_owner(s)
+                drama_ev = OWNER_ARRIVAL_MOMENT
+            else:
+                drama_ev = drama.maybe_event(s)  # else: nothing ever goes to plan
+                if drama_ev:
+                    events += drama_ev["lines"]
+                if encounters.stop_active(s) and drama_ev is None:
+                    drama_ev = encounters.WHISPER_MOMENT
+                # arriving somewhere bright: telegraph exposure + maybe get posted
+                if drama_ev is None and not encounters.stop_active(s):
+                    from engine import heat as _heat
+                    soc = _heat.social_arrival(s)
+                    if soc:
+                        events += soc["events"]
+                        drama_ev = soc["moment"]
+    encounters.check_owner_deadline(s, events)
+    # a clean arrival is a checkpoint — unless something's still standing at the window
+    if (s.place.poi_id and s.status == "playing"
+            and not encounters.stop_active(s) and not encounters.owner_active(s)):
+        checkpoint(s, f"arrived {s.place.name}")
+    return npc, drama_ev, story_beat
+
+
+def _example_dest(s: GameState) -> str:
+    """A nearby place name to seed the 'let her drive to ___' hint."""
+    p = s.place
+    near = sorted(((world.haversine_mi(p.lat, p.lon, q.lat, q.lon), q)
+                   for q in world.all_pois() if q.poi_id and q.poi_id != p.poi_id),
+                  key=lambda t: t[0])
+    return near[0][1].poi_id if near else "zion"
 
 
 def handle(s: GameState, raw: str) -> dict:
@@ -619,6 +696,10 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "heatreport":
         from engine import heat as _heat
         return _result(s, [], "", info=_heat.dashboard(s))
+    if verb == "closures":           # the mountain-pass / season report
+        return _result(s, [], "", info=season.closures_text(s))
+    if verb == "scorecard":          # the running tally / how it ended
+        return _result(s, [], "", info=endings.scorecard(s))
     if verb == "untag":
         from engine import heat as _heat
         events = _heat.untag(s)
@@ -656,6 +737,9 @@ def handle(s: GameState, raw: str) -> dict:
         return _result(s, events, scene, voice=audio)
 
     if s.status != "playing" and verb not in ("tow", "look"):
+        if s.status == "won":
+            return _result(s, [], "That's the ride, ace. 'scorecard' to see the tally again, "
+                           "'new' to do it all differently — or 'rewind' if you want the ending back.")
         hint = "'rewind' to take it back, or 'new' to start again."
         return _result(s, [], f"The trip's over. 'tow' if you can afford it, {hint}"
                        if s.status == "stranded" else f"The trip's over. {hint}")
@@ -676,7 +760,10 @@ def handle(s: GameState, raw: str) -> dict:
             events += _heat.clerk_resolve(s, humble=True)        # you left — slid by
         elif verb == "say":
             events += _heat.clerk_resolve(s, humble=not showoff)
-        elif verb not in ("look", "heatreport", "map", "range", "untag", "lielow"):
+        elif verb == "camo":
+            events += _heat.clerk_resolve(s, humble=True)        # you dressed her down — slid by
+        elif verb not in ("look", "heatreport", "map", "range", "untag", "lielow",
+                          "uncamo", "stereo", "text", "scorecard", "closures"):
             events += _heat.clerk_resolve(s, humble=False)       # lingered at the pump — he got it
 
     if verb == "home":                # "drive her home" — her home is the Oakland garage by default
@@ -698,52 +785,24 @@ def handle(s: GameState, raw: str) -> dict:
             return _result(s, events, scene, voice=audio)
         before_odo = s.odometer_mi
         events = rules.drive(s, dest, push=args.get("push", False))
-        moved = s.odometer_mi > before_odo
-        if s.status == "playing" and moved:
-            if encounters.stop_active(s):        # law_check opened a roadblock stop mid-drive
-                drama_ev = encounters.WHISPER_MOMENT
+        if s.status == "playing" and s.odometer_mi > before_odo:
+            npc, drama_ev, story_beat = _after_arrival(s, events)
+        player_text = ""
+    elif verb == "autodrive":            # the self-driving secret — she takes the wheel
+        if not gadgets.can_autodrive(s):
+            events = gadgets.autodrive_refusal(s)
+        elif not args.get("dest"):
+            events = [f"WHEEL: 'Where to, ace? I'll drive — you rest. (e.g. 'let her drive to "
+                      f"{_example_dest(s)}'.)'"]
+        else:
+            dest = world.geocode(args["dest"])
+            if dest is None:
+                events = [f"NAV: '{args['dest']}' isn't on my maps — NV/CA/AZ/UT only."]
             else:
-                npc = _encounter(s)
-                if npc:
-                    events.append(f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
-                                  "not switching to English.")
-                # he said he'd wait at the Oakland garage to make the deal — and he's there,
-                # ahead of the homecoming tour and the dice
-                if (s.place.poi_id == "oakland_aisha" and s.flags.get("owner_met")
-                        and not s.flags.get("bought")):
-                    events += encounters.start_owner(s)
-                    events.append(f"OWNER: he's leaning on the roll-up, waiting. 'You came back. "
-                                  f"${encounters.owner_price(s):.0f} and she's yours — or talk, "
-                                  f"if you'd rather. Your call.'")
-                    drama_ev = OWNER_ARRIVAL_MOMENT
-                else:
-                    story_beat = _story_on_arrival(s)    # a set-piece reveal takes the moment
-                    if not story_beat and not s.place.poi_id:
-                        fact = world.wiki_fact(s.place.lat, s.place.lon)   # ANY town brings something up
-                        if fact:
-                            events.append(f"FACT: {fact}")
-                    if not story_beat:
-                        if _owner_should_appear(s):  # the man who built her finds you first
-                            events += encounters.start_owner(s)
-                            drama_ev = OWNER_ARRIVAL_MOMENT
-                        else:
-                            drama_ev = drama.maybe_event(s)  # else: nothing ever goes to plan
-                            if drama_ev:
-                                events += drama_ev["lines"]
-                            if encounters.stop_active(s) and drama_ev is None:
-                                drama_ev = encounters.WHISPER_MOMENT
-                            # arriving somewhere bright: telegraph exposure + maybe get posted
-                            if drama_ev is None and not encounters.stop_active(s):
-                                from engine import heat as _heat
-                                soc = _heat.social_arrival(s)
-                                if soc:
-                                    events += soc["events"]
-                                    drama_ev = soc["moment"]
-            encounters.check_owner_deadline(s, events)
-            # a clean arrival is a checkpoint — unless something's still standing at the window
-            if (s.place.poi_id and s.status == "playing"
-                    and not encounters.stop_active(s) and not encounters.owner_active(s)):
-                checkpoint(s, f"arrived {s.place.name}")
+                before_odo = s.odometer_mi
+                events = rules.drive(s, dest, selfdrive=True)
+                if s.status == "playing" and s.odometer_mi > before_odo:
+                    npc, drama_ev, story_beat = _after_arrival(s, events)
         player_text = ""
     elif verb == "fuel":
         events = rules.fuel(s, dollars=args.get("dollars"), liters=args.get("liters"),
@@ -862,6 +921,36 @@ def handle(s: GameState, raw: str) -> dict:
                   else ("GUN: you keep the piece down — no call for it here." if s.flags.get("gun")
                         else "GUN: you don't have a gun. Not yet.")]
         player_text = ""
+    # ---- the endgame: the ways OUT (each rolls a scorecard) ----
+    elif verb == "cross":                        # flee south across the border
+        out = endings.cross_border(s); events = out["events"]
+        drama_ev = out.get("moment"); player_text = ""
+    elif verb == "ship":                         # a shipping container, a forged life
+        out = endings.ship_out(s); events = out["events"]
+        drama_ev = out.get("moment"); player_text = ""
+    elif verb == "pardon":                       # bribe your way clean — the farce
+        out = endings.buy_pardon(s); events = out["events"]
+        drama_ev = out.get("moment"); player_text = ""
+    elif verb == "retire":                       # roll the credits from a good place
+        out = endings.retire(s); events = out["events"]
+        drama_ev = out.get("moment"); player_text = ""
+    # ---- her gadgets ----
+    elif verb == "camo":
+        events = gadgets.camo(s); player_text = ""
+    elif verb == "uncamo":
+        events = gadgets.uncamo(s); player_text = ""
+    elif verb == "flash":
+        events = gadgets.flash_lights(s); player_text = ""
+    elif verb == "stereo":
+        events = gadgets.play_stereo(s, args.get("what")); player_text = ""
+    elif verb == "text":
+        events = gadgets.text_someone(s, args.get("who")); player_text = ""
+    elif verb == "upgrade":                      # the secret: wake her up to drive herself
+        out = gadgets.upgrade_selfdrive(s); events = out["events"]
+        drama_ev = out.get("moment")
+        if s.flags.get("self_driving"):
+            checkpoint(s, "she drives herself now")
+        player_text = ""
     else:  # say — conversation, or leaning on the clerk at a manned pump
         if (s.place.has("gas") and not encounters.standoff_active(s)
                 and encounters.gas_aggression(raw) >= 2):
@@ -875,7 +964,7 @@ def handle(s: GameState, raw: str) -> dict:
                 story_beat = payoff
 
     save.save(s, "autosave")
-    welcome = _state_welcome(s)
+    welcome = _state_welcome(s) if s.status == "playing" else None  # no 'welcome' as you leave for good
     if story_beat:
         scene, audio = story_beat, None         # the authored reveal, verbatim
     else:
@@ -999,6 +1088,12 @@ def _help_text() -> str:
         "  bet $1000 on <team>   gamble at the Vegas/Reno tables to raise it (rewind a loss, re-roll)\n"
         "  rob the bank          (armed only) a heist — big take, big heat\n"
         "  flirt / compliment her   pick up a date anywhere there's a crowd — but she's watching\n"
+        "  camo / uncamo         dress her down to lie low, or flaunt the show car\n"
+        "  flash the lights · play music · text   her tricks (text needs WiFi; music cools her off)\n"
+        "  upgrade her           the secret, once she's yours and home — then 'let her drive to <place>'\n"
+        "  passes                what mountain roads the snow has closed (the calendar matters)\n"
+        "  cross the border · ship out · buy a pardon · retire   the ways the road ends — WELL\n"
+        "  scorecard             your running tally + awards\n"
         "  sleep / motel / airbnb / camp   rest for the night (airbnb = cash, off the record)\n"
         "  talk                  speak with the locals where the language isn't English\n"
         "  map / nearby gas      see what's around\n"

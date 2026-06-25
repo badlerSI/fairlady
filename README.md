@@ -65,6 +65,13 @@ disarm / draw          (Desperado) go for an armed clerk's gun; once you're arme
 bet $1000 on <team>    gamble at the Vegas/Reno tables (rewind a loss and re-roll — the cheat)
 rob the bank           (armed only) a Desperado heist — big take, big heat
 flirt / compliment her  pick up a date anywhere there's a crowd; she gets jealous
+camo / uncamo          dress her down to lie low (one notch quieter), or flaunt the show car
+flash the lights · play music · text   her tricks — text needs WiFi; music cools a jealous sulk
+upgrade her            the SECRET, once she's yours and home at the AiSha garage → self-driving Ace
+let her drive to <place>   after the upgrade, she takes the wheel: no fatigue, never a ticket
+passes                 which mountain roads the snow's closed (the calendar matters now)
+cross the border · ship out · buy a pardon · retire   the ways the road ENDS — and ends well
+scorecard              your running tally + the awards you've earned
 rewind | branches | branch N   fold the timeline back; list checkpoints; jump to any one
 map / look / tow / new
 ```
@@ -87,6 +94,10 @@ backend/
     encounters.py     talk-your-way-out: stops, the owner, the standoff (Desperado), the buyout
     heat.py           the heat-as-credit-score model: factors dashboard, Instagram tags, visibility
     garage.py         the economy: cash claims, ATM, glovebox, parts, racing, shows, going legit
+    dating.py         pick up a date of any gender; the car gets jealous if she's watching
+    endings.py        the ways out (border / container / pardon / retire) + the final scorecard
+    season.py         the descending snow line that closes the high passes as winter comes
+    gadgets.py        Z camo, her WiFi tricks (text/lights/stereo), and the self-driving secret
     game.py           orchestration: new game, snapshots, suggested moves, turns
     save.py           JSON save/load
   adapters/
@@ -107,7 +118,7 @@ tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes
 tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
-backend/tests/        126 deterministic-core tests
+backend/tests/        145 deterministic-core tests
 ```
 
 ### The one rule that makes it work
@@ -222,6 +233,46 @@ Willow Springs, Sonoma…) or **`show`** her on a museum lawn or at Monterey, le
 the entry. Keep the build whole and she wins the lawn; strip her for the buy-in and she'll still race,
 but she can't win a concours stripped. Your call.
 
+### The ways out — and it ends well
+
+The run has to **end**, and not just on the shoulder with a dry tank. Buying her (above) is one ending
+that lets you keep playing — free roam, racing, sightseeing, like post–Elite Four. The others are
+escapes you can take while you're still hot, each rolling a **scorecard**:
+
+- **`cross the border`** — drive south to Nogales, Calexico, San Diego, Yuma, and roll into a country
+  that's never heard of a plate reading CARTALK. Gone, clean. (Needs a little fuel in the tank.)
+- **`ship out`** — at a deepwater port (Long Beach, San Diego, the Bay), a no-questions **shipping
+  container** and a forged manifest carry you and her overseas to a new name. **Ends Desperado mode.**
+- **`buy a pardon`** — at a state capital, since this is a farce, **$50k cash** in a nice envelope makes
+  a stolen car a clerical error with a gold seal on it. Money is the only language the state speaks.
+- **`retire`** — once she's legally yours (or self-driving), call it whenever you like and roll credits.
+
+Every ending — win **or** lose (busted, stranded, taken) — prints **THE RIDE**: days, miles, cash, peak
+heat, towns, wonders, bank jobs, dates, the **awards** you earned (The Ghost, Most Wanted, Heartbreaker,
+Ride or Die, The Sevens, She Told You Everything, The Ghost in the Dash…), a **final score**, and a
+**rank**. `scorecard` shows the running tally any time.
+
+### Seasons — the mountains close
+
+The clock starts **Nov 7**, and it matters now. As winter rolls in, a **snow line descends** and the high
+passes shut in elevation order — **Tioga first**, then the Sierra high country, the Wasatch, the North
+Rim — until by New Year's fourteen of them are chained and gated. You can't `drive to` a snowed-in pass;
+`passes` reports what's closed and what's about to. Early November is a window; dawdle, and the map
+freezes around you — which bites hardest on a **Desperado who has to burn days lying low**.
+
+### Her gadgets — and the self-driving secret
+
+She's a stack of compute with a voice and a map, not (out of the box) a robot. She can wear **Z camo**
+(`camo` / `uncamo`) — a tarp, road grime over the spade, a junk plate over CARTALK — to drop one notch
+off how exposed she is everywhere it counts (a flashy full-tilt push shakes it loose). On **WiFi** she
+can **`text`** (and read a little road recon back), **`flash the lights`** (a wink in the dark — or the
+wrong kind of loud in a crowd), and **`play music`** (which, conveniently, talks her down off a jealous
+sulk). What she *can't* do is drive herself — `let her drive` and she'll tell you the wheel's still
+yours… **unless** you find the secret: once she's **legally yours** and you bring her **home to the
+AiSha garage** where she was built, the cats who made her will **`upgrade her`** the rest of the way.
+After that, **`let her drive to <place>`** and she takes the wheel — no fatigue on you, never a ticket,
+the strangest and freest ending the road has.
+
 ### Desperado Mode — armed and dangerous
 
 Lean on the clerk at a manned pump — threaten him, act hinky — and his hand comes up from under the
@@ -332,7 +383,7 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-126 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+145 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
 heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
 ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
 traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,

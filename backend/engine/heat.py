@@ -58,6 +58,14 @@ VIS_WORD = {0: "nowhere — no eyes for miles", 1: "low-key", 2: "busy, a few ph
             3: "paparazzi-bright — phones everywhere"}
 
 
+def exposure(s: GameState) -> int:
+    """How exposed she actually is HERE, accounting for the Z camo disguise (one notch quieter)."""
+    vis = visibility(s.place)
+    if s.flags.get("camo") and not s.flags.get("no_heat"):
+        vis = max(0, vis - 1)
+    return vis
+
+
 # --------------------------------------------------------------- the meter
 def _floor(s: GameState) -> float:
     if s.flags.get("no_heat"):
@@ -74,6 +82,7 @@ def add(s: GameState, delta: float, reason: str, kind: str = "mark") -> float:
     lo = _floor(s)
     before = s.heat
     s.heat = round(max(lo, min(100.0, s.heat + delta)), 1)
+    s.flags["peak_heat"] = max(s.flags.get("peak_heat", 0), round(s.heat))  # for the scorecard
     real = round(s.heat - before, 1)
     if abs(real) >= 0.1 and reason:
         log = s.flags.setdefault("heat_log", [])
@@ -180,8 +189,11 @@ def dashboard(s: GameState) -> str:
         levers.append("pay CASH from here on to stop the bleed")
     if h >= 45:
         levers.append("cross a state line and run clean miles — marks age off")
-    if visibility(s.place) >= 2:
-        levers.append("you're parked somewhere bright — keep moving")
+    if exposure(s) >= 2:
+        levers.append("you're parked somewhere bright — keep moving"
+                      + (" (camo helps, but barely)" if visibility(s.place) >= 3 else ""))
+    elif visibility(s.place) >= 2 and s.flags.get("camo"):
+        levers.append("the camo's holding — you're quieter than this block should be")
     if not levers and h <= 12:
         levers.append("nothing to do — you're a ghost, enjoy it")
     if levers:
@@ -210,7 +222,7 @@ def social_arrival(s: GameState) -> dict | None:
     variance lives inside the band the player's own route set."""
     if s.flags.get("no_heat"):
         return None
-    vis = visibility(s.place)
+    vis = exposure(s)
     if vis < 2:
         return None
     events = [f"SOCIAL: {VIS_WORD[vis]}. She watches her own feed and the notifications climb."]
@@ -252,7 +264,7 @@ def social_fuel(s: GameState) -> dict | None:
     off and he posts you. Rare and gated by how flashy the stop is, so it's a moment, not a tax."""
     if s.flags.get("no_heat") or not s.place.has("gas"):
         return None
-    vis = visibility(s.place)
+    vis = exposure(s)
     if vis < 2:
         return None
     since = s.turn - s.flags.get("last_clerk_turn", -99)
@@ -307,7 +319,7 @@ def lie_low(s: GameState) -> list:
     to actually MOVE (put real miles down) to reset it — you can't grind a meter sitting still."""
     if s.flags.get("no_heat"):
         return ["LIE LOW: nothing to hide from — she's yours, free and clear."]
-    vis = visibility(s.place)
+    vis = exposure(s)
     if vis >= 2:
         return [f"LIE LOW: you can't disappear in plain sight — {VIS_WORD[vis]}. Get to a back road "
                 "or a quiet town first."]

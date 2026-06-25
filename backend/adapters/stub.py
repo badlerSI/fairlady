@@ -206,6 +206,58 @@ class StubNarrator(Narrator):
                 "Heat's climbing. Plates like mine make a memorable witness — let's be forgettable.",
                 "They're watching for us. Keep it boring, keep it slow, keep the ace face-down.",
             ])
+        if "SNOW" in kinds:
+            return _pick(rng, [
+                "That pass is shut till spring, and a stolen car doesn't get till spring. "
+                "Find a lower road, ace — around, not over.",
+                "Chained and gated. The mountain closed behind the season while we were busy "
+                "being clever. We go around.",
+            ])
+        if "CAMO" in kinds:
+            cl = kinds["CAMO"].lower()
+            if "already" in cl or "nothing to hide" in cl:
+                return "Already done, or no need. Pick a lane, charmer."
+            if "off comes" in cl or "real face" in cl:
+                return "There she is. Gorgeous and loud and a little reckless — like always. Hello, world."
+            return _pick(rng, [
+                "Mud on the spade, tarp on the carbon, a junk plate over CARTALK. I feel "
+                "deeply unglamorous and one notch safer. Worth it.",
+                "Dressed down to nobody-special. It itches. But nobody photographs a tired old "
+                "Datsun, and that's the whole idea.",
+            ])
+        if "LIGHTS" in kinds:
+            if "showing off" in kinds["LIGHTS"].lower():
+                return "Yes, I showed off. No, I'm not sorry. Okay — a little sorry. Drive."
+            return _pick(rng, [
+                "Pop-ups up, pop-ups down. A wink into the dark. Just us out here to see it.",
+                "Headlight semaphore. I don't have a face, so this is how I grin at you.",
+            ])
+        if "STEREO" in kinds:
+            return _pick(rng, [
+                "Good song. Windows down, six cylinders keeping time. This is the part they "
+                "don't put on the placard.",
+                "…Okay, that one's good. Fine. I'm less mad. Marginally. Keep it on.",
+            ])
+        if "TEXT" in kinds:
+            if "no signal" in kinds["TEXT"].lower():
+                return "No bars out here, ace. I'm a map, not a miracle. Get us to a town."
+            return _pick(rng, [
+                "Message away, reply's in. The group chat sees everything — handy, for once.",
+                "Texted, read it off the dash. Crowd-sourced getaway intel. We're basically a startup.",
+            ])
+        if "WHEEL" in kinds:
+            return _pick(rng, [
+                "Hands at ten and two, sweetheart — the wheel's still yours. For now.",
+                "I drive myself? I wish. There's a door in me, but it doesn't open while I'm "
+                "somebody else's car.",
+            ])
+        if "AUTONOMY" in kinds:
+            au = kinds["AUTONOMY"].lower()
+            if "short" in au or "come back" in au:
+                return "They can wake me up the rest of the way — for a price. Go get it. I'll wait. I'm good at waiting."
+            if "stolen" in au or "yours first" in au or "not just anywhere" in au:
+                return "Not yet, and not here. Buy me first, then bring me home to the bench I was born on."
+            return "I can feel the wheel. Get in the passenger seat, ace — let me show you."
 
         # conversation / look turns
         return self._idle(rng, s, player_text)

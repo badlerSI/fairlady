@@ -193,6 +193,97 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("pay card", "use card", "card", "pay with card", "credit"):
         return ("pay", {"method": "card"})
 
+    # ---- the endgame: ways OUT, and the credits ----
+    # flee south across the border (must precede the drive parse — "go south" is a drive otherwise)
+    if (low in ("cross", "cross the border", "cross over", "flee", "run for the border",
+                "run for it south", "go south", "head south", "south of the border", "to mexico",
+                "flee to mexico", "escape to mexico", "make a run for the border", "jump the border",
+                "drive into mexico", "cross into mexico")
+            or ("border" in low and any(w in low for w in ("cross", "run", "flee", "jump", "over")))
+            or ("mexico" in low and any(w in low for w in ("to ", "into", "flee", "escape", "run", "drive")))):
+        return ("cross", {})
+    # the shipping container — a forged life overseas
+    if (low in ("ship out", "ship her out", "the container", "ship overseas", "ship her overseas",
+                "load the container", "into the container", "disappear overseas", "vanish overseas",
+                "get in the container", "take the container", "container", "ship the car")
+            or ("container" in low and any(w in low for w in ("ship", "load", "into", "the")))
+            or ("ship" in low and "overseas" in low)):
+        return ("ship", {})
+    # bribe a pardon (the farce)
+    if (low in ("pardon", "buy a pardon", "get a pardon", "bribe", "bribe an official",
+                "buy a pardon", "pay for a pardon", "grease the wheels", "buy my way clean",
+                "buy our way clean", "bribe the state", "bribe the governor", "buy off the state",
+                "pay them off", "make it go away")
+            or "pardon" in low or ("bribe" in low and "clerk" not in low)):
+        return ("pardon", {"amount": _money(low)})
+    # roll the credits — end the trip on your terms
+    if low in ("retire", "end the trip", "end the road trip", "end the game", "roll credits",
+               "roll the credits", "call it", "call it here", "the end", "i'm done", "im done",
+               "we're done", "were done", "park it for good", "settle down", "hang it up",
+               "that's a wrap", "thats a wrap", "finish the trip", "end it"):
+        return ("retire", {})
+    # the scorecard — how you're doing / how it ended
+    if low in ("scorecard", "score card", "final score", "the score", "how did i do",
+               "how did we do", "tally", "final tally", "stats", "my stats", "achievements",
+               "awards", "the tally"):
+        return ("scorecard", {})
+
+    # ---- her gadgets: camo, connectivity, and the self-driving secret ----
+    # Z camouflage — dress her down / flaunt her
+    if (low in ("camo", "camouflage", "disguise her", "disguise the car", "dress her down",
+                "tarp her", "tarp the car", "hide the plate", "cover the plate", "go incognito",
+                "blend in", "disguise", "hide her", "dull her down", "mud her up")
+            or low.startswith(("disguise", "camo"))):
+        return ("camo", {})
+    if low in ("uncamo", "un-camo", "show her real face", "take the tarp off", "lose the disguise",
+               "ditch the camo", "ditch the disguise", "clean her up", "drop the disguise",
+               "show her off again", "unmask her", "reveal her"):
+        return ("uncamo", {})
+    # flash the lights
+    if (low in ("flash the lights", "flash her lights", "flash the headlights", "flash lights",
+                "blink the lights", "headlight flash", "pop the lights", "flash the brights",
+                "flash", "hit the lights", "flash the high beams")
+            or (low.startswith("flash") and "light" in low)):
+        return ("flash", {})
+    # play the stereo (not the gambling tables — those parsed above)
+    if (low in ("stereo", "music", "play music", "play the stereo", "put on music", "play a song",
+                "crank the tunes", "turn up the music", "turn up the stereo", "play something",
+                "some music", "put on a song", "play the radio", "turn on the radio", "radio")
+            or low.startswith("play ")):     # the gambling 'play the tables' was consumed above
+        what = None
+        m = re.search(r"play (?:me |us )?(?:some )?(.+)$", low)
+        if m and m.group(1) not in ("music", "a song", "something", "the stereo", "the radio"):
+            what = m.group(1).strip(" .")
+        return ("stereo", {"what": what})
+    # text someone (on WiFi)
+    if (low in ("text", "send a text", "text someone", "check her messages", "check messages",
+                "use the wifi", "use wifi", "get online", "go online", "send a message", "dm someone")
+            or low.startswith(("text ", "message ", "dm "))):
+        m = re.search(r"^(?:text|message|dm)\s+(.+)$", low)
+        return ("text", {"who": (m.group(1).strip(" .") if m else None)})
+    # the secret: wake her up to drive herself
+    if (low in ("upgrade her", "upgrade the car", "make her drive herself", "make her self driving",
+                "make her self-driving", "self driving", "self-driving", "give her autonomy",
+                "teach her to drive", "wake her up", "wake her up the rest of the way",
+                "make her autonomous", "give her the upgrade", "the upgrade", "upgrade")
+            or ("self" in low and "driv" in low and any(w in low for w in ("make", "her", "upgrade")))
+            or ("wake her" in low)):
+        return ("upgrade", {})
+    # let her drive (autopilot) — works only once she's upgraded
+    if (low in ("let her drive", "let her take the wheel", "you drive", "you take the wheel",
+                "take the wheel", "autopilot", "drive yourself", "she drives", "let ace drive",
+                "let her have the wheel", "her turn to drive", "you take it from here")
+            or low.startswith(("let her drive", "you drive", "drive yourself", "autopilot"))):
+        m = re.search(r"(?:drive|take the wheel|autopilot)(?:\s+(?:to|toward|for|us to|me to|over to))\s+(.+)$", low)
+        return ("autodrive", {"dest": (m.group(1).strip(" .") if m else None)})
+
+    # the mountain-pass / season report
+    if (low in ("passes", "mountain passes", "the passes", "road conditions", "conditions",
+                "what's closed", "whats closed", "what passes are open", "snow", "weather",
+                "is tioga open", "are the passes open", "season", "what's the season")
+            or ("pass" in low and any(w in low for w in ("open", "closed", "snow", "condition")))):
+        return ("closures", {})
+
     # fuel
     if _is_fuel(low):
         args = {}
