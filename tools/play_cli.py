@@ -24,6 +24,10 @@ FLAGS_OF_INTEREST = (
     "prologue", "prologue_done", "favor_filled", "card_swipes", "knows_mayumi",
     "knows_truth", "seen_monterey", "seen_berlin", "owner_met", "owner_deadline_day",
     "report_withdrawn", "rewinds", "limp", "homestretch", "home",
+    # the newer systems — surfaced so QA can see them
+    "desperado", "gun", "wanted_armed", "desperado_tries", "robbed_banks", "rob_attempts",
+    "bought", "no_heat", "instagram_tags", "ace_jealousy", "ace_off", "dates", "gambled_up",
+    "rewind_tax", "rewinds_here", "last_rewind_seq", "cp_seq",
 )
 
 

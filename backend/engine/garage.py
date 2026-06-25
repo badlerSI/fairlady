@@ -264,6 +264,8 @@ def gamble(s: GameState, amount, pick=None) -> dict:
     if not can_gamble(s):
         return {"events": ["BET: no action here. The tables are in Vegas, Laughlin, Reno, the "
                            "border books — go where the money moves."], "won": None}
+    if amount == "all":                            # 'all in' / 'let it ride' — the whole wad
+        amount = round(s.cash, 2)
     if amount is None or amount <= 0:
         return {"events": ["BET: name a number. 'bet $1000' — and the wad runs out fast if the "
                            "loop's not catching."], "won": None}

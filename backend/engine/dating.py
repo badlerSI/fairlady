@@ -68,9 +68,15 @@ def flirt(s: GameState) -> dict:
                            "town, a boardwalk, a casino floor."], "moment": None}
     rng = random.Random(s.seed * 2246822519 + s.turn * 3266489917)
     who, pro, vibe = DATES[rng.randrange(len(DATES))]
-    s.riz = round(s.riz + RIZ_RAPPORT * 0.6, 1)        # you've got game — a little style
+    # charm has diminishing returns — the first number on your wrist is a thrill, the ninth is a
+    # phase. No standing in one spot farming Riz off strangers.
+    dates = s.flags.get("dates", 0)
+    gain = round(RIZ_RAPPORT * 0.6 * (0.5 ** dates), 1)
+    s.riz = round(s.riz + gain, 1)
+    riz_note = (f" Riz +{gain:.1f} → {s.riz:.0f}." if gain >= 0.1
+                else " (the novelty's worn off — no new style in it.)")
     events = [f"DATE: you fall into easy conversation with {who} — {vibe}. {pro.capitalize()} "
-              f"writes a number on your wrist and means it. Riz +{RIZ_RAPPORT*0.6:.0f} → {s.riz:.0f}."]
+              f"writes a number on your wrist and means it.{riz_note}"]
 
     if not watching(s):                                # engine off — she never saw it
         s.flags["dates"] = s.flags.get("dates", 0) + 1

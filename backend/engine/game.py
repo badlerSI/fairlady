@@ -222,7 +222,7 @@ def new_game(seed: int | None = None, prologue_on: bool = True) -> GameState:
 # jumps to any of them. Brute-forcing the SAME wall costs escalating Riz and she'll tell you when
 # it's the wrong wall — go back further. And sometimes the loop simply doesn't reach far enough.
 TIMELINE_KEEP = 8
-META_PERSIST = ("timeline", "cp_seq", "rewinds", "rewinds_here", "last_rewind_seq")
+META_PERSIST = ("timeline", "cp_seq", "rewinds", "rewinds_here", "last_rewind_seq", "rewind_tax")
 
 
 def _cp(s: GameState, seq: int) -> str:
@@ -290,7 +290,7 @@ def rewind(s: GameState, target=None):
         return (["REWIND: that branch is gone — the loop only holds the last few. 'branches' shows "
                  "what's left."], None)
 
-    same_wall = (target is None and entry["seq"] == s.flags.get("last_rewind_seq"))
+    same_wall = (entry["seq"] == s.flags.get("last_rewind_seq"))   # the SAME seq — even via 'branch'
     here = s.flags.get("rewinds_here", 0) if same_wall else 0
     # sometimes the third time is NOT the charm: batter the exact same wall four times and the
     # timeline sets — she tells you honestly to break a different one (use a branch further back)
@@ -298,23 +298,38 @@ def rewind(s: GameState, target=None):
         return (["REWIND: …it won't fold. Same moves, same wall, same ending — the timeline's set "
                  "here, ace. This isn't the moment to break. Go back FURTHER ('branches') and "
                  "change something that mattered, or live with it."], REWIND_STUCK_MOMENT)
-    cost = RIZ_REWIND_COST + here                  # 2, then 3, 4, 5… on the same wall
+    step = RIZ_REWIND_COST + here                   # 2, then 3, 4, 5… on the same wall
 
-    riz = max(0.0, round(chk.riz - cost, 1))
+    # The fee is a TAX that accumulates across every fold since you last put real road behind you,
+    # and it NEVER refunds — so branching to a high-Riz checkpoint can't hand your style back, and
+    # alternating two walls isn't free. Whatever your style can't cover, the loop pays in HEAT: the
+    # strain shows, you come back sloppy and more noticed. That's the real cost of brute-forcing.
+    tax = round(s.flags.get("rewind_tax", 0.0) + step, 1)
+    base_riz = chk.riz                              # the earned style at that branch (reverts — no farm)
+    paid_riz = min(base_riz, tax)
+    overflow = round(tax - paid_riz, 1)
+
     meta = {k: s.flags.get(k) for k in META_PERSIST if k in s.flags}
     meta.update({k: s.flags.get(k) for k in encounters.DESPERADO_PERSIST if k in s.flags})
     s.__dict__.update(GameState.from_dict(chk.to_dict()).__dict__)
-    s.riz = riz
+    s.riz = round(base_riz - paid_riz, 1)
     s.flags.update(meta)
+    s.flags["rewind_tax"] = tax
     s.flags["rewinds"] = s.flags.get("rewinds", 0) + 1
     s.flags["rewinds_here"] = here + 1
     s.flags["last_rewind_seq"] = entry["seq"]
+
+    strain = ""
+    if overflow > 0:
+        from engine import heat as _heat
+        _heat.add(s, overflow, "the loop strained — you came back sloppy, more noticed", "mark")
+        strain = f"  Style's spent — the strain bleeds into heat (+{overflow:.0f} → {s.heat:.0f})."
     save.save(s, "autosave")
-    far = "" if same_wall or target is None else "  (a different branch — the counter resets)"
-    nudge = ("  Same wall again — try something new or go back further." if here >= 2 else "")
+    far = "" if same_wall else "  (a different branch)"
     events = [f"REWIND: the world folds back to {s.place.name}, Day {s.day}. "
-              f"Riz −{cost:.0f} → {s.riz:.0f}.{far}{nudge}"]
-    return (events, REWIND_MOMENT)
+              f"Riz −{step:.0f} → {s.riz:.0f}.{far}{strain}  "
+              f"(Put real road behind you to clear the strain.)"]
+    return (events, REWIND_STUCK_MOMENT if overflow > 4 else REWIND_MOMENT)
 
 
 # --------------------------------------------------------------------- snapshot

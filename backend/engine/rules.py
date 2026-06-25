@@ -188,6 +188,7 @@ def drive(state: GameState, dest: Place, push: bool = False) -> list:
         if push:
             _heat.add(state, HEAT_PUSH_DRIVE, "drove flashy — pushing hard", "mark")
         state.flags["lielow_streak"] = 0          # real miles reset the lie-low diminishing returns
+        state.flags["rewind_tax"] = 0.0           # ...and clear the rewind strain — you've moved on
         state.flags.pop("ace_off", None)          # turn the key and she's watching again
         _clamp_heat(state)
 

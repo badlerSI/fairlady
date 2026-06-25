@@ -133,7 +133,7 @@ def parse(raw: str) -> Tuple[str, dict]:
     # ATM / withdraw — match the ATM/withdraw signal ANYWHERE ("let me hit the ATM for $5000")
     if ("atm" in low or "cash machine" in low or "bank machine" in low or "withdraw" in low
             or low.startswith("take out") or low in ("find a bank", "hit the bank")):
-        return ("atm", {"amount": _money(low)})
+        return ("atm", {"amount": _money(low) or _bare_number(low)})   # accept 'withdraw 200'
 
     # claim what you're carrying
     if _is_claim(low):
@@ -170,9 +170,12 @@ def parse(raw: str) -> Tuple[str, dict]:
     # gambling — raise the money (and the rewind cheat)
     if (low.startswith(("bet", "gamble", "wager", "put ", "lay ", "place a bet"))
             or low in ("hit the tables", "hit the casino", "play the tables", "sports bet",
-                       "double or nothing", "all in", "all-in", "let it ride")):
-        amt = _money(low)
+                       "double or nothing", "all in", "all-in", "let it ride", "everything")):
         m = re.search(r"on\s+(.+)$", low)            # "bet $1000 on the raiders"
+        if any(p in low for p in ("all in", "all-in", "let it ride", "everything", "double or nothing")):
+            amt = "all"                              # bet the whole wad
+        else:
+            amt = _money(low) or _bare_number(low)   # accept '$1000', '1000', '1k'
         return ("bet", {"amount": amt, "pick": (m.group(1).strip() if m else None)})
 
     # legal racing / showing (only after you own her)
@@ -271,6 +274,13 @@ def spec_hits(text: str) -> int:
 def is_spec_question(text: str) -> bool:
     low = (text or "").lower()
     return spec_hits(low) > 0 and any(q in low for q in _INTERROGATIVE)
+
+
+def _bare_number(low: str):
+    """A bare integer figure ('withdraw 200', 'bet 1000') with no $ — for the money verbs that
+    already know the number is dollars. Skips small ints that are likely menu picks (handled first)."""
+    m = re.search(r"\b(\d[\d,]{2,})\b", low)        # ≥3 digits → a dollar amount, not 'branch 3'
+    return float(m.group(1).replace(",", "")) if m else None
 
 
 def _money(low: str):

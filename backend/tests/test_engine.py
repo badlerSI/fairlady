@@ -367,14 +367,39 @@ def test_branch_selector_navigates_the_timeline():
 def test_battering_one_wall_costs_more_and_eventually_wont_fold():
     s = fresh(); s.fuel_l = 40.0; s.riz = 50.0
     game.handle(s, "drive to mesquite")                # checkpoint with riz 50
-    game.handle(s, "rewind"); assert s.riz == 48.0     # first fold: −2 (50−2)
-    game.handle(s, "rewind"); assert s.riz == 47.0     # same wall: −3 (50−3)
-    game.handle(s, "rewind"); assert s.riz == 46.0     # −4 — escalating from the checkpoint
-    game.handle(s, "rewind")                           # −5
-    # batter it enough and the loop won't fold here anymore
-    r = game.handle(s, "rewind")
+    game.handle(s, "rewind"); assert s.riz == 48.0     # tax 2  → 50−2
+    game.handle(s, "rewind"); assert s.riz == 45.0     # tax 5  → 50−5 (accumulating, never refunds)
+    game.handle(s, "rewind"); assert s.riz == 41.0     # tax 9  → 50−9
+    game.handle(s, "rewind")                           # tax 14
+    r = game.handle(s, "rewind")                        # batter enough and it won't fold here
     assert "won't fold" in r["events"][0] or "not catching" in (r["scene"] or "")
-    assert s.place.poi_id == "mesquite"                # still stuck — you must branch further back
+    assert s.place.poi_id == "mesquite"                # stuck — you must branch further back
+
+
+def test_rewind_tax_does_not_refund_and_bleeds_into_heat_when_riz_is_spent():
+    # the playtest's headline bug: alternating branches used to be a free undo. Now the tax
+    # accumulates across folds and, once Riz is gone, the strain shows up as heat.
+    s = fresh(); s.fuel_l = 40.0; s.riz = 3.0
+    game.handle(s, "drive to mesquite"); game.handle(s, "drive to st_george")
+    h0 = s.heat
+    game.handle(s, "rewind")                            # −2 → riz 1
+    r = game.handle(s, "rewind")                        # tax overflows riz → heat strain
+    assert s.riz == 0.0
+    assert s.heat > h0                                  # the loop strained; brute-force isn't free
+    # a real drive clears the strain
+    s.fuel_l = 40.0
+    game.handle(s, "drive to cedar_city")
+    assert s.flags.get("rewind_tax") == 0.0
+
+
+def test_flirt_riz_has_diminishing_returns_no_kill_engine_farm():
+    s = fresh(); s.place = world.get_poi("las_vegas")
+    game.handle(s, "kill the engine")                  # she can't watch — no jealousy brake
+    gains = []
+    for _ in range(5):
+        r0 = s.riz; game.handle(s, "flirt"); gains.append(round(s.riz - r0, 2))
+    assert gains[0] > gains[1] > gains[2]               # diminishing — you can't farm charm
+    assert sum(gains) < 7                               # it converges fast
 
 
 def test_rewind_escapes_an_ending():
@@ -723,14 +748,20 @@ def test_the_seven_sevens_hack_breaks_the_floor():
     from engine.commands import parse
     assert parse("seven sevens")[1]["amount"] == 77777.77
     assert parse("offer $77,777.77")[1]["amount"] == 77777.77
+    # broke: you know the number but can't lay it down — it refuses (not a free car)
+    s0 = game.new_game(seed=44, prologue_on=False)
+    s0.flags["owner_met"] = True; s0.fuel_l = 40.0; s0.cash = 100.0
+    s0.place = world.get_poi("livermore"); game.handle(s0, "drive to oakland_aisha")
+    game.handle(s0, "seven sevens")
+    assert not s0.flags.get("bought")                # the hack still costs the number
+    # with the cash, the sevens break the $80k floor (you pay 77,777.77, not 80k)
     s = game.new_game(seed=44, prologue_on=False)
-    s.flags["owner_met"] = True; s.fuel_l = 40.0; s.cash = 100.0   # nearly broke!
-    s.place = world.get_poi("livermore")
-    game.handle(s, "drive to oakland_aisha")
-    assert encounters.owner_price(s) >= 80000        # he'd never sell this low normally
-    r = game.handle(s, "seven sevens")               # ...but the magic number breaks him
+    s.flags["owner_met"] = True; s.fuel_l = 40.0; s.cash = 80000.0
+    s.place = world.get_poi("livermore"); game.handle(s, "drive to oakland_aisha")
+    assert encounters.owner_price(s) >= 80000        # his floor
+    r = game.handle(s, "seven sevens")               # ...but the magic number undercuts it
     assert s.flags.get("bought") and s.flags.get("no_heat")
-    assert "shouldn't have worked" in " ".join(r["events"]) or "sevens" in (r["scene"] or "").lower()
+    assert abs(s.cash - (80000.0 - 77777.77)) < 0.01  # you paid exactly the sevens, under the floor
 
 
 def test_buy_when_broke_names_the_price_and_waits():

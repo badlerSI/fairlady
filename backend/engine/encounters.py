@@ -25,8 +25,8 @@ from engine.state import GameState
 from engine.commands import spec_hits
 
 # flags that are META-progress: they survive rewinds (game.rewind re-applies them), because
-# the curse — and the gun you eventually win — belong to you, not to any one timeline.
-DESPERADO_PERSIST = ("desperado", "gun", "desperado_tries", "wanted_armed")
+# the curse — the gun you win, the heat the county's seen — belong to you, not to any one timeline.
+DESPERADO_PERSIST = ("desperado", "gun", "desperado_tries", "wanted_armed", "rob_attempts")
 
 ROUNDS = 2          # exchanges before the verdict
 
@@ -354,17 +354,31 @@ def owner_buy(s: GameState, amount):
     price = owner_price(s)
     s.flags["owner_price"] = price
 
-    # THE HACK: offer exactly seven sevens and the floor evaporates — a glitch in the man, or fate.
+    # THE HACK: offer exactly seven sevens and the $80k floor evaporates — but you still PAY the
+    # number (it's a secret price below the floor, not a free car). You have to raise ~$78k either way.
     if amount is not None and abs(amount - LUCKY_SEVENS) < 0.01:
+        if economy.max_affordable(s, "cash") < LUCKY_SEVENS:
+            return {"events": [f"OWNER: you say the number — 'seventy-seven thousand, seven hundred "
+                               f"seventy-seven seventy-seven.' His eyes flicker, something almost "
+                               f"superstitious — then he counts the air where the cash should be. "
+                               f"'...Cute. Come back when you can actually lay it down, kid.'"],
+                    "moment": {"cue": "the driver found the magic number $77,777.77 but doesn't have "
+                                      "it to pay — the owner is rattled that they KNOW it but won't "
+                                      "be hustled; she's thrilled they cracked the code and gutted "
+                                      "they can't cover it yet", "stub": ["You KNOW it. You actually "
+                               "know the number — I felt him flinch. We just don't have it. Go get "
+                               "$77,777.77, ace, and that exact number walks her out the door."]},
+                    "done": False}
         s.flags.pop("owner_scene", None)
+        economy.pay(s, LUCKY_SEVENS, prefer="cash")
         s.riz = round(s.riz + RIZ_BOUGHT, 1)
         garage.go_legit(s)
         return {"events": [f"OWNER: you say it slow — 'seventy-seven thousand, seven hundred and "
                            f"seventy-seven dollars. And seventy-seven cents.' He goes very still. "
-                           f"'...How did you—' Then he just laughs, signs the slip, and takes the "
-                           f"seven sevens like they were always the price. Heat 0. Riz "
+                           f"'...How did you—' Then he just laughs, takes the seven sevens, and signs "
+                           f"the slip for two grand under his own floor. Heat 0. Riz "
                            f"+{RIZ_BOUGHT:.0f} → {s.riz:.0f}.",
-                           "OWNED: she's yours — for a number that shouldn't have worked."],
+                           "OWNED: she's yours — for a number that broke his $80k like a password."],
                 "moment": {"cue": "the driver offered the exact magic number $77,777.77 — seven "
                                   "sevens — and it broke the owner's $80k floor like a cheat code; "
                                   "he's spooked and delighted and signs; she is gleeful that they "
@@ -451,10 +465,13 @@ def rob_bank(s: GameState) -> dict:
         return {"events": ["ROB: no bank out here worth the trouble. A real town — a city with a "
                            "vault and a Tuesday-slow teller."], "moment": None, "done": True}
     import random
+    # ATTEMPTS (not just successes) drive the danger, and the counter SURVIVES rewinds — so
+    # rewind-retrying a botched job makes the next try riskier, not free. The take self-caps.
+    s.flags["rob_attempts"] = s.flags.get("rob_attempts", 0) + 1
+    attempts = s.flags["rob_attempts"]
     hits = s.flags.get("robbed_banks", 0)
-    rng = random.Random(s.seed * 50331653 + s.turn * 7919 + hits * 104729 + s.flags.get("rewinds", 0))
-    # the more banks you've hit, the readier they are (guards, silent alarms, a faster response)
-    botch = rng.random() < (0.18 + hits * 0.12)
+    rng = random.Random(s.seed * 50331653 + s.turn * 7919 + attempts * 104729 + s.flags.get("rewinds", 0))
+    botch = rng.random() < (0.18 + attempts * 0.10)   # every attempt makes the whole county warier
     if botch:
         rules.set_ending(s, "busted")
         return {"events": ["ROB: the teller's hand drifts under the counter and the silent alarm's "
