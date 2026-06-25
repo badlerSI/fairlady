@@ -13,6 +13,20 @@ from engine.state import GameState
 
 app = FastAPI(title="RIDE OR DIE", version="1.1")
 
+
+@app.middleware("http")
+async def _revalidate_ui(request, call_next):
+    """Dev ergonomics: the UI is edited live, so tell browsers to always revalidate the static
+    assets (they have ETags — revalidation is a cheap 304 when unchanged, a fresh 200 when edited).
+    Without this, Starlette's StaticFiles ships no Cache-Control and browsers heuristically cache
+    stale JS/CSS, so edits silently don't show."""
+    resp = await call_next(request)
+    p = request.url.path
+    if p == "/" or p.startswith("/ui"):
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 # the current game lives in memory and is autosaved every turn
 CURRENT: Optional[GameState] = None
 

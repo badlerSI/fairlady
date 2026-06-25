@@ -104,7 +104,11 @@ function updateDash(s) {
     <div class="d-row"><span class="d-k">HEAT</span><span class="bar heat"><i style="width:${heatW}%"></i></span><span class="d-v dim">${esc(s.heat_label)}</span></div>
     <div class="d-row"><span class="d-k">RIZ</span><span class="d-v">♠ ${s.riz ?? 0}</span><span class="d-v dim">style, banked</span></div>` +
     (s.bought ? `<div class="d-row owned"><span class="d-k">♥</span><span class="d-v">YOURS</span><span class="d-v dim">legal · race · show</span></div>` : ``) +
-    (s.desperado ? `<div class="d-row desperado"><span class="d-k">⚠</span><span class="d-v">DESPERADO</span><span class="d-v dim">armed &amp; dangerous · 'draw'</span></div>` : ``);
+    (s.self_driving ? `<div class="d-row selfdrive"><span class="d-k">◉</span><span class="d-v">SELF-DRIVING</span><span class="d-v dim">'let her drive to …'</span></div>` : ``) +
+    (s.desperado ? `<div class="d-row desperado"><span class="d-k">⚠</span><span class="d-v">DESPERADO</span><span class="d-v dim">armed &amp; dangerous · 'draw'</span></div>` : ``) +
+    (s.camo ? `<div class="d-row camo"><span class="d-k">▒</span><span class="d-v">CAMO</span><span class="d-v dim">dressed down · 'uncamo'</span></div>` : ``) +
+    (s.snow_line != null && s.snow_line <= 1.25
+      ? `<div class="d-row snow"><span class="d-k">❄</span><span class="d-v">WINTER</span><span class="d-v dim">passes closing · 'passes'</span></div>` : ``);
 }
 
 // ----------------------------------------------------------------- audio

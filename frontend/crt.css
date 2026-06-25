@@ -73,6 +73,13 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 .d-row.desperado { color: var(--red); text-shadow: 0 0 7px rgba(226,59,46,.55); animation: despFlick 2.2s steps(1) infinite; }
 .d-row.desperado .d-k, .d-row.desperado .d-v { color: var(--red); }
 @keyframes despFlick { 0%,93%,100% { opacity: 1; } 95% { opacity: .55; } }
+.d-row.selfdrive { color: var(--cyan); text-shadow: 0 0 8px rgba(56,214,236,.5); animation: sdPulse 2.4s ease-in-out infinite; }
+.d-row.selfdrive .d-k, .d-row.selfdrive .d-v { color: var(--cyan); }
+@keyframes sdPulse { 0%,100% { opacity: 1; } 50% { opacity: .68; } }
+.d-row.camo { color: var(--cyan-dim); opacity: .85; }
+.d-row.camo .d-k, .d-row.camo .d-v { color: var(--cyan-dim); }
+.d-row.snow .d-k { color: var(--cyan); }
+.d-row.snow .d-v { color: var(--paper); }
 .d-k { color: var(--cyan-dim); min-width: 48px; letter-spacing: 1px; }
 .d-v { color: var(--paper); overflow: hidden; text-overflow: ellipsis; }
 .gauge { display: inline-flex; gap: 1px; align-items: center; }

@@ -73,7 +73,7 @@ class GameState:
     riz: float = 0.0
 
     # --- bookkeeping ---
-    status: str = "playing"             # playing | stranded | busted | taken
+    status: str = "playing"             # playing | won | stranded | busted | taken
     ending: Optional[str] = None
     seed: int = 73111737                # deterministic per game (overridden at new-game)
     turn: int = 0

@@ -363,6 +363,13 @@ def snapshot(s: GameState) -> dict:
         "riz": round(s.riz),
         "desperado": bool(s.flags.get("desperado")) and not s.flags.get("no_heat"),
         "bought": bool(s.flags.get("bought")),
+        "no_heat": bool(s.flags.get("no_heat")),
+        # the endgame layer — so the frontend can dress her down, draw her self-driving,
+        # pick a win/credits scene, and flag the closing passes
+        "camo": gadgets.camo_active(s),
+        "self_driving": bool(s.flags.get("self_driving")),
+        "ending_key": s.flags.get("ending_key"),
+        "snow_line": round(season.snow_line(s), 3),
         "car_value": garage.car_value(s), "show_score": garage.show_score(s),
         "encounter_open": (encounters.stop_active(s) or encounters.owner_active(s)
                            or encounters.standoff_active(s)),
