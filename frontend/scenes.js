@@ -325,18 +325,8 @@ function drawAce(s, t, o = {}) {
   if (!moving && s.blink(2.4, 0.3))
     s.dither(x + Math.round(w * 0.46), y + h - 7, 13, 8, 6, I.d2);
 
-  // rear-glass reflection — a sheen sweeps the back glass in the direction the world RECEDES
-  // (right → left as she drives forward), so it reads with the motion, not against it
-  const rg = CAR_META.anchors.rearGlass;
-  if (rg) {
-    const gx = x + rg[0] * w, gy = y + rg[1] * h, gw = rg[2] * w, gh = rg[3] * h;
-    const sweep = (moving ? (t * 0.42) : (t * 0.16)) % 1;
-    const sxx = gx + gw + gh * 0.6 - sweep * (gw + gh * 0.8);   // travels right → left
-    for (let i = 0; i < gh; i++) {
-      const px = sxx + i * 0.55;
-      if (px >= gx + 1 && px <= gx + gw - 1) { s.plot(px, gy + i, i & 1 ? I.hot : I.f); s.plot(px + 1, gy + i, I.f); }
-    }
-  }
+  // (no drawn roof/glass reflection sweep — it crawled across her cabin and fought the digitized
+  //  photo's own baked highlights. The 1-bit "there or not there" ink reads cleaner without it.)
 
   // driver-side fender bullet mirror — chrome housing on a stalk, a glisten travelling its face
   const ma = CAR_META.anchors.mirror;
@@ -405,30 +395,35 @@ function _drawFar(s, env, hy, t) {
 }
 
 function drawHighway(s, t, env) {
-  // CENTERED straight road: the car sits centered and heads INTO the screen toward a vanishing
-  // point dead ahead — so it always reads as "on the road, going forward," no left/right mismatch.
-  const hy = 70, H = s.H, topW = 7, botW = s.W * 0.5, cx = s.W * 0.5;
+  // The road is ORIENTED TO THE CAR'S TILT: the sprite is a rear-3/4 view heading up-and-to-the-
+  // LEFT (rear/plate near the camera at lower-right, nose pointing to the upper-left), so the road
+  // recedes to a vanishing point up-LEFT and its near end sits behind her rear. She drives DOWN
+  // the road instead of drifting across it. Motion is still forward (dashes rush toward camera).
+  const hy = 70, H = s.H, topW = 7, botW = s.W * 0.52;
+  const vpx = s.W * 0.40, nearCx = s.W * 0.55;            // vanishing point left; near under the rear
+  const frac = (p) => (_roadY(p, hy, H) - hy) / (H - hy);  // 0 at horizon, 1 at the bottom
+  const cx = (p) => vpx + frac(p) * (nearCx - vpx);        // centerline leans from the VP to the near
   s.rect(0, 0, s.W, hy, I.bg);
   _drawFar(s, env, hy, t);
-  // the road wedge (symmetric)
-  s.poly([[cx - topW, hy], [cx + topW, hy], [cx + botW, H], [cx - botW, H]], I.d1);
-  s.line(cx - topW, hy, cx - botW, H, I.d3);
-  s.line(cx + topW, hy, cx + botW, H, I.d3);
+  // the road wedge — apex at the VP, fanning to a wide base behind the car
+  s.poly([[vpx, hy], [nearCx - botW, H], [nearCx + botW, H]], I.d1);
+  s.line(vpx, hy, nearCx - botW, H, I.d3);
+  s.line(vpx, hy, nearCx + botW, H, I.d3);
   const ph = (t * 0.85) % 1;
-  // centre dashes rushing toward the camera (down the screen) — the forward-motion cue
-  for (let k = 0; k < 10; k++) { const p = ((k / 10) + ph) % 1; const y = _roadY(p, hy, H); const w = 1 + p * 7; s.rect(cx - w / 2, y, w, 2 + p * 16, I.f); }
+  // centre dashes rushing toward the camera along the lean — the forward-motion cue
+  for (let k = 0; k < 10; k++) { const p = ((k / 10) + ph) % 1; const y = _roadY(p, hy, H); const w = 1 + p * 7; s.rect(cx(p) - w / 2, y, w, 2 + p * 16, I.f); }
   // rumble strips
   for (let k = 0; k < 14; k++) {
     const p = ((k / 14) + ph) % 1, y = _roadY(p, hy, H), hw = _roadHalf(p, topW, botW);
     const lit = (k + Math.floor(ph * 14)) & 1, c = lit ? I.f : I.d2, tk = 1 + p * 4;
-    s.rect(cx - hw, y, tk, Math.max(1, p * 9), c); s.rect(cx + hw - tk, y, tk, Math.max(1, p * 9), c);
+    s.rect(cx(p) - hw, y, tk, Math.max(1, p * 9), c); s.rect(cx(p) + hw - tk, y, tk, Math.max(1, p * 9), c);
   }
   // roadside objects spawning at the horizon, sweeping outward toward the camera
   const obj = ENV_OBJ[env] || ENV_OBJ.desert;
   for (let i = 0; i < 6; i++) {
     const p = ((i / 6) + ph * 0.9) % 1; if (p < 0.05) continue;
     const side = (i & 1) ? 1 : -1, hw = _roadHalf(p, topW, botW);
-    obj(s, cx + side * (hw + 4 + p * 46), _roadY(p, hy, H), 0.2 + p * 2.0, t, side);
+    obj(s, cx(p) + side * (hw + 4 + p * 46), _roadY(p, hy, H), 0.2 + p * 2.0, t, side);
   }
 }
 
