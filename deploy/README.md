@@ -21,9 +21,10 @@ cd /opt/fairlady
 git checkout ride-or-die          # until it's merged to main
 
 # Linux Python (modern OpenSSL) is fine for live OSM routing.
+# (Debian/Ubuntu: the venv needs the stdlib venv package — `sudo apt install python3.12-venv`.)
 python3 -m venv .venv
 ./.venv/bin/pip install -U pip
-./.venv/bin/pip install -r backend/requirements.txt
+./.venv/bin/pip install -r requirements.txt        # requirements.txt is at the repo ROOT
 ```
 
 A dedicated service user (the unit assumes `fairlady`):
@@ -76,9 +77,25 @@ Point DNS for the hostname (e.g. `rideordie.badler.ai`) at rop1 **first**, then:
 sudo systemctl reload caddy
 ```
 
-**…or Cloudflare Tunnel** (how the SOUL fleet does it — no open ports): add an ingress rule
-`hostname: rideordie.badler.ai → service: http://127.0.0.1:8739` to your tunnel config and reload
-`cloudflared`. See `Caddyfile.example` for the snippet.
+**…or Cloudflare Tunnel** (no open ports — this is how rop1 runs it). Two parts:
+
+1. **Ingress rule** — add a hostname → local service rule to the tunnel's config, *above* the
+   `http_status:404` catch-all, then restart the tunnel:
+   ```yaml
+   ingress:
+     - hostname: ace-api.badler.ai          # existing
+       service: https://localhost:8443
+       originRequest: { noTLSVerify: true }
+     - hostname: rideordie.badler.ai        # the game
+       service: http://localhost:8739
+     - service: http_status:404
+   ```
+   `cloudflared tunnel --config <cfg> ingress validate` then `sudo systemctl restart <tunnel-unit>`.
+2. **DNS record** — the hostname must point at the tunnel. In the Cloudflare dashboard (badler.ai
+   zone) add a **proxied CNAME**: name `rideordie` → target `<TUNNEL-UUID>.cfargotunnel.com`
+   (orange cloud ON). Or, on a box that has run `cloudflared tunnel login` (an account `cert.pem`):
+   `cloudflared tunnel route dns <TUNNEL-UUID> rideordie.badler.ai`. Cloudflare provides edge TLS
+   automatically for proxied records.
 
 Either way the app stays bound to `127.0.0.1:8739`; the proxy terminates TLS and forwards
 `X-Forwarded-Proto`, which `--proxy-headers` uses to set the **Secure** session cookie.
