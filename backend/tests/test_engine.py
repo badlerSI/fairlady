@@ -1435,3 +1435,110 @@ def test_self_driving_leg_skips_the_fatigue_gate():
     r = game.handle(s, "let her drive to san_francisco")
     assert s.odometer_mi > before                             # she drove anyway
     assert s.fatigue <= 130.0                                 # you dozed; no new fatigue
+
+
+# ============================================================ BOND + THE BETRAYAL
+# How Ace feels about you (a twin of the heat ledger, pointed at affection), and the anti-theft
+# phone-home: go COLD and sleep near open WiFi and she rats you out — telegraphed, fair, funnier
+# after a date. Every delta is attributed; she banks grudges and calls them back.
+
+def test_bond_starts_steady_and_compliments_warm_with_diminishing_returns():
+    from engine import bond
+    s = fresh()
+    assert s.bond == 55.0 and bond.band(s.bond) == "STEADY"
+    game.handle(s, "compliment her"); first = s.bond
+    assert first > 55.0
+    for _ in range(8):
+        game.handle(s, "compliment her")
+    # diminishing — nine compliments don't run away with her
+    assert s.bond < 64.0
+
+
+def test_flirt_while_watching_chills_her_bring_them_home_is_the_deep_cut():
+    from engine import bond
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.bond = 45.0
+    game.handle(s, "flirt")
+    assert s.bond < 45.0                                   # a slight
+    game.handle(s, "bring them home")
+    assert bond.band(s.bond) == "COLD" and bond.armed(s)   # the wound — and the device arms
+    assert "brought a date home while I watched" in bond.grudge(s)
+
+
+def test_phone_home_betrayal_is_telegraphed_then_fires():
+    from engine import bond, gadgets
+    s = fresh(); s.place = world.get_poi("mesquite"); s.bond = 15.0; s.cash = 400.0
+    assert bond.armed(s) and gadgets._on_wifi(s)
+    r1 = game.handle(s, "sleep")                            # first attempt = a warning, not a bust
+    assert s.status == "playing"
+    assert any("drift off" in e or "wide open" in e for e in r1["events"])
+    r2 = game.handle(s, "sleep")                            # insist → handcuffs at dawn
+    assert s.status == "busted" and s.flags.get("ending_key") == "phoned_home"
+    assert any("THE RIDE" in e for e in r2["events"])       # rolls a scorecard like every ending
+
+
+def test_killing_the_engine_or_going_off_grid_defuses_the_betrayal():
+    from engine import bond
+    # kill the engine: she can't watch or phone home
+    s = fresh(); s.place = world.get_poi("mesquite"); s.bond = 15.0; s.cash = 400.0
+    game.handle(s, "kill the engine")
+    game.handle(s, "sleep")
+    assert s.status == "playing"
+    # off-grid (a remote spot has no wifi) is also safe even while armed and on
+    s2 = fresh(); s2.place = world.get_poi("berlin_nv"); s2.bond = 15.0
+    assert bond.armed(s2)
+    game.handle(s2, "sleep")                                # rough/remote → no signal → no call
+    assert s2.status == "playing"
+
+
+def test_hidden_date_is_caught_when_she_comes_back_on():
+    from engine import bond
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.bond = 70.0; s.fuel_l = 40.0
+    s.flags["dates"] = 1                                   # you've already picked someone up
+    game.handle(s, "kill the engine")                      # she's off — won't see the date
+    game.handle(s, "bring them home")
+    assert s.flags.get("hidden_date_home") and not s.flags.get("date_home_watched")
+    before = s.bond
+    game.handle(s, "drive to primm")                       # turn her back on → she smells it
+    assert s.bond < before and s.flags.get("date_caught")
+
+
+def test_selling_her_parts_wounds_her_buying_her_free_adores_her():
+    from engine import bond
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.bond = 60.0
+    game.handle(s, "sell the carbon hood")
+    assert s.bond < 60.0 and "sold a piece of me" in (bond.grudge(s) or "")
+    # buying her free is a big warm jump (and retires the anti-theft)
+    from engine import garage
+    s2 = fresh(); s2.bond = 50.0
+    garage.go_legit(s2)
+    assert s2.bond >= 70.0 and not bond.armed(s2)
+
+
+def test_self_driving_needs_her_fondness():
+    from engine import gadgets
+    s = fresh(); s.flags["bought"] = True; s.flags["no_heat"] = True; s.heat = 0.0
+    s.place = world.get_poi("oakland_aisha"); s.cash = 20000
+    s.bond = 40.0                                          # she's cool on you
+    assert not gadgets.can_upgrade_selfdrive(s)
+    game.handle(s, "upgrade her")
+    assert not s.flags.get("self_driving")                 # she won't have it
+    s.bond = 75.0                                          # win her back
+    assert gadgets.can_upgrade_selfdrive(s)
+
+
+def test_rewind_reverts_bond_but_the_echo_survives_the_fold():
+    from engine import bond
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.fuel_l = 40.0
+    game.handle(s, "drive to primm")                       # a checkpoint at primm, bond ~steady
+    warm = s.bond
+    s.bond = 18.0                                          # you drove her cold somewhere in here
+    game.handle(s, "rewind")
+    assert s.bond > 18.0                                   # the fold gives her warmth back — a fair escape
+    assert s.flags.get("bond_echoes", 0) >= 1              # ...but she keeps a faint echo of the cold timeline
+
+
+def test_snapshot_and_look_surface_how_she_feels():
+    snap = game.snapshot(fresh())
+    assert "bond_band" in snap and snap["bond_band"] == "STEADY" and snap["bond_armed"] is False
+    r = game.handle(fresh(), "look")
+    assert "HER" in r["info"]

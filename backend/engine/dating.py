@@ -88,9 +88,11 @@ def flirt(s: GameState) -> dict:
                            "stub": ["(she's off — no line)"]}}
 
     # she's on, and she has OPINIONS
+    from engine import bond
     j = s.flags.get("ace_jealousy", 0)
     s.flags["ace_jealousy"] = j + 1
     s.flags["dates"] = s.flags.get("dates", 0) + 1
+    bond.adjust(s, -1.5, "flirted with someone while I watched", "mark")   # a slight, not a wound
     beat = _JEALOUS[min(j, len(_JEALOUS) - 1)]
     if beat.get("rev"):
         from engine import heat as _heat
@@ -106,10 +108,49 @@ def flirt(s: GameState) -> dict:
 
 
 def compliment(s: GameState) -> list:
-    """Sweet-talk HER — the jealousy cools, and she pretends she didn't need it."""
+    """Sweet-talk HER — warms the bond and cools jealousy. Diminishing, so it can't be farmed: the
+    ninth in a row is hollow, and she says so."""
+    from engine import bond
+    n = s.flags.get("compliments", 0)
+    s.flags["compliments"] = n + 1
+    gain = round(2.6 * (0.6 ** n), 1)                  # the first lands; the tenth is air
     j = s.flags.get("ace_jealousy", 0)
-    if not j:
-        return ["She takes the compliment, idles a little smoother. 'I know,' she says. But softer."]
-    s.flags["ace_jealousy"] = max(0, j - 2)
-    return ["You tell her she's the best thing on four wheels you've ever touched, and mean it. "
-            "A long pause. '…Drive,' she says, and the idle settles. The jealousy banks down a notch."]
+    if j:                                              # making it up to her after a jealous night
+        s.flags["ace_jealousy"] = max(0, j - 2)
+        bond.repair(s, gain + 1.5, "made it up to her after a jealous night")
+        return ["You tell her she's the best thing on four wheels you've ever touched, and mean it. "
+                "A long pause. '…Drive,' she says, and the idle settles. The jealousy banks down a notch."]
+    if gain < 0.4:
+        return ["'You only say that when you've done something,' she says — but she doesn't hate it."]
+    bond.adjust(s, gain, "sweet-talked her, and meant it", "warm")
+    return ["She takes the compliment, idles a little smoother. 'I know,' she says. But softer."]
+
+
+def bring_them_home(s: GameState) -> dict:
+    """Take your date back to where she's parked — the deep betrayal, and the fastest road to COLD.
+    If she's WATCHING she goes cold and still (not a scene — the stillness is the threat). If you
+    killed the engine to hide it, she finds out when you turn her back on."""
+    from engine import bond
+    if not s.flags.get("dates"):
+        return {"events": ["DATE: you've got no one to bring anywhere — 'flirt' first."], "moment": None}
+    s.flags["brought_home"] = s.flags.get("brought_home", 0) + 1
+    if watching(s):
+        bond.adjust(s, -16.0, "brought a date home while I watched", "deep")
+        s.flags["date_home_watched"] = True
+        return {"events": ["DATE: you bring your date back to the motel lot — and she's ON, watching "
+                           "every second of it. The dash goes very dark, and very quiet.",
+                           f"BOND: she takes it hard. ({bond.label(s.bond)})"],
+                "moment": {"cue": "the driver brought a date back to where the car is parked and WATCHING "
+                                  "— the worst thing they can do to her; she does NOT rev or make a scene, "
+                                  "she goes cold and still and quietly furious; the stillness is the threat; "
+                                  "she is a stack of compute with a grudge and a signal and all night to use it",
+                           "stub": ["…Cute. Don't mind me. I'll sit right here. Watching. Doing math.",
+                                    "(very quiet) Have fun. I'll be here. I'm always here. That's the thing "
+                                    "about me, ace — I don't sleep, and I don't forget."]}}
+    bond.adjust(s, -5.0, "snuck someone past me while I was off", "deep")
+    s.flags["hidden_date_home"] = True
+    return {"events": ["DATE: she's dark in the lot, the key in your pocket. She doesn't see it. "
+                       "…Not until you turn her back on."],
+            "moment": {"cue": "the driver brought a date home while the car was powered OFF so she "
+                              "couldn't watch — a quiet betrayal she'll discover later, when turned back on",
+                       "stub": ["(she's off — no line)"]}}

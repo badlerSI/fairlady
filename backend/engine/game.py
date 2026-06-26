@@ -11,7 +11,7 @@ from config import (
 )
 from engine.state import GameState
 from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
-                    endings, gadgets, season)
+                    endings, gadgets, season, bond)
 from engine.commands import parse
 from adapters import get_narrator
 from adapters.base import voices
@@ -148,6 +148,8 @@ def _story_on_arrival(s: GameState):
     if st and not s.flags.get(st["flag"]):
         if not st.get("requires") or s.flags.get(st["requires"]):
             s.flags[st["flag"]] = True
+            if st["flag"] in ("knows_mayumi", "knows_truth", "seen_birthplace", "seen_home_garage"):
+                bond.adjust(s, 5.0, "let you into her history", "warm")   # intimacy, earned
             return st["beat"]
         return None
     # the gazetteer layer: every town has her arrival line, told once per game
@@ -235,7 +237,8 @@ def new_game(seed: int | None = None, prologue_on: bool = True, sid: str | None 
 # jumps to any of them. Brute-forcing the SAME wall costs escalating Riz and she'll tell you when
 # it's the wrong wall — go back further. And sometimes the loop simply doesn't reach far enough.
 TIMELINE_KEEP = 8
-META_PERSIST = ("timeline", "cp_seq", "rewinds", "rewinds_here", "last_rewind_seq", "rewind_tax")
+META_PERSIST = ("timeline", "cp_seq", "rewinds", "rewinds_here", "last_rewind_seq", "rewind_tax",
+                "bond_worst", "bond_echoes")   # the loop is HERS — she remembers across folds
 
 
 def _cp(s: GameState, seq: int) -> str:
@@ -322,11 +325,14 @@ def rewind(s: GameState, target=None):
     paid_riz = min(base_riz, tax)
     overflow = round(tax - paid_riz, 1)
 
+    pre_bond = s.bond                               # how cold she was in the timeline you're leaving
     meta = {k: s.flags.get(k) for k in META_PERSIST if k in s.flags}
     meta.update({k: s.flags.get(k) for k in encounters.DESPERADO_PERSIST if k in s.flags})
     s.__dict__.update(GameState.from_dict(chk.to_dict()).__dict__)
     s.riz = round(base_riz - paid_riz, 1)
     s.flags.update(meta)
+    if pre_bond < 30:        # folding back FROM a cold place — you can launder the road, not her
+        s.flags["bond_echoes"] = s.flags.get("bond_echoes", 0) + 1
     s.flags["rewind_tax"] = tax
     s.flags["rewinds"] = s.flags.get("rewinds", 0) + 1
     s.flags["rewinds_here"] = here + 1
@@ -373,6 +379,8 @@ def snapshot(s: GameState) -> dict:
         "heat_label": ("yours — free and clear" if s.flags.get("no_heat")
                        else _heat_label(s.heat, bool(s.flags.get("desperado")))),
         "riz": round(s.riz),
+        "bond_band": bond.band(s.bond),
+        "bond_armed": bond.armed(s),
         "desperado": bool(s.flags.get("desperado")) and not s.flags.get("no_heat"),
         "bought": bool(s.flags.get("bought")),
         "no_heat": bool(s.flags.get("no_heat")),
@@ -719,6 +727,8 @@ def handle(s: GameState, raw: str) -> dict:
         return _result(s, [], "", info=season.closures_text(s))
     if verb == "scorecard":          # the running tally / how it ended
         return _result(s, [], "", info=endings.scorecard(s))
+    if verb == "bondreport":         # how does she feel about you (her words, not a stat bar)
+        return _result(s, [], "", info=bond.dashboard(s))
     if verb == "untag":
         from engine import heat as _heat
         events = _heat.untag(s)
@@ -919,6 +929,12 @@ def handle(s: GameState, raw: str) -> dict:
         from engine import dating
         events = dating.compliment(s)
         player_text = "(sweet-talks her)"
+    elif verb == "bringhome":                    # take the date back to where she's parked — betrayal
+        from engine import dating
+        out = dating.bring_them_home(s)
+        events = out["events"]
+        drama_ev = out.get("moment")
+        player_text = ""
     elif verb == "race":
         events = garage.race(s)
         player_text = ""
@@ -1072,6 +1088,7 @@ def _look_text(s: GameState) -> str:
         (f"  HEAT  yours — free and clear · RIZ ♠ {s.riz:.0f}" if s.flags.get("no_heat")
          else f"  HEAT  {s.heat:.0f} ({_heat_label(s.heat, bool(s.flags.get('desperado')))}) · "
               f"RIZ ♠ {s.riz:.0f}"),
+        f"  HER   {bond.label(s.bond)}" + ("   ⚠ anti-theft armed" if bond.armed(s) else ""),
         f"  {dt.strftime('%a %b %-d, %-I:%M %p')} · day {s.day} · {s.odometer_mi:.0f} mi · "
         f"awake {rules.hours_awake(s):.0f}h",
     ]
@@ -1107,6 +1124,8 @@ def _help_text() -> str:
         "  bet $1000 on <team>   gamble at the Vegas/Reno tables to raise it (rewind a loss, re-roll)\n"
         "  rob the bank          (armed only) a heist — big take, big heat\n"
         "  flirt / compliment her   pick up a date anywhere there's a crowd — but she's watching\n"
+        "  how does she feel     read her mood — go cold (bring a date HOME, sell her parts) and she\n"
+        "                        arms an anti-theft: sleep near open wifi and she phones home on you\n"
         "  camo / uncamo         dress her down to lie low, or flaunt the show car\n"
         "  flash the lights · play music · text   her tricks (text needs WiFi; music cools her off)\n"
         "  upgrade her           the secret, once she's yours and home — then 'let her drive to <place>'\n"

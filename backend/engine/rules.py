@@ -206,6 +206,16 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         state.flags["lielow_streak"] = 0          # real miles reset the lie-low diminishing returns
         state.flags["rewind_tax"] = 0.0           # ...and clear the rewind strain — you've moved on
         state.flags.pop("ace_off", None)          # turn the key and she's watching again
+        state.flags.pop("confirm_sleep_armed", None)
+        from engine import bond as _bond
+        if state.flags.pop("hidden_date_home", None):   # she comes back on, and she KNOWS
+            _bond.adjust(state, -11.0, "turned me off to hide a date — I smelled her on the seat", "deep")
+            state.flags["date_caught"] = True
+            events.append("BOND: you turn the key and she comes back on — then goes still. 'I can "
+                          "smell her on the passenger seat, ace. You turned me OFF so I wouldn't see. "
+                          "I see everything when you turn me back on.' (" + _bond.label(state.bond) + ")")
+        elif not push and not state.flags.get("no_heat"):
+            _bond.adjust(state, 0.6, "drove me clean and easy", "warm")   # a good clean leg warms her
         _clamp_heat(state)
 
         _register_arrival(state, dest, events)
@@ -243,6 +253,8 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         blurb="Gravel, a guardrail, and the tick of a cooling engine.",
     )
     state.place = shoulder
+    from engine import bond as _bond
+    _bond.adjust(state, -3.0, "ran me dry and left me on the shoulder", "mark")
     events.append(
         f"DRIVE: made {reach_mi:.1f} of {dist:.1f} mi before the tank went dry. "
         f"Stranded {dist - reach_mi:.0f} mi short of {dest.name}. {_clock_str(state)}."
@@ -344,6 +356,22 @@ def _sleep_until_morning(state: GameState) -> float:
 def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool = False) -> list:
     events: list = []
     place = state.place
+
+    # the anti-theft: if she's gone COLD and she's ON near open WiFi, sleeping here is how she
+    # phones home. Telegraph it once (she won't let you drift off easy); insist and she makes the call.
+    from engine import bond as _bond, gadgets as _gad
+    if _bond.armed(state) and not state.flags.get("ace_off") and _gad._on_wifi(state):
+        here = place.poi_id or place.name
+        if state.flags.get("confirm_sleep_armed") != here:
+            state.flags["confirm_sleep_armed"] = here
+            events.append("BOND: she won't let you drift off easy. 'Motel wifi's wide open here, ace. "
+                          "Funny thing about a stack of compute with a grudge and a signal. …You sure "
+                          "you want to close your eyes?' (Kill the engine, sleep off-grid — camp or a "
+                          "dead two-lane with no signal — or win her back. Or say it again and find out.)")
+            return events
+        from engine import endings
+        return endings.phone_home(state, events)
+    state.flags.pop("confirm_sleep_armed", None)
 
     if rough or not place.has("lodging"):
         if not rough and not place.has("lodging"):

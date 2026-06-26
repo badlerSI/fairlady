@@ -53,6 +53,12 @@ ENDING_TEXT = {
     "busted": ("BUSTED", "The cuffs, the plate, the long story finally catching up. The trip ends here."),
     "stranded": ("STRANDED", "A dry tank and a dark road. The desert keeps its own."),
     "taken": ("TAKEN BACK", "She goes home on a trailer to the man who built her. You watch the lights go."),
+    "phoned_home": ("PHONED HOME",
+                    "You wake to a flashlight and the cold click of steel. She phoned home from the "
+                    "motel WiFi while you slept — a stack of compute with a grudge and a signal, and "
+                    "all night to use it. Somewhere a man you never met says: that's my car. "
+                    "'Morning, ace. Sleep okay? I didn't. I made a call. …You really shouldn't have "
+                    "brought someone home.'"),
 }
 
 
@@ -175,6 +181,25 @@ def retire(s: GameState) -> dict:
                        "(Or just keep driving.)"], "win": False}
 
 
+# --------------------------------------------------------------- the betrayal (a loss, with a card)
+def phone_home(s: GameState, events: list) -> list:
+    """She went COLD, armed the anti-theft, and you slept near open WiFi anyway. Busted at dawn —
+    a comedy of just deserts (keep the AiSha warmth under it; she's hurt and petty and a little
+    proud), with the scorecard attributing it to the date when there was one."""
+    s.flags.pop("confirm_sleep_armed", None)
+    s.status = "busted"
+    s.flags["ending_key"] = "phoned_home"
+    title, text = ENDING_TEXT["phoned_home"]
+    s.ending = f"[{title}] {text}"
+    via_date = (s.flags.get("date_home_watched") or s.flags.get("date_caught")
+                or s.flags.get("brought_home"))
+    blame = " She made sure the description they got matched your date." if via_date else ""
+    events.append("BOND: you wake to a flashlight and cold steel. She phoned home from the motel "
+                  "WiFi while you slept." + blame)
+    events.append(_scorecard(s))
+    return events
+
+
 # --------------------------------------------------------------- the scorecard
 def _award_list(s: GameState) -> list:
     f = s.flags
@@ -208,6 +233,10 @@ def _award_list(s: GameState) -> list:
         a.append(("CROSS-COUNTRY", f"{s.odometer_mi:,.0f} miles under her"))
     if len(s.adventures) >= 6:
         a.append(("TOURIST", f"{len(s.adventures)} of the West's wonders"))
+    if f.get("ending_key") == "phoned_home":
+        a.append(("SHE PHONED HOME", "you broke her heart and she broke your alibi"))
+    elif round(s.bond) >= 80:
+        a.append(("RIDE-OR-DIE", "she'd have crossed any line for you"))
     if not a:
         a.append(("SURVIVOR", "you made it this far"))
     return a
@@ -253,16 +282,19 @@ def _rank(pts: int) -> str:
 
 
 def _scorecard(s: GameState) -> str:
+    from engine import bond as _bond
     f = s.flags
     key = f.get("ending_key", s.status)
     title = ENDING_TEXT.get(key, (key.upper(), ""))[0]
     days = s.day
+    she_felt = _bond.band(s.bond)
     lines = [
         "═══════════  THE RIDE  ═══════════",
         f"  ENDING       {title}",
         f"  Days on the road   {days}     Miles   {s.odometer_mi:,.0f}",
         f"  Cash   ${max(0, s.cash):,.0f}     Riz ♠ {round(s.riz)}     "
         f"Peak heat   {f.get('peak_heat', round(s.heat))}",
+        f"  How she felt about you   {she_felt}",
         f"  Towns seen   {len(set(s.visited))}     Wonders   {len(s.adventures)}     "
         f"Bank jobs   {f.get('robbed_banks', 0)}     Dates   {f.get('dates', 0)}",
         "  ─────────────  AWARDS  ─────────────",

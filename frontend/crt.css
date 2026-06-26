@@ -78,6 +78,10 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 @keyframes sdPulse { 0%,100% { opacity: 1; } 50% { opacity: .68; } }
 .d-row.camo { color: var(--cyan-dim); opacity: .85; }
 .d-row.camo .d-k, .d-row.camo .d-v { color: var(--cyan-dim); }
+.d-row.coldarmed { color: var(--red); text-shadow: 0 0 7px rgba(226,59,46,.55); animation: despFlick 2.4s steps(1) infinite; }
+.d-row.coldarmed .d-k, .d-row.coldarmed .d-v { color: var(--red); }
+.d-row.cooling { color: var(--cyan-dim); }
+.d-row.cooling .d-k { color: var(--orange); }
 .d-row.snow .d-k { color: var(--cyan); }
 .d-row.snow .d-v { color: var(--paper); }
 .d-k { color: var(--cyan-dim); min-width: 48px; letter-spacing: 1px; }

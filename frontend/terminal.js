@@ -107,6 +107,10 @@ function updateDash(s) {
     (s.self_driving ? `<div class="d-row selfdrive"><span class="d-k">◉</span><span class="d-v">SELF-DRIVING</span><span class="d-v dim">'let her drive to …'</span></div>` : ``) +
     (s.desperado ? `<div class="d-row desperado"><span class="d-k">⚠</span><span class="d-v">DESPERADO</span><span class="d-v dim">armed &amp; dangerous · 'draw'</span></div>` : ``) +
     (s.camo ? `<div class="d-row camo"><span class="d-k">▒</span><span class="d-v">CAMO</span><span class="d-v dim">dressed down · 'uncamo'</span></div>` : ``) +
+    (s.bond_armed
+      ? `<div class="d-row coldarmed"><span class="d-k">☎</span><span class="d-v">SHE'S COLD</span><span class="d-v dim">anti-theft armed — sleep off-grid · 'how does she feel'</span></div>`
+      : (s.bond_band === 'COOL'
+        ? `<div class="d-row cooling"><span class="d-k">♡</span><span class="d-v">COOLING</span><span class="d-v dim">she's pulling away · warm her back</span></div>` : ``)) +
     (s.snow_line != null && s.snow_line <= 1.25
       ? `<div class="d-row snow"><span class="d-k">❄</span><span class="d-v">WINTER</span><span class="d-v dim">passes closing · 'passes'</span></div>` : ``);
 }

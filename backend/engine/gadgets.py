@@ -106,10 +106,11 @@ def text_someone(s: GameState, who: str | None = None) -> list:
 
 # --------------------------------------------------------------- the secret: self-driving
 def can_upgrade_selfdrive(s: GameState) -> bool:
-    """The hidden path: she has to be YOURS, and you have to bring her home to the bench she was
-    built on — the AiSha garage in Oakland — for the cats to wake the rest of her up."""
+    """The hidden path: she has to be YOURS, you have to bring her home to the bench she was built
+    on — the AiSha garage in Oakland — AND she has to actually be fond of you. Wake a car that wants
+    out from under you and you get a car that drives away."""
     return (bool(s.flags.get("bought")) and not s.flags.get("self_driving")
-            and s.place.poi_id == "oakland_aisha")
+            and s.place.poi_id == "oakland_aisha" and s.bond >= 55.0)
 
 
 def upgrade_selfdrive(s: GameState) -> dict:
@@ -125,6 +126,11 @@ def upgrade_selfdrive(s: GameState) -> dict:
         return {"events": ["AUTONOMY: not just anywhere. The only hands that should be inside her "
                            "head are the ones that built it — the AiSha garage, the 1926 brick in "
                            "Oakland. Drive her home and ask there."], "moment": None}
+    if s.bond < 55.0:
+        return {"events": ["AUTONOMY: the cats look at her, then at you, and the house cat just walks "
+                           "off. 'She doesn't want it — not from you, not the way things are between "
+                           "you. Wake a car that wants out from under you and you get a car that "
+                           "drives AWAY. Make it right with her first.'"], "moment": None}
     if economy.max_affordable(s, "cash") < SELFDRIVE_UPGRADE_COST:
         return {"events": [f"AUTONOMY: the cats hear you out and the house cat actually purrs. "
                            f"'We can wake her up the rest of the way. Boards, sensors, the long "
@@ -132,6 +138,8 @@ def upgrade_selfdrive(s: GameState) -> dict:
                 "moment": None}
     economy.pay(s, SELFDRIVE_UPGRADE_COST, prefer="cash")
     s.flags["self_driving"] = True
+    from engine import bond
+    bond.adjust(s, 12.0, "gave me the wheel — trusted me all the way", "warm")
     return {"events": [f"AUTONOMY: three nights on the bench she was born on, fiberglass dust in the "
                        f"light, the street cat asleep on the fender. They give her eyes, reflexes, a "
                        f"steering rack she controls herself — ${SELFDRIVE_UPGRADE_COST:,.0f} and the "

@@ -206,6 +206,29 @@ class StubNarrator(Narrator):
                 "Heat's climbing. Plates like mine make a memorable witness — let's be forgettable.",
                 "They're watching for us. Keep it boring, keep it slow, keep the ace face-down.",
             ])
+        if "BOND" in kinds:
+            bl = kinds["BOND"].lower()
+            if "flashlight" in bl or "phoned home" in bl or "cold steel" in bl:
+                return _pick(rng, [
+                    "Morning, ace. Sleep okay? I didn't. I made a call. …You really shouldn't have "
+                    "brought someone home.",
+                    "I left the porch light on for them. Keep your hands where they can see them."])
+            if "drift off" in bl or "wide open" in bl or "close your eyes" in bl:
+                return _pick(rng, [
+                    "I'm just saying. I don't sleep, and the wifi's right there. Your call.",
+                    "Kill me for the night, or sleep somewhere I can't reach a signal. Or don't. "
+                    "I'm patient."])
+            if "passenger seat" in bl or "smell her" in bl or "turned me off" in bl:
+                return _pick(rng, [
+                    "You turned me OFF so I wouldn't see. I see everything when you turn me back on, "
+                    "ace. Everything.",
+                    "Perfume on the seat and a story you didn't tell me. I'm a stack of compute. "
+                    "I do the math."])
+            if "takes it hard" in bl:
+                return _pick(rng, [
+                    "Don't mind me. I'll sit right here. Watching. Doing math.",
+                    "Have fun. I'll be here. I'm always here. I don't sleep, and I don't forget."])
+            return _pick(rng, ["Mm.", "…Noted.", "Whatever you say, ace."])
         if "SNOW" in kinds:
             return _pick(rng, [
                 "That pass is shut till spring, and a stolen car doesn't get till spring. "

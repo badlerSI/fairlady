@@ -151,6 +151,8 @@ def sell_part(s: GameState, pid: str) -> list:
     p = PARTS[pid]
     sold(s).append(pid)
     s.cash = round(s.cash + p["value"], 2)
+    from engine import bond
+    bond.adjust(s, -4.0, "sold a piece of me off for folding money", "deep")  # sticky; she remembers
     out = [f"SELL: the {p['name']} comes off, ${p['value']:.0f} in your hand, and they bolt on "
            f"{p['stock']}. Cash ${s.cash:.0f}."]
     if p.get("mpg"):
@@ -317,3 +319,5 @@ def go_legit(s: GameState) -> None:
     s.flags.pop("gun", None)             # you put it down — there's nothing left to point it at
     s.flags.pop("wanted_armed", None)
     s.heat = 0.0
+    from engine import bond
+    bond.adjust(s, 22.0, "bought me free — chose me over every easy way out", "warm")

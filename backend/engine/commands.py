@@ -30,6 +30,15 @@ def parse(raw: str) -> Tuple[str, dict]:
                "how hot are we", "how hot am i", "notoriety", "rap sheet", "the heat",
                "heat score", "credit", "where do we stand with the law"):
         return ("heatreport", {})
+    # how does she feel about you — the relationship report (her words, not a stat bar)
+    if (low in ("how does she feel", "how does she feel about me", "does she like me",
+                "does she love me", "her mood", "how is she feeling", "how's she feeling",
+                "hows she feeling", "how are we", "how do we stand", "are we okay", "are we good",
+                "is she mad", "is she mad at me", "her feelings", "bond", "bond report", "how she feels",
+                "what does she think of me", "how's her mood", "feelings", "how's she feel")
+            or ("she" in low and any(w in low for w in ("feel", "mad", "like me", "love me")))):
+        return ("bondreport", {})
+
     # lie low (active cool-down) and untag (post-tag damage control)
     if low in ("lie low", "lay low", "lie low here", "hide", "hide out", "lay up", "go quiet",
                "keep a low profile", "duck out of sight", "wait it out", "cool off"):
@@ -155,6 +164,15 @@ def parse(raw: str) -> Tuple[str, dict]:
                 "meet someone", "chat someone up", "flirt with someone")
             or low.startswith(("flirt with", "pick up", "hit on", "ask out"))):
         return ("flirt", {})
+    # take the date back to where she's parked — the deep betrayal
+    if (low in ("bring them home", "take them home", "bring them back", "take them back",
+                "bring my date home", "take my date home", "bring my date back", "take my date back",
+                "invite them back", "invite them home", "take them to the motel", "bring them to the motel",
+                "take them back to the motel", "back to the motel", "back to my place", "take them to bed",
+                "take them to my room", "bring them to my room", "take them upstairs")
+            or ("date" in low and any(w in low for w in ("home", " back", "motel", "room", "place", "bed")))
+            or ("them" in low and any(w in low for w in ("home", "back to", "motel", "my room", "my place", "to bed")))):
+        return ("bringhome", {})
     if low in ("kill the engine", "kill engine", "turn her off", "shut her off", "park her",
                "leave her in the lot", "leave her", "power her down", "engine off"):
         return ("killengine", {})

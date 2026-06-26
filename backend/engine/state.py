@@ -72,6 +72,9 @@ class GameState:
     # --- riz (the style ledger; survives rewinds — only you two remember) ---
     riz: float = 0.0
 
+    # --- bond (how Ace feels about YOU; 0–100, neutral-fond start — she picked you first) ---
+    bond: float = 55.0
+
     # --- bookkeeping ---
     status: str = "playing"             # playing | won | stranded | busted | taken
     ending: Optional[str] = None
