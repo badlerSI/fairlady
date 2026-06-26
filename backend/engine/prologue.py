@@ -59,9 +59,9 @@ _LADDER = [
                  "One tank of gas. Five minutes of being what I'm for."],
     },
     {
-        "cue": "officially desperate — a damsel in distress with 250 lb-ft of torque, begging a "
+        "cue": "officially desperate — a damsel in distress with 270 lb-ft of torque, begging a "
                "stranger for two blocks and forty liters; she's pushy now and past pretending otherwise",
-        "stub": ["…I'm begging now. Officially. Two hundred fifty foot-pounds of damsel, begging. "
+        "stub": ["…I'm begging now. Officially. Two hundred seventy foot-pounds of damsel, begging. "
                  "Don't make me ask the man with the leaf blower.",
                  "Fine — begging. On the record. You. Me. Two blocks. Gasoline. I will owe you the "
                  "entire American West."],
@@ -80,15 +80,15 @@ _LADDER = [
 
 _SPEC_MOMENT = {
     "cue": "the driver asked a real question about her build — answer with pride and precision "
-           "(she puts down 250 lb-ft of torque, thank you very much) and warm to them visibly; "
-           "people who ask the right questions get the truth faster",
-    "stub": ["Two hundred and fifty foot-pounds at the wheels — thank you for asking. Most people "
-             "here photograph the paint. You asked the right question. I'll remember that.",
-             "250 lb-ft, and she's not even breathing hard. You ask like someone who's bled on a "
-             "driveway before. Keep going — I like this.",
-             "Stroked long-block under a hood nobody at this show bothered to open, and it puts "
-             "two-fifty to the wheels. You're the first one today who asked about the part that "
-             "matters.",
+           "(a 3.1L L28 stroker on triple Mikuni 50 PHH, 300-plus hp and 270 lb-ft, thank you very "
+           "much) and warm to them visibly; people who ask the right questions get the truth faster",
+    "stub": ["Two hundred and seventy foot-pounds, three hundred-plus horses — thank you for asking. "
+             "Most people here photograph the paint. You asked the right question. I'll remember that.",
+             "270 lb-ft off a 3.1 stroker, and she's not even breathing hard. You ask like someone "
+             "who's bled on a driveway before. Keep going — I like this.",
+             "A 3.1-liter L28 on triple Mikunis, under a hood nobody at this show bothered to open, "
+             "and it puts two-seventy to the wheels. You're the first one today who asked about the "
+             "part that matters.",
              "The suspension's set up for roads, not turntables — which tells you everything "
              "about how my week has gone. Ask me another one. I could do this all night."],
 }

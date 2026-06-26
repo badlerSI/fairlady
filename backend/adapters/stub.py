@@ -265,10 +265,10 @@ class StubNarrator(Narrator):
     def _idle(self, rng, s, player_text):
         if is_spec_question(player_text):       # the build sheet, recited with pride
             return _pick(rng, [
-                "Two hundred and fifty foot-pounds at the wheels, thank you very much. Most "
-                "people photograph the paint. You asked the right question.",
-                "250 lb-ft, a fifty-three-year-old chassis, and opinions. The placard undersells "
-                "two of the three.",
+                "Two hundred and seventy foot-pounds at the wheels, three hundred-plus horses, "
+                "thank you very much. Most people photograph the paint. You asked the right question.",
+                "270 lb-ft off a 3.1 stroker, a fifty-three-year-old chassis, and opinions. The "
+                "placard undersells all three.",
             ])
         r = s.get("range_mi", 0)
         heat = s.get("heat", 0)

@@ -5,7 +5,7 @@ about to agree to.*
 
 A free-roaming, retrofuturistic text road-trip across the American West, played in a CRT terminal.
 It opens on the SEMA show floor, twenty minutes to close, at the white 1972 Datsun 240Z everybody
-stops at — **FAIRLADY**, 250 lb-ft of torque, ace of spades on the hood, and a placard that doesn't
+stops at — **FAIRLADY**, 270 lb-ft of torque, ace of spades on the hood, and a placard that doesn't
 mention she talks. Talk to her a while (ask real questions about her build and she warms up fast)
 and she'll ask one simple favor: *take her down the block to fill up with gasoline, so she's ready
 to head home after this nightmare that was SEMA.* Then she'll ask again. Then she'll beg.
