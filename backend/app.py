@@ -151,3 +151,10 @@ def index():
 
 app.mount("/tts-audio", StaticFiles(directory=str(TTS_DIR)), name="tts")
 app.mount("/ui", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="ui")
+# index.html is served at "/" and references its assets with bare relative paths
+# (crt.css, terminal.js, koinoya-crt.webp, scenes_wm/...), so the browser requests them at the
+# ROOT (/crt.css), not /ui/crt.css. Without a root mount those 404 and the page renders as raw
+# unstyled HTML — the "glitch boot screen" on hand-off. This catch-all mount is registered LAST,
+# so the explicit API routes and the "/" index route above still win; it only serves the static
+# files that nothing else matched.
+app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="root")
