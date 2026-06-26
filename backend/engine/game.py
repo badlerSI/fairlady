@@ -381,6 +381,8 @@ def snapshot(s: GameState) -> dict:
         "riz": round(s.riz),
         "bond_band": bond.band(s.bond),
         "bond_armed": bond.armed(s),
+        "pending_turnkey": bool(s.flags.get("pending_turnkey")),   # show the [Turn the key] button
+        "gas_run": bool(s.flags.get("prologue_done") and not s.flags.get("favor_filled")),
         "desperado": bool(s.flags.get("desperado")) and not s.flags.get("no_heat"),
         "bought": bool(s.flags.get("bought")),
         "no_heat": bool(s.flags.get("no_heat")),
@@ -431,6 +433,19 @@ def choices(s: GameState) -> list:
         out += [{"cmd": "how much torque do you make?", "note": "ask about the build"},
                 {"cmd": "where were you born?", "note": "her story"},
                 {"cmd": "look", "note": "the hall, the car"}]
+        return out
+
+    # you agreed — the one move that matters is turning the key (the big button)
+    if s.flags.get("pending_turnkey"):
+        return [{"cmd": "turn the key all the way", "note": "unplug the charger and roll", "big": True},
+                {"cmd": "look", "note": "the lot, the ramp"}]
+
+    # at the Chevron on the opening gas run — the pay-and-talk dilemma
+    if (s.flags.get("prologue_done") and not s.flags.get("favor_filled")
+            and s.place.poi_id == "sema_chevron"):
+        out = [{"cmd": "pay cash", "note": "quiet — but you'll talk past the clerk inside"},
+               {"cmd": "pay card", "note": "fast — and a trail with your face on it"}]
+        out.append({"cmd": "fill", "note": "fill the tank"})
         return out
 
     # mid-standoff: a gun is on you — talk him down or take it
@@ -610,6 +625,20 @@ def _after_arrival(s: GameState, events: list):
     return npc, drama_ev, story_beat
 
 
+def _favor_reveal(s: GameState):
+    """The tank's full and the clerk's been dealt with — she drops the act, the title drop lands.
+    Sets favor_filled, flags the title drop, checkpoints, and returns the reveal moment. Returns
+    None when it isn't time (tank not full, or a clerk still eyeing the car at the register)."""
+    if (s.flags.get("prologue_done") and not s.flags.get("favor_filled")
+            and s.place.poi_id == "sema_chevron" and s.fuel_l >= s.tank_l - 0.5
+            and not s.flags.get("clerk_curious")):
+        s.flags["favor_filled"] = True
+        s.flags["_titledrop"] = True
+        checkpoint(s, "tank full — she drops the act")
+        return prologue.favor_done_moment()
+    return None
+
+
 def _example_dest(s: GameState) -> str:
     """A nearby place name to seed the 'let her drive to ___' hint."""
     p = s.place
@@ -755,15 +784,40 @@ def handle(s: GameState, raw: str) -> dict:
         events = list(out["events"])
         if out["agreed"]:
             s.flags.pop("prologue", None)
-            s.flags["prologue_done"] = True
-            events += rules.drive(s, world.get_poi("sema_chevron"))   # down the block
-            checkpoint(s, "the favor — down the block")
+            s.flags["pending_turnkey"] = True       # she's ready; now unplug the charger + turn the key
             _autosave(s)
             scene, voice, audio = _narrate(s, events, "", drama=out["moment"])
-            return _result(s, events, scene, voice=audio, welcome=TITLE_DROP)
+            return _result(s, events, scene, voice=audio)   # NO drive, NO title drop — yet
         _autosave(s)
         scene, voice, audio = _narrate(s, events, raw, drama=out["moment"])
         return _result(s, events, scene, voice=audio)
+
+    # ---- the two-step commit: you agreed — now disconnect the trickle charger and turn the key ----
+    if s.flags.get("pending_turnkey"):
+        if verb == "turnkey":
+            s.flags.pop("pending_turnkey", None)
+            s.flags["prologue_done"] = True
+            s.flags["charger_unplugged"] = True
+            s.turn += 1
+            events = ["IGNITION: you reach past her left fender and pop the trickle charger off the "
+                      "battery — the little red light dies. Then you turn the key all the way. She "
+                      "catches on the second crank and drops into a lumpy, delighted idle."]
+            events += rules.drive(s, world.get_poi("sema_chevron"))   # two blocks of neon
+            checkpoint(s, "turned the key — rolled down to the Chevron")
+            _autosave(s)
+            scene, voice, audio = _narrate(s, events, "", drama=prologue.TURNKEY_MOMENT)
+            return _result(s, events, scene, voice=audio)
+        if verb in ("drive", "home", "fuel", "sleep", "tow"):
+            s.turn += 1
+            _autosave(s)
+            scene, voice, audio = _narrate(s, [], "", drama={
+                "cue": "the driver tried to do something before turning the key; she stops them — "
+                       "pop the trickle charger, turn the key ALL the way, THEN we move",
+                "stub": ["Charger off, key all the way, ace — THEN we roll. Not before.",
+                         "Not yet. Unplug me and turn the key all the way over. Then we go."]})
+            return _result(s, [], scene, voice=audio,
+                           info="(she won't move until you 'turn the key all the way')")
+        # chat / look fall through to normal handling — she'll talk while she waits
 
     if s.status != "playing" and verb not in ("tow", "look"):
         if s.status == "won":
@@ -783,7 +837,7 @@ def handle(s: GameState, raw: str) -> dict:
         from engine import heat as _heat
         low = raw.lower()
         showoff = any(t in low for t in ("sema", "yeah", "yes", "sure", "famous", "take a", "selfie",
-                                         "follow", " pic", "build", "show car", "250", "mikuni",
+                                         "follow", " pic", "build", "show car", "250", "270", "mikuni",
                                          "go ahead", "post it", "tag"))
         if verb in ("drive", "home"):
             events += _heat.clerk_resolve(s, humble=True)        # you left — slid by
@@ -794,6 +848,11 @@ def handle(s: GameState, raw: str) -> dict:
         elif verb not in ("look", "heatreport", "map", "range", "untag", "lielow",
                           "uncamo", "stereo", "text", "scorecard", "closures"):
             events += _heat.clerk_resolve(s, humble=False)       # lingered at the pump — he got it
+        if s.flags.pop("chevron_cover", None):   # the OPENING cover-story is resolved — she drops the act
+            s.flags["cover_done"] = True
+            _rev = _favor_reveal(s)
+            if _rev:
+                drama_ev = _rev
 
     if verb == "home":                # "drive her home" — her home is the Oakland garage by default
         if args.get("dest"):
@@ -834,23 +893,38 @@ def handle(s: GameState, raw: str) -> dict:
                     npc, drama_ev, story_beat = _after_arrival(s, events)
         player_text = ""
     elif verb == "fuel":
+        gas_run = (s.flags.get("prologue_done") and not s.flags.get("favor_filled")
+                   and s.place.poi_id == "sema_chevron")
+        paying_cash = (args.get("prefer") or s.pay_method) == "cash"
         events = rules.fuel(s, dollars=args.get("dollars"), liters=args.get("liters"),
                             gallons=args.get("gallons"), fill=args.get("fill", False),
                             prefer=args.get("prefer"))
-        # the favor completes the first time you actually FILL her at the Chevron
-        if (s.flags.get("prologue_done") and not s.flags.get("favor_filled")
-                and s.place.poi_id == "sema_chevron" and s.fuel_l >= s.tank_l - 0.5):
-            s.flags["favor_filled"] = True
-            events.append("FAVOR: the tank is full. The favor is done — she's ready to load out "
-                          "for home tomorrow. ...She goes quiet a second.")
-            drama_ev = prologue.favor_done_moment()
-            checkpoint(s, "tank full — the favor's done")
-        elif s.status == "playing" and s.fuel_l >= s.tank_l - 0.5 and any(
-                e.startswith("FUEL: pumped") for e in events):
+        pumped = any(e.startswith("FUEL: pumped") for e in events)
+        # the opening pay-and-talk dilemma: card at the pump leaves a fast trail; cash means going
+        # inside, where the kid clocks the show car and you have to talk your way past him.
+        if gas_run and pumped:
+            if paying_cash and not s.flags.get("cover_done"):
+                s.flags["clerk_curious"] = True
+                s.flags["chevron_cover"] = True
+                events.append("CLERK: you pay the kid cash, and he keeps looking past you at the "
+                              "white Z under the lot lights. 'Hey — that's the SEMA car, isn't it? "
+                              "You with the show?'")
+                drama_ev = prologue.CHEVRON_CLERK_MOMENT
+            elif not paying_cash and not s.flags.get("card_at_pump"):
+                s.flags["card_at_pump"] = True
+                from engine import heat as _heat
+                _heat.add(s, 11.0, "card-swiped at the pump leaving a car show", "mark")
+                events.append("HEAT: the pump camera takes your picture and the swipe takes your "
+                              "name — a timestamped trail walking out of a car show in a car nobody's "
+                              f"reported missing yet. Heat → {s.heat:.0f}. (Cash inside would've been quiet.)")
+        # she drops the act when the tank's full AND the clerk's dealt with — the title lands here
+        rev = _favor_reveal(s)
+        if rev:
+            drama_ev = rev
+        elif s.status == "playing" and not gas_run and pumped and s.fuel_l >= s.tank_l - 0.5:
             checkpoint(s, "topped off")  # a full tank is a clean save point (and sets up the standoff)
-        # a curious clerk may clock the show car at a bright, busy pump
-        if (s.status == "playing" and any(e.startswith("FUEL: pumped") for e in events)
-                and not s.flags.get("clerk_curious")):
+        # a curious clerk may clock the show car at a bright, busy pump (post-opening play)
+        if (s.status == "playing" and pumped and not gas_run and not s.flags.get("clerk_curious")):
             from engine import heat as _heat
             clerk = _heat.social_fuel(s)
             if clerk:
@@ -951,6 +1025,9 @@ def handle(s: GameState, raw: str) -> dict:
             events = ["BUY: there's no one to buy her from yet. The man who built her finds you "
                       "when the trail runs hot enough — keep moving through the cities."]
         player_text = ""
+    elif verb == "turnkey":                     # she's already running by now
+        events = ["IGNITION: she's already turned over and idling, ace — we're past that."]
+        player_text = ""
     elif verb in ("disarm", "draw"):            # the gun, with nothing to point it at
         events = ["GUN: nobody's holding a gun on you right now." if verb == "disarm"
                   else ("GUN: you keep the piece down — no call for it here." if s.flags.get("gun")
@@ -999,7 +1076,10 @@ def handle(s: GameState, raw: str) -> dict:
                 story_beat = payoff
 
     _autosave(s)
-    welcome = _state_welcome(s) if s.status == "playing" else None  # no 'welcome' as you leave for good
+    if s.flags.pop("_titledrop", None):                 # the reveal just landed — RIDE OR DIE
+        welcome = TITLE_DROP
+    else:
+        welcome = _state_welcome(s) if s.status == "playing" else None
     if story_beat:
         scene, audio = story_beat, None         # the authored reveal, verbatim
     else:

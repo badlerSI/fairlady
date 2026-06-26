@@ -25,6 +25,15 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("look", "l", "status", "state", "look around", "hud"):
         return ("look", {})
 
+    # the two-step commit: turn the key all the way (the opening button)
+    if (low in ("turn the key all the way", "turn the key", "turnkey", "turn her all the way",
+                "turn the key all the way over", "turn it all the way", "start her", "start her up",
+                "fire her up", "start the engine", "start the car", "turn her over", "turn the key over",
+                "crank her", "crank it", "key it", "send it down the block")
+            or ("turn" in low and "key" in low)
+            or ("all the way" in low and any(w in low for w in ("key", "turn", "crank")))):
+        return ("turnkey", {})
+
     # the heat report — the credit-karma dashboard for your notoriety
     if low in ("heat", "score", "heat report", "report", "record", "my record", "how hot",
                "how hot are we", "how hot am i", "notoriety", "rap sheet", "the heat",

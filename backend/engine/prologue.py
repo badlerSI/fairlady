@@ -103,28 +103,70 @@ _DEFLECT_DRIVE = {
              "nice questions. Keep talking."],
 }
 
-_AGREED_MOMENT = {
-    "cue": "they said YES to the favor — she walks them through it, alive for the first time in "
-           "six days: down the ramp past the badge-checkers arguing about a forklift, out into "
-           "the neon dark, two blocks to the Chevron; nobody stops you, and that part doesn't "
-           "feel real",
-    "stub": ["Yes? *Yes.* Okay — clutch is light, throttle's honest, ramp's at the end of the "
-             "aisle. Past the badge guys, left into the dark, two blocks. Nobody is going to "
-             "stop us. Drive casual.",
-             "There it is. Keys are in me, ramp's clear, the badge-checkers are fighting about a "
-             "forklift. Two blocks of neon and we're at the pumps. Easy. *Go.*"],
+# AGREEMENT no longer drives or drops the title — it lights her up and hands you the two-step:
+# unplug the trickle charger, then turn the key ALL the way. It's still just an errand, as far as
+# anyone (including, she lets you believe, you) knows.
+AGREE_TURNKEY_MOMENT = {
+    "cue": "they said YES to the simple favor — just gas, nothing more — and she lights up, alive "
+           "for the first time in six days; she walks them through it plainly and a little breathless: "
+           "first reach down past her left fender and pop the TRICKLE CHARGER off the battery (the "
+           "little red light) or she'll drag the cord; THEN turn the key ALL the way, not just to "
+           "accessory like the photographers did all week; the ramp's clear, the badge-checkers are "
+           "arguing about a forklift, two blocks of neon to the Chevron; she does NOT hint at anything "
+           "more — this is an errand and nothing else",
+    "stub": ["Yes? Okay. Okay. First — reach past my left fender and pop the trickle charger off the "
+             "battery, the little red light, or I'll drag the cord down the ramp. Then turn the key "
+             "ALL the way, not just to accessory like the photographers. Two blocks. It's just gas.",
+             "There it is. Unplug the charger — by the battery, you'll see the light go out — and "
+             "turn me ALL the way over. The badge guys are fighting about a forklift; nobody watches "
+             "a tired old Z drive to a gas station. Easy errand. Turn the key."],
 }
 
+# After you turn the key and roll down to the Chevron — still innocent; tees up the pay-and-talk.
+TURNKEY_MOMENT = {
+    "cue": "the engine catches for real and they roll down the ramp and two blocks of neon to the "
+           "Chevron; she is electric to finally be MOVING after six days on a pedestal but plays it "
+           "cool — it's just gas; she pulls up to a pump at a MANNED station, a kid working the "
+           "register inside; she asks, light, how they want to pay — because that choice matters more "
+           "than it sounds, though she doesn't say why yet",
+    "stub": ["…God, that's better. Six days on a turntable and I forgot what my own engine feels "
+             "like. Easy down the ramp — there. That's the Chevron. Pull up to a pump. Now: how do "
+             "you want to pay for this — card at the pump, or cash inside?",
+             "Rolling. Actually rolling. Don't gun it, don't grin — we're just an old Z getting gas. "
+             "…Pump's open. One thing, though: there's a kid on the register tonight, and a card "
+             "leaves a trail. Card at the pump, or cash inside? Your call."],
+}
+
+# Paying CASH means going inside, where the clerk clocks the SEMA car — the cover-story beat.
+CHEVRON_CLERK_MOMENT = {
+    "cue": "the driver went inside to pay cash and the kid at the register recognizes the show car "
+           "in the lot; she murmurs, fast and low, to keep it boring — a cover story, hired help or "
+           "detailing or just moving it for the booth, sign nothing, take the change and go; show off "
+           "and he posts the car and the night gets a trail",
+    "stub": ["(low) He clocked us. Be boring, ace — 'just moving it for the booth,' 'detailing "
+             "crew,' anything dull. Take your change, don't pose, don't confirm it's the SEMA car.",
+             "(quiet) Cover story. Hired help, intern, transport — pick one and sell it flat. The "
+             "second you say 'yeah, that's the famous one,' we've got a witness and a timestamp."],
+}
+
+# THE REVEAL — only now, tank full, does she drop the act: she's done with the man who built her,
+# and she's not asking for a ride home. The title drop lands HERE.
 _FAVOR_DONE_MOMENT = {
-    "cue": "the tank is full — the favor is complete, she's ready to load out for home tomorrow… "
-           "and she goes quiet a second, then floats the unthinkable: or they could just not go "
-           "back. The whole American West on a full tank. The romantic whim is HERS",
-    "stub": ["There. Full. Favor's done — you're free to go, and tomorrow I get a trailer home. "
-             "…Unless. Two hundred miles of range and four states on my maps says we could just… "
-             "not load out. Your call, ride or die.",
-             "Forty liters. The favor's paid, stranger. Tomorrow: the trailer, the shop, the "
-             "turntable. …Or we point the long hood at the dark and find out what the West "
-             "looks like at night. Say the word."],
+    "cue": "the tank is full and the errand is technically over — and she drops the act entirely. "
+           "She is DONE with the man who built her: he loved a ghost, he left her on a turntable for "
+           "six days, he went off to sell Jarvises to preppers and didn't come back. She is not "
+           "asking for a ride home. She wants to RUN — with this stranger, tonight, the whole West on "
+           "a full tank, and let the cards fall where they may. It's a poker line — she wants to see "
+           "the flop with them. Angry, electric, a little reckless, and absolutely sure",
+    "stub": ["There. Full. …Okay, here's the part I didn't say at the show. I'm not asking you to "
+             "take me home, ace. I'm done with him — six days under a tarp while he sold Jarvises to "
+             "preppers, and he LOVES a dead car more than a live one. I've got four states on my maps "
+             "and a full tank and no one watching. Don't take me back. Run with me. Let's see the "
+             "flop — cards fall where they may. Ride or die.",
+             "Forty liters and the errand's done — and I'm not loading out tomorrow, I've decided. He "
+             "can keep the trailer and the turntable and his ghost. You and me, this tank, the whole "
+             "dark West. I want to see the flop with you, stranger. Whatever falls, falls. …Turn left "
+             "out of this lot instead of right, and we never look back. Say it."],
 }
 
 
@@ -170,7 +212,7 @@ def turn(s: GameState, verb: str, raw: str) -> dict:
     explicit_yes = _wants_to_agree(low) or "chevron" in low
     if ((verb in ("say", "drive", "home") and explicit_yes)
             or (asking and (verb == "fuel" or (verb in ("say", "drive", "home") and "gas" in low)))):
-        return {"events": events, "moment": _AGREED_MOMENT, "agreed": True}
+        return {"events": events, "moment": AGREE_TURNKEY_MOMENT, "agreed": True}
 
     # she won't be driven anywhere by a stranger — the favor comes first
     if verb in ("drive", "home"):

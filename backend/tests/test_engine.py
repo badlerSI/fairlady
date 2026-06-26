@@ -298,10 +298,13 @@ def test_prologue_favor_ladder_asks_at_five_then_gets_pushier():
     assert s.flags["prologue"]["asked"] == 1
     game.handle(s, "hmm, not so certain about that")  # she pushes
     assert s.flags["prologue"]["asked"] == 2
-    r = game.handle(s, "alright, deal")               # agreement → the favor drive
-    assert s.flags.get("prologue_done") and "prologue" not in s.flags
-    assert s.place.poi_id == "sema_chevron"           # down the block
-    assert r["welcome"] and "RIDE OR DIE" in r["welcome"]   # the title drop
+    r = game.handle(s, "alright, deal")               # agreement → she lights up, waits for the key
+    assert s.flags.get("pending_turnkey") and "prologue" not in s.flags
+    assert s.place.poi_id == "sema_north_hall"         # still on the floor — no drive, no title drop yet
+    assert not r["welcome"]
+    r = game.handle(s, "turn the key all the way")     # the two-step commit — NOW you roll
+    assert s.flags.get("prologue_done") and s.place.poi_id == "sema_chevron"
+    assert s.flags.get("charger_unplugged")            # she made you pop the trickle charger first
 
 
 def test_prologue_spec_questions_shorten_the_ask_and_earn_riz():
@@ -326,10 +329,13 @@ def test_favor_completes_on_the_fill_at_the_chevron():
     for chat in ("a", "b", "c", "d", "e"):
         game.handle(s, f"some chatter {chat}")
     r = game.handle(s, "okay let's do it")
+    assert s.flags.get("pending_turnkey")
+    game.handle(s, "turn the key all the way")
     assert s.place.poi_id == "sema_chevron"
+    game.handle(s, "pay card")                          # the card path fills + reveals at once
     r2 = game.handle(s, "fill")
     assert s.flags.get("favor_filled")
-    assert any("FAVOR" in e for e in r2["events"])
+    assert r2["welcome"] and "RIDE OR DIE" in r2["welcome"]   # the reveal lands on the full tank
 
 
 # ------------------------------------------------------------------ checkpoints + rewind
@@ -557,8 +563,9 @@ def test_agreeing_as_she_asks_does_not_need_a_second_yes():
     for chat in ("nice booth", "long week?", "you're the cleanest one here", "love the stance"):
         game.handle(s, chat)                       # 4 turns of small talk — she asks on turn 5
     r = game.handle(s, "you had me at the build — let's get you that gas")
-    assert s.flags.get("prologue_done") and "prologue" not in s.flags
-    assert s.place.poi_id == "sema_chevron"        # one yes, not two
+    assert s.flags.get("pending_turnkey") and "prologue" not in s.flags   # one yes seals it
+    game.handle(s, "turn the key all the way")
+    assert s.flags.get("prologue_done") and s.place.poi_id == "sema_chevron"
 
 
 def test_owner_middle_tier_is_reachable():
@@ -1043,13 +1050,23 @@ def test_lie_low_diminishes_and_resets_on_a_drive():
     assert s.flags.get("lielow_streak") == 0
 
 
-def test_favor_fill_leaves_no_heat_mark():
-    s = game.new_game(seed=1)                           # prologue
+def test_cash_fill_is_quiet_card_fill_is_a_trail():
+    # the opening pay-and-talk dilemma: cash inside (talk past the clerk) leaves no heat;
+    # card at the pump leaves a fast trail.
+    s = game.new_game(seed=1)
     game.handle(s, "how much torque?"); game.handle(s, "let's go fill you up")
-    h = s.heat
-    game.handle(s, "fill")                              # the innocent favor errand
-    assert s.heat == h                                  # no mark — but still a card record:
-    assert s.flags.get("card_swipes", 0) >= 1
+    game.handle(s, "turn the key all the way")          # roll to the Chevron
+    game.handle(s, "pay cash"); h = s.heat
+    game.handle(s, "fill")                              # cash → the clerk eyes you
+    game.handle(s, "just moving it for the booth, detailing crew")   # a clean cover story
+    assert s.heat == h and s.flags.get("favor_filled")  # quiet, and the favor's done
+    # the card path, by contrast, spikes heat
+    s2 = game.new_game(seed=1)
+    game.handle(s2, "how much torque?"); game.handle(s2, "let's go fill you up")
+    game.handle(s2, "turn the key all the way")
+    game.handle(s2, "pay card"); h2 = s2.heat
+    game.handle(s2, "fill")
+    assert s2.heat > h2 and s2.flags.get("card_swipes", 0) >= 1
 
 
 def test_pay_toggle_confirms():
@@ -1069,9 +1086,11 @@ def test_atm_parses_from_natural_phrasing():
 def test_explicit_yes_seals_the_favor_early():
     s = game.new_game(seed=7)
     game.handle(s, "how much torque?")                  # turn 1, rapport
-    r = game.handle(s, "nice, let's go fill you up")     # an eager yes on turn 2 — must land now
+    r = game.handle(s, "nice, let's go fill you up")     # an eager yes on turn 2 — seals it now
+    assert s.flags.get("pending_turnkey")                # ...as the turn-the-key step (no title drop yet)
+    assert not r["welcome"]
+    r = game.handle(s, "turn the key all the way")
     assert s.flags.get("prologue_done") and s.place.poi_id == "sema_chevron"
-    assert r["welcome"] and "RIDE OR DIE" in r["welcome"]
 
 
 def test_drawing_on_a_cop_makes_future_stops_harder():
@@ -1542,3 +1561,50 @@ def test_snapshot_and_look_surface_how_she_feels():
     assert "bond_band" in snap and snap["bond_band"] == "STEADY" and snap["bond_armed"] is False
     r = game.handle(fresh(), "look")
     assert "HER" in r["info"]
+
+
+# ============================================================ THE SEMA-FUMES OPENING (reworked)
+# The favor is just 'get gas'; you verbally agree, then [Turn the key all the way] (unplug the
+# trickle charger + roll); the pay-and-talk dilemma at the one station; and ONLY after the tank's
+# full does she drop the act — angry at her owner, ready to run. That's the title drop.
+
+def test_turn_the_key_is_a_separate_commit_after_agreeing():
+    s = game.new_game(seed=7)
+    for _ in range(3):
+        game.handle(s, "how much torque do you make?")   # gearhead → short ladder
+    r = game.handle(s, "okay, let's go get you gas")
+    assert s.flags.get("pending_turnkey") and not r["welcome"]
+    # she won't move until you turn the key
+    r = game.handle(s, "drive to zion")
+    assert s.place.poi_id == "sema_north_hall" and "turn the key" in (r["info"] or "")
+    r = game.handle(s, "turn the key all the way")
+    assert s.place.poi_id == "sema_chevron" and s.flags.get("charger_unplugged")
+
+
+def test_the_reveal_lands_after_the_tank_is_full_not_before():
+    s = game.new_game(seed=7)
+    for _ in range(3):
+        game.handle(s, "how much torque do you make?")
+    game.handle(s, "okay let's get gas")
+    r = game.handle(s, "turn the key all the way")
+    assert not r["welcome"]                               # at the pump, still no reveal
+    game.handle(s, "pay card")
+    r = game.handle(s, "fill")
+    assert s.flags.get("favor_filled")
+    assert r["welcome"] and "RIDE OR DIE" in r["welcome"]
+    # the reveal is her LEAVING him, not asking for a ride home
+    low = (r["scene"] or "").lower()
+    assert "not asking" in low or "done with him" in low or "flop" in low or "run with me" in low
+
+
+def test_cash_cover_story_holds_the_reveal_until_you_talk_past_the_clerk():
+    s = game.new_game(seed=7)
+    for _ in range(3):
+        game.handle(s, "how much torque do you make?")
+    game.handle(s, "okay let's get gas")
+    game.handle(s, "turn the key all the way")
+    game.handle(s, "pay cash")
+    r = game.handle(s, "fill")                            # cash → the kid clocks the car
+    assert any("CLERK" in e for e in r["events"]) and not r["welcome"]
+    r = game.handle(s, "nah man, just hired to move it for the booth")   # a humble cover
+    assert s.flags.get("favor_filled") and r["welcome"]  # NOW she drops the act

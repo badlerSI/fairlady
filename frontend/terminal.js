@@ -115,6 +115,22 @@ function updateDash(s) {
       ? `<div class="d-row snow"><span class="d-k">❄</span><span class="d-v">WINTER</span><span class="d-v dim">passes closing · 'passes'</span></div>` : ``);
 }
 
+// the one big diegetic button: after you agree, she waits for you to turn the key all the way
+function turnKeyButton(snap) {
+  const old = document.getElementById("turnkeywrap");
+  if (old) old.remove();
+  if (!snap || !snap.pending_turnkey) return;
+  const wrap = document.createElement("div");
+  wrap.id = "turnkeywrap"; wrap.className = "block";
+  const b = document.createElement("button");
+  b.className = "keybtn";
+  b.textContent = "🔑  Turn the key — all the way";
+  b.onclick = () => { wrap.remove(); submit("turn the key all the way"); };
+  wrap.appendChild(b);
+  $("#scroll").appendChild(wrap);
+  $("#scroll").scrollTop = $("#scroll").scrollHeight;
+}
+
 // ----------------------------------------------------------------- audio
 function resolveAudio(u) { return /^https?:\/\//.test(u) ? u : location.origin + u; }
 function playAudio(u) { try { player.src = u; player.play().catch(() => {}); } catch (e) {} }
@@ -137,6 +153,7 @@ async function render(res) {
   if (res.scene) { await her(res.scene); playVoice(res); }
   npcBlock(res.npc);
   info(res.info);
+  turnKeyButton(res.snapshot);
   if (res.status && res.status !== "playing") ending(res.ending);
   setSys(res);
 }
