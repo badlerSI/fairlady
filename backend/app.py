@@ -10,7 +10,7 @@ import secrets
 from typing import Optional
 
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -120,10 +120,34 @@ def api_command(req: CmdReq, request: Request):
 
 
 # --- static --------------------------------------------------------------------
+_ASSET_RE = re.compile(r'(href|src)="(crt\.css|retro\.js|car_sprite\.js|scenes\.js|terminal\.js)(\?v=[^"]*)?"')
+
+
+def _index_html() -> str:
+    """Serve index.html with each local asset stamped by its file MTIME, so the version query
+    changes automatically whenever a file changes. The HTML itself is no-cache (Cloudflare serves it
+    DYNAMIC, always fresh), so browsers always get the latest asset URLs — even though Cloudflare's
+    edge forces a long max-age on the .js/.css files. New file → new URL → guaranteed fresh fetch.
+    Without this, an edit to terminal.js was invisible behind a stale ?v=2 for up to 4 hours."""
+    raw = (FRONTEND_DIR / "index.html").read_text()
+
+    def _stamp(m):
+        fname = m.group(2)
+        try:
+            v = int((FRONTEND_DIR / fname).stat().st_mtime)
+        except OSError:
+            v = 0
+        return f'{m.group(1)}="{fname}?v={v}"'
+
+    return _ASSET_RE.sub(_stamp, raw)
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/ui", response_class=HTMLResponse)
+@app.get("/ui/", response_class=HTMLResponse)
+def index():
+    return HTMLResponse(_index_html(), headers={"Cache-Control": "no-cache"})
+
+
 app.mount("/tts-audio", StaticFiles(directory=str(TTS_DIR)), name="tts")
 app.mount("/ui", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="ui")
-
-
-@app.get("/")
-def root():
-    return RedirectResponse(url="/ui/")
