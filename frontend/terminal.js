@@ -214,6 +214,7 @@ async function boot() {
   if (res.snapshot && res.snapshot.turn > 0 && !res.intro) {
     updateDash(res.snapshot); showScene(res.snapshot);
     add("info", "…resuming. say 'look' to take stock, or 'new' to start over.");
+    turnKeyButton(res.snapshot);     // a resumed game can be mid-commit — keep the big button
   } else { await render(res); }
   cmd.focus();
 }
