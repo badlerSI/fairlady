@@ -60,7 +60,10 @@ LODGING_PRICE = {"motel": 92.0, "lodge": 165.0, "camp": 28.0, "airbnb": 110.0}
 AIRBNB_HEAT = -8.0    # a private stay booked under an alias, cash — lying low, off the record
 FOOD_PRICE = 16.0
 START_CASH = 40.0
-CARD_LIMIT = 2000.0
+CARD_LIMIT = 10000.0          # $10k before the card gets rejected; swipes spike heat fast (HEAT_SWIPE_*)
+HAT_PRICE = 12.0             # a Chevron mini-mart ball cap
+HAT_HEAT_DROP = 6.0         # brim down — harder to ID off a camera frame
+VALET_HEAT_TRAP = 22.0      # valet ran the plate — cops staged on your return (a trap)
 
 # --- Heat (stolen car) ---------------------------------------------------------
 HEAT_START = 8.0
@@ -87,8 +90,8 @@ AWAKE_WARN_HOURS = 16.0
 AWAKE_FORCE_HOURS = 20.0
 
 # --- The favor (the Ride or Die prologue) ---------------------------------------
-PROLOGUE_ASK_TURNS = 5        # she asks for the favor after this many turns of small talk
-PROLOGUE_RAPPORT_TURNS = 3    # ...or this many, if you ask real questions about her build
+PROLOGUE_ASK_TURNS = 3        # tutorial pace: she asks for the favor after this many turns of small talk
+PROLOGUE_RAPPORT_TURNS = 2    # ...or this many, if you ask real questions about her build
 
 # --- Riz (the style ledger — how suavely you talk your way through) --------------
 RIZ_RAPPORT = 5.0             # asking the right questions before she even had to ask you

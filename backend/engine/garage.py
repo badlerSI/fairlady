@@ -17,6 +17,7 @@ import re
 from config import (
     CASH_CLAIM_CAP, ATM_ACCOUNT_LIMIT, ATM_HEAT, GLOVEBOX_CASH,
     CAR_VALUE_BASE, PART_VALUE_MULT, RIZ_RACE_WIN, RIZ_SHOW_WIN,
+    HAT_PRICE, HAT_HEAT_DROP, VALET_HEAT_TRAP,
 )
 from engine.state import GameState
 from engine import economy
@@ -141,6 +142,46 @@ def explore(s: GameState) -> list:
     s.cash = round(s.cash + GLOVEBOX_CASH, 2)
     return [f"EXPLORE: under the registration and a dead flashlight — a roll of bills. "
             f"${GLOVEBOX_CASH:.0f}. Somebody's emergency stash, yours now. Cash ${s.cash:.0f}."]
+
+
+def buy_hat(s: GameState) -> list:
+    """A $12 mini-mart ball cap. Brim down, you read as anybody — heat drops. One-shot."""
+    if not (s.place.has("gas") or s.place.kind == "city"):
+        return ["HAT: nowhere to buy one out here — a station mini-mart or a town."]
+    if s.flags.get("hat_on"):
+        return ["HAT: you're already wearing it, brim down. Can't disguise twice."]
+    r = economy.pay(s, HAT_PRICE, prefer="cash")        # cash-first: a hat on a card is comedy
+    if not r["ok"]:
+        return [f"HAT: ${HAT_PRICE:.0f} for the cap and you can't cover it. (Try the ATM.)"]
+    from engine import heat as _heat
+    s.flags["hat_on"] = True
+    _heat.add(s, -HAT_HEAT_DROP, "ball cap pulled low — harder to ID off a camera frame", "mark")
+    return [f"HAT: a ${HAT_PRICE:.0f} Chevron ball cap, brim down. You read as anybody now. "
+            f"Heat -{HAT_HEAT_DROP:.0f} → {s.heat:.0f}."]
+
+
+def valet_drop(s: GameState) -> list:
+    """Hand the keys to a valet. Easy and quiet NOW — but it's a trap (see valet_return)."""
+    if not (s.place.has("gas") or s.place.kind == "city"):
+        return ["VALET: no valet stand out here."]
+    if s.flags.get("valet_parked"):
+        return ["VALET: she's already with the valet."]
+    s.flags["valet_parked"] = True
+    return ["VALET: a kid in a vest takes the keys and parks the white Z out back. Easy. Too easy. "
+            "(She goes very quiet about it.)"]
+
+
+def valet_return(s: GameState) -> list:
+    """The trap springs: you come back for her and the valet ran the plate — cops are staged.
+    Call this when the player goes to LEAVE / fetch the car after valeting. Returns event lines
+    (empty if she was never valeted)."""
+    if not s.flags.pop("valet_parked", None):
+        return []
+    from engine import heat as _heat
+    _heat.add(s, VALET_HEAT_TRAP, "the valet ran the plate — there are units waiting on the car", "spike")
+    return ["VALET: you come back for her and there are two cruisers idling by the air pump, cops "
+            "pretending to buy coffee. The valet ran the plate. "
+            f"Heat +{VALET_HEAT_TRAP:.0f} → {s.heat:.0f}. They're between you and the road."]
 
 
 def sell_part(s: GameState, pid: str) -> list:

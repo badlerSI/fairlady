@@ -142,6 +142,14 @@ def parse(raw: str) -> Tuple[str, dict]:
                               "lucky sevens")):
         return ("buy", {"amount": 77777.77})
 
+    # baseball cap (disguise — drops heat) and valet parking (a trap: cops staged on your return)
+    if (low in ("hat", "cap", "buy hat", "buy a hat", "buy cap", "buy a cap", "get a hat",
+                "grab a hat", "buy the hat", "get a cap")
+            or "baseball" in low or "ball cap" in low or "ballcap" in low):
+        return ("buyhat", {})
+    if "valet" in low and "no valet" not in low:
+        return ("valet", {})
+
     # explore the car / the glovebox
     if (low in ("explore", "search", "search the car", "search her", "look around the car",
                 "glovebox", "glove box", "check the glovebox", "check the glove box", "rummage")

@@ -12,7 +12,7 @@ from config import (
 from engine.state import GameState
 from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
                     endings, gadgets, season, bond)
-from engine.commands import parse
+from engine.commands import parse, _bare_number, _money
 from adapters import get_narrator
 from adapters.base import voices
 
@@ -634,6 +634,7 @@ def _favor_reveal(s: GameState):
             and not s.flags.get("clerk_curious")):
         s.flags["favor_filled"] = True
         s.flags["_titledrop"] = True
+        s.flags.pop("gas_target", None)        # tank's full — the whole West opens up now
         checkpoint(s, "tank full — she drops the act")
         return prologue.favor_done_moment()
     return None
@@ -798,15 +799,23 @@ def handle(s: GameState, raw: str) -> dict:
             s.flags.pop("pending_turnkey", None)
             s.flags["prologue_done"] = True
             s.flags["charger_unplugged"] = True
+            s.flags["gas_target"] = "sema_chevron"     # the ONLY easy destination until the tank's full
+            s.flags["awaiting_cash_ask"] = True         # she asks how much cash you're carrying next turn
             s.turn += 1
+            chevron = world.get_poi("sema_chevron")
+            rt = world.route(s.place, chevron)          # OSRM if online, haversine fallback
             events = ["IGNITION: you reach past her left fender and pop the trickle charger off the "
                       "battery — the little red light dies. Then you turn the key all the way. She "
                       "catches on the second crank and drops into a lumpy, delighted idle."]
-            events += rules.drive(s, world.get_poi("sema_chevron"))   # two blocks of neon
+            events.append(f"NAV: '{rt['distance_mi']:.1f} miles — basically a straight shot. Out of "
+                          "the lot, two blocks up Paradise, the Chevron's on the right. I'll call it.'")
+            events += rules.drive(s, chevron)           # two blocks of neon
             checkpoint(s, "turned the key — rolled down to the Chevron")
             _autosave(s)
             scene, voice, audio = _narrate(s, events, "", drama=prologue.TURNKEY_MOMENT)
-            return _result(s, events, scene, voice=audio)
+            return _result(s, events, scene, voice=audio,
+                           info="(she asks: how much cash did you walk out with? say a number — or "
+                                "'nothing' and she'll point you at the glovebox roll)")
         if verb in ("drive", "home", "fuel", "sleep", "tow"):
             s.turn += 1
             _autosave(s)
@@ -830,6 +839,45 @@ def handle(s: GameState, raw: str) -> dict:
     # ---- action verbs ----
     s.turn += 1                       # a true per-action counter (used for resume + rng)
     events, player_text, npc, drama_ev, story_beat, info = [], raw, None, None, None, None
+    pre = []                          # events prepended at finalization (e.g. the glovebox default)
+
+    # the cash ask (set right after turn-key): a NUMBER = your wallet (capped at CASH_CLAIM_CAP);
+    # "nothing"/"broke"/declining = the $500 roll in the glovebox. Non-blocking — if you ignore it
+    # and just act, she hands you the glovebox roll and the turn proceeds.
+    if s.flags.get("awaiting_cash_ask") and verb not in ("drive", "home"):
+        low = raw.lower()
+        n = _bare_number(low) or _money(low)
+        declined = any(w in low for w in ("nothing", "broke", "none", "no cash", "empty", "skip",
+                                          "zero", "glovebox", "glove box"))
+        if n and n > 0 and not declined:                # a real number → that's your wallet
+            s.flags.pop("awaiting_cash_ask", None)
+            events = garage.claim_cash(s, float(n))
+            _autosave(s)
+            scene, voice, audio = _narrate(s, events, raw, drama={
+                "cue": "the driver told her how much cash they're carrying; she nods and points at "
+                       "the pump — paying cash inside is quiet but means charming the kid at the "
+                       "counter, swiping the card at the pump is fast but leaves a camera-and-name trail",
+                "stub": ["Good. Now tank her up — 'fill it with cash' keeps us a ghost (charm the kid "
+                         "inside), or 'fill it on the card' — fast, but the camera gets you.",
+                         "Alright. Fuel — cash inside is quiet, card at the pump is quick and loud."]})
+            return _result(s, events, scene, voice=audio,
+                           info="('fill it with cash' = quiet, talk past the clerk · 'fill it on the "
+                                "card' = fast but spikes heat)")
+        # declined or ignored → hand over the glovebox $500 (once), then continue
+        s.flags.pop("awaiting_cash_ask", None)
+        if not s.flags.get("glovebox_found"):
+            pre = garage.explore(s)
+        if declined:                                    # an explicit "I've got nothing" is its own turn
+            _autosave(s)
+            scene, voice, audio = _narrate(s, pre, raw, drama={
+                "cue": "the driver says they're carrying nothing; she points at the glovebox — there's "
+                       "a $500 roll in there — then nudges them toward the pump",
+                "stub": ["Glovebox, ace — there's a roll in there, call it five hundred. Now fuel: "
+                         "cash inside is quiet, card at the pump is fast and loud.",
+                         "Check the glovebox — somebody's emergency five hundred, yours now. Then tank her up."]})
+            return _result(s, pre, scene, voice=audio,
+                           info="('fill it with cash' = quiet · 'fill it on the card' = fast but spikes heat)")
+        # else: fall through — `pre` carries the glovebox line; the real command runs below
 
     # the curious gas-station clerk is mid-beat — your next ACTION resolves him: leave or play it
     # humble and slide by; show off or linger and he posts the car
@@ -864,6 +912,13 @@ def handle(s: GameState, raw: str) -> dict:
         verb, args = "drive", {"dest": home}
 
     if verb == "drive":
+        # the valet trap: you valeted her — coming back to drive away springs the staged cops
+        if s.flags.get("valet_parked"):
+            events = garage.valet_return(s) + encounters.start_stop(s, "plate")
+            _autosave(s)
+            scene, voice, audio = _narrate(s, events, raw)
+            return _result(s, events, scene, voice=audio,
+                           info="(talk them down — stay calm, give them nothing — or 'disarm' if it comes to that)")
         dest = world.geocode(args["dest"])
         if dest is None:
             events = [f"NAV: I don't have '{args['dest']}' on my maps. Nevada, California, "
@@ -871,6 +926,24 @@ def handle(s: GameState, raw: str) -> dict:
             _autosave(s)
             scene, voice, audio = _narrate(s, events, raw)
             return _result(s, events, scene, voice=audio)
+        target = s.flags.get("gas_target")
+        if target and not s.flags.get("favor_filled") and getattr(dest, "poi_id", None) != target:
+            # SOFT FAIL — the tank isn't full yet. Don't move, don't end the game: checkpoint + rewind.
+            checkpoint(s, "wrong turn off the lot — fold it back")
+            events = ["SOFT FAIL: you point her away from the Chevron and the wheel locks up — 'No. "
+                      "Not yet, not that way. Gas first — then the whole West is yours.' She won't "
+                      "follow you anywhere but the pump."]
+            _autosave(s)
+            scene, voice, audio = _narrate(s, events, raw, drama={
+                "cue": "the driver tried to bolt somewhere other than the gas station before the tank "
+                       "is full; she refuses, warm but immovable — fuel first; the wrong move folds "
+                       "back and she reminds them they can 'rewind' if they got turned around",
+                "stub": ["Not that way, ace. Gas first — the Chevron, two blocks. THEN anywhere you "
+                         "want. Say 'rewind' if you got turned around.",
+                         "No. We fuel, then we run. Point me back at the Chevron."]})
+            return _result(s, events, scene, voice=audio,
+                           info="(fuel up at the Chevron first — it's the only move that works right "
+                                "now. 'rewind' takes the wrong turn back.)")
         before_odo = s.odometer_mi
         events = rules.drive(s, dest, push=args.get("push", False))
         if s.status == "playing" and s.odometer_mi > before_odo:
@@ -962,6 +1035,12 @@ def handle(s: GameState, raw: str) -> dict:
         player_text = ""
     elif verb == "explore":
         events = garage.explore(s)
+        player_text = ""
+    elif verb == "buyhat":
+        events = garage.buy_hat(s)
+        player_text = ""
+    elif verb == "valet":
+        events = garage.valet_drop(s)
         player_text = ""
     elif verb == "parts":
         info = garage.parts_text(s)
@@ -1075,6 +1154,8 @@ def handle(s: GameState, raw: str) -> dict:
             if payoff:
                 story_beat = payoff
 
+    if pre:                          # the glovebox default landed this turn — show it first
+        events = pre + events
     _autosave(s)
     if s.flags.pop("_titledrop", None):                 # the reveal just landed — RIDE OR DIE
         welcome = TITLE_DROP
