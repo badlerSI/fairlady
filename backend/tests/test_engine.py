@@ -288,13 +288,13 @@ def test_handle_drive_and_snapshot():
 
 
 # ------------------------------------------------------------------ the favor (prologue)
-def test_prologue_favor_ladder_asks_at_three_then_gets_pushier():
+def test_prologue_favor_ladder_asks_at_five_then_gets_pushier():
     s = game.new_game(seed=7)
     assert s.place.poi_id == "sema_north_hall"
-    for chat in ("nice paint", "busy week here"):     # two turns of small talk: no ask yet
+    for chat in ("nice paint", "busy week here", "long day huh", "the strip is loud"):
         game.handle(s, chat)
-    assert s.flags["prologue"]["asked"] == 0
-    game.handle(s, "long day huh")                    # turn three (tutorial pace) — the ask lands
+    assert s.flags["prologue"]["asked"] == 0          # four turns of small talk: no ask yet
+    game.handle(s, "so anyway")                       # turn five — the ask lands
     assert s.flags["prologue"]["asked"] == 1
     game.handle(s, "hmm, not so certain about that")  # she pushes
     assert s.flags["prologue"]["asked"] == 2

@@ -90,8 +90,8 @@ AWAKE_WARN_HOURS = 16.0
 AWAKE_FORCE_HOURS = 20.0
 
 # --- The favor (the Ride or Die prologue) ---------------------------------------
-PROLOGUE_ASK_TURNS = 3        # tutorial pace: she asks for the favor after this many turns of small talk
-PROLOGUE_RAPPORT_TURNS = 2    # ...or this many, if you ask real questions about her build
+PROLOGUE_ASK_TURNS = 5        # she asks for the favor after this many turns (matches the badler.ai 5-interaction count)
+PROLOGUE_RAPPORT_TURNS = 3    # ...or this many, if you ask real questions about her build
 
 # --- Riz (the style ledger — how suavely you talk your way through) --------------
 RIZ_RAPPORT = 5.0             # asking the right questions before she even had to ask you
