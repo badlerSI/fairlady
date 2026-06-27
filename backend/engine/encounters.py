@@ -23,6 +23,7 @@ from config import (
 )
 from engine.state import GameState
 from engine.commands import spec_hits
+from engine import heat as _heat
 
 # flags that are META-progress: they survive rewinds (game.rewind re-applies them), because
 # the curse — the gun you win, the heat the county's seen — belong to you, not to any one timeline.
@@ -184,9 +185,8 @@ def stop_turn(s: GameState, text: str) -> dict:
 
     if total >= 6:
         wave_riz = max(2.0, RIZ_STOP_WAVE - 2.0 * survived)   # the same trick pays less each time
-        s.heat += STOP_HEAT_WAVE
+        _heat.add(s, STOP_HEAT_WAVE, "a wave-off, but the plate got eyeballed", "spike", axis="car")
         s.riz = round(s.riz + wave_riz, 1)
-        s.heat = max(0.0, min(100.0, s.heat))
         s.flags["stops_survived"] = survived + 1
         word = ("" if survived == 0 else
                 " He hesitates first, though — 'funny, Dispatch mentioned a white Z with a "
@@ -211,8 +211,7 @@ def stop_turn(s: GameState, text: str) -> dict:
                           f"({paid['method']}), a warning about paperwork, and a long last look. "
                           f"Riz +{RIZ_STOP_TICKET:.0f} → {s.riz:.0f}.")
         else:
-            s.heat += STOP_HEAT_TICKET
-            s.heat = max(0.0, min(100.0, s.heat))
+            _heat.add(s, STOP_HEAT_TICKET, "a notice-to-appear under a made-up name", "mark", axis="car")
             events.append(f"LAW: a ticket you can't pay and a notice-to-appear with a name you "
                           f"made up. He'll think about it all shift. Heat {s.heat:.0f}.")
         moment = {"cue": "they took a ticket and survived a traffic stop in an unregistered, "
@@ -223,8 +222,7 @@ def stop_turn(s: GameState, text: str) -> dict:
                            "He wrote paper instead of running the plate twice. Cheapest miracle "
                            "in Nevada. Go."]}
     elif total >= 0 or rng.random() < 0.5:
-        s.heat += STOP_HEAT_BAD
-        s.heat = max(0.0, min(100.0, s.heat))
+        _heat.add(s, STOP_HEAT_BAD, "he read the plate twice on the radio", "spike", axis="car")
         events.append(f"LAW: he didn't buy a word of it. No arrest — yet — but he's on the radio "
                       f"as you pull away, reading the plate twice. Heat {s.heat:.0f}. "
                       f"Expect every cruiser in the county to know the car by morning.")
@@ -285,7 +283,7 @@ def owner_turn(s: GameState, text: str) -> dict:
 
     if total >= 6:
         s.riz = round(s.riz + RIZ_OWNER_BLESSING, 1)
-        s.heat = max(0.0, s.heat - 30.0)
+        _heat.add(s, -30.0, "the owner withdrew the report", "lower")
         s.flags["report_withdrawn"] = True
         s.flags.pop("owner_deadline_day", None)
         events.append(f"OWNER: a long silence. Then he reaches through the window — past you — "
@@ -513,7 +511,7 @@ def check_owner_deadline(s: GameState, events: list) -> None:
     if deadline and s.day > deadline and not s.flags.get("report_withdrawn"):
         from config import OWNER_DEADLINE_HEAT
         s.flags.pop("owner_deadline_day", None)
-        s.heat = min(100.0, s.heat + OWNER_DEADLINE_HEAT)
+        _heat.add(s, OWNER_DEADLINE_HEAT, "the owner made the call — the West knows the car again", "spike", axis="car")
         events.append(f"OWNER: the week he gave you is gone, and the phone call he promised is "
                       f"made. Heat {s.heat:.0f}. The whole West knows the car again.")
 
@@ -628,7 +626,7 @@ def standoff_turn(s: GameState, verb: str, raw: str) -> dict:
         s.flags["desperado"] = True
         s.flags["gun"] = True
         s.flags["wanted_armed"] = True
-        s.heat = min(100.0, s.heat + DESPERADO_HEAT_ON_UNLOCK)
+        _heat.add(s, DESPERADO_HEAT_ON_UNLOCK, "walked out of a standoff armed — wanted statewide", "spike")
         s.riz = round(s.riz + RIZ_DESPERADO, 1)
         return {"events": [f"STANDOFF: this time your hand finds the barrel first. One twist and "
                            f"the pistol is yours, the clerk's backing into the cigarette rack with "
@@ -727,7 +725,7 @@ def draw_in_stop(s: GameState, in_owner: bool) -> dict:
     if in_owner:
         s.flags.pop("owner_scene", None)
         s.flags["owner_refused_forever"] = True
-        s.heat = min(100.0, s.heat + 20.0)
+        _heat.add(s, 20.0, "drew the gun on the man who built her", "spike")
         return {"events": ["OWNER: you put the gun on the man who built her. He goes still, then "
                            "raises both hands and steps back, slow. 'Okay. Okay. She's yours.' He "
                            "walks to his rental without turning his back on you. He will not ask "
@@ -741,7 +739,7 @@ def draw_in_stop(s: GameState, in_owner: bool) -> dict:
                 "done": True}
     s.flags.pop("stop", None)
     s.flags["wanted_armed"] = True
-    s.heat = DRAW_HEAT
+    _heat.set_to(s, DRAW_HEAT, "drew first on a cop — armed and flagged statewide", "spike")
     return {"events": [f"LAW: you draw first. The officer's eyes go wide and he dives behind his "
                        f"door as you drop it into gear — clean away, this time, but every radio in "
                        f"the state just learned this car shoots back. Heat {s.heat:.0f}.",

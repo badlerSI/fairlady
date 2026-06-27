@@ -74,8 +74,9 @@ def _card_mark(state: GameState, place: Place, events: list, what: str) -> None:
     from engine import heat as _heat
     dh = card_swipe_heat(state, place)
     state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
-    _heat.add(state, dh, "credit card swipe", "mark")
-    events.append(f"HEAT: {what} on the card — a mark on the record. +{dh:.0f} → {state.heat:.0f}.")
+    _heat.add(state, dh, "credit card swipe — your name, your face", "mark", axis="personal")
+    events.append(f"HEAT: {what} on the card — that's a mark on YOU, not the car. "
+                  f"Driver heat +{dh:.0f} → {state.heat:.0f}.")
 
 
 def _clamp_heat(state: GameState) -> None:
@@ -106,14 +107,14 @@ def law_check(state: GameState, events: list) -> None:
             from engine import encounters
             events.extend(encounters.start_stop(state, "roadblock"))
             return
-        state.heat -= 12
-        _clamp_heat(state)
+        from engine import heat as _heat
+        _heat.add(state, -12, "slipped a roadblock onto a frontage road", "lower")
         events.append("LAW: spotted a roadblock and slipped onto a frontage road. Too close. Heat down to "
                       f"{state.heat:.0f}.")
     elif state.heat >= HEAT_PATROL_THRESHOLD:
         if rng.random() < (state.heat - HEAT_PATROL_THRESHOLD) / 90.0:
-            state.heat += 3
-            _clamp_heat(state)
+            from engine import heat as _heat
+            _heat.add(state, 3, "a county cruiser tailed the car", "spike", axis="car")
             events.append(f"LAW: a county cruiser tailed you a mile, then waved off. Heat {state.heat:.0f}.")
 
 

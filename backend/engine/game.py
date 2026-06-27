@@ -11,7 +11,7 @@ from config import (
 )
 from engine.state import GameState
 from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
-                    endings, gadgets, season, bond)
+                    endings, gadgets, season, bond, heat)
 from engine.commands import parse, _bare_number, _money
 from adapters import get_narrator
 from adapters.base import voices
@@ -217,7 +217,9 @@ def new_game(seed: int | None = None, prologue_on: bool = True, sid: str | None 
     from engine import heat as _heat
     base = s.heat
     s.heat = 0.0
-    _heat.add(s, base, "she's a stolen SEMA show car — the baseline", "spike")
+    s.flags["car_heat"] = 0.0           # fresh game → both axes start clean
+    s.flags["personal_heat"] = 0.0
+    _heat.add(s, base, "she's a stolen SEMA show car — the baseline BOLO", "spike", axis="car")
     for n in range(1, TIMELINE_KEEP + 2):  # a fresh game owns a fresh timeline
         save.delete(_cp(s, n))
     if prologue_on:
@@ -376,6 +378,8 @@ def snapshot(s: GameState) -> dict:
         "must_sleep": rules.hours_awake(s) >= AWAKE_FORCE_HOURS,
         "tired": rules.hours_awake(s) >= AWAKE_WARN_HOURS,
         "heat": 0 if s.flags.get("no_heat") else round(s.heat),
+        "car_heat": 0 if s.flags.get("no_heat") else round(heat.car_heat(s)),
+        "driver_heat": 0 if s.flags.get("no_heat") else round(heat.personal_heat(s)),
         "heat_label": ("yours — free and clear" if s.flags.get("no_heat")
                        else _heat_label(s.heat, bool(s.flags.get("desperado")))),
         "riz": round(s.riz),
@@ -986,7 +990,7 @@ def handle(s: GameState, raw: str) -> dict:
             elif not paying_cash and not s.flags.get("card_at_pump"):
                 s.flags["card_at_pump"] = True
                 from engine import heat as _heat
-                _heat.add(s, 11.0, "card-swiped at the pump leaving a car show", "mark")
+                _heat.add(s, 11.0, "card-swiped at the pump — your name on the timestamp", "mark", axis="personal")
                 events.append("HEAT: the pump camera takes your picture and the swipe takes your "
                               "name — a timestamped trail walking out of a car show in a car nobody's "
                               f"reported missing yet. Heat → {s.heat:.0f}. (Cash inside would've been quiet.)")

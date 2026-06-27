@@ -5,7 +5,7 @@ os.environ.setdefault("FAIRLADY_ADAPTER", "stub")
 
 import pytest
 
-from engine import game, world, rules, economy
+from engine import game, world, rules, economy, heat
 from engine.state import GameState
 from engine.commands import parse
 from config import LITERS_PER_GALLON
@@ -80,13 +80,13 @@ def test_cannot_overspend_credit():
 
 # ------------------------------------------------------------------ heat
 def test_card_swipe_raises_heat_cash_does_not():
-    s1 = fresh(); h0 = s1.heat
+    s1 = fresh(); d0 = heat.personal_heat(s1)
     rules.fuel(s1, dollars=10.0, prefer="card")
-    assert s1.heat > h0                    # paper trail
+    assert heat.personal_heat(s1) > d0     # the card marks YOU (driver heat), not the car
 
     s2 = fresh()
     rules.fuel(s2, dollars=10.0, prefer="cash")
-    assert s2.heat == rules.HEAT_START     # cash is clean
+    assert s2.heat == rules.HEAT_START and heat.personal_heat(s2) == 0.0   # cash is clean
 
 
 def test_state_line_cools_heat():
@@ -709,9 +709,9 @@ def test_claim_cap_and_broke_then_glovebox():
 
 def test_atm_under_10k_and_camera_heat():
     s = _at_town()
-    h0 = s.heat
+    d0 = heat.personal_heat(s)
     game.handle(s, "withdraw $4000")
-    assert s.cash == 4000.0 and s.heat > h0
+    assert s.cash == 4000.0 and heat.personal_heat(s) > d0    # the ATM camera marks YOU
     game.handle(s, "withdraw $99999")             # clamps to the account ceiling
     from config import ATM_ACCOUNT_LIMIT
     assert abs(s.cash - ATM_ACCOUNT_LIMIT) < 1.0
@@ -888,11 +888,11 @@ def test_heat_changes_are_logged_as_factors_with_a_dashboard():
 
 def test_card_swipe_is_a_derogatory_mark_cash_is_clean():
     s = fresh(); s.place = world.get_poi("mesquite"); s.cash = 200.0; s.fuel_l = 5.0
-    h0 = s.heat
+    h0 = s.heat; d0 = heat.personal_heat(s)
     game.handle(s, "pay cash"); game.handle(s, "gas $20")          # partial fill, cash
-    assert s.heat == h0                                            # cash leaves no mark
+    assert s.heat == h0 and heat.personal_heat(s) == d0            # cash leaves no mark
     game.handle(s, "pay card"); game.handle(s, "gas $20")          # partial fill, card
-    assert s.heat > h0                                             # the card does
+    assert heat.personal_heat(s) > d0                             # the card marks YOU (driver heat)
     assert any("credit card swipe" in e["r"] for e in s.flags.get("heat_log", []))
 
 
@@ -1025,8 +1025,12 @@ def test_the_dashboard_ledger_reconciles_to_the_score():
     game.handle(s, "withdraw $2000")                  # ATM mark (was bypassing the ledger)
     game.handle(s, "drive to st_george fast")         # push + state line + decay
     game.handle(s, "pay card"); game.handle(s, "fill")
-    log_sum = sum(e["d"] for e in s.flags["heat_log"])
-    assert abs(s.heat - log_sum) < 0.3                 # reconciles
+    # two-axis: the combined meter is the MAX of the axes (the core invariant), and the axis-routed
+    # marks (car) reconcile to the ledger; the card/ATM both raised DRIVER heat.
+    assert s.heat == max(round(heat.car_heat(s), 1), round(heat.personal_heat(s), 1))
+    car_sum = sum(e["d"] for e in s.flags["heat_log"] if e.get("x") in ("car", "both"))
+    assert abs(heat.car_heat(s) - car_sum) < 0.5            # the car axis reconciles to its marks
+    assert heat.personal_heat(s) > 0                        # the ATM + card put heat on YOU
     info = game.handle(s, "heat report")["info"]
     assert "baseline" in info and "an ATM camera" in info   # both now attributed
 

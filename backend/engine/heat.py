@@ -73,21 +73,56 @@ def _floor(s: GameState) -> float:
     return DESPERADO_HEAT_FLOOR if s.flags.get("desperado") else 0.0
 
 
-def add(s: GameState, delta: float, reason: str, kind: str = "mark") -> float:
-    """The one true heat mutator: clamp, apply, and record the factor (cause + magnitude +
-    odometer stamp for age-off). A no_heat (bought) car never moves off 0."""
+# Two-axis heat: CAR heat (the white Z is a recognizable stolen show car — a BOLO on the plate/spade)
+# vs PERSONAL/DRIVER heat (YOU are identified — your face on a camera, your name on a card/ATM).
+# s.heat stays the authoritative COMBINED meter = max(car, personal) so every existing reader + the
+# 163 tests keep working; the two axes live in flags (old saves default to 0 and backfill on load).
+AXES = ("car", "personal")
+
+
+def car_heat(s: GameState) -> float:
+    return float(s.flags.get("car_heat", 0.0))
+
+
+def personal_heat(s: GameState) -> float:
+    return float(s.flags.get("personal_heat", 0.0))
+
+
+def _combined(s: GameState) -> float:
+    return round(max(car_heat(s), personal_heat(s)), 1)
+
+
+def add(s: GameState, delta: float, reason: str, kind: str = "mark", axis: str = None) -> float:
+    """The one true heat mutator: clamp, apply, record the factor. `axis` in {'car','personal'}
+    routes the delta to that axis and re-derives s.heat = max(car, personal). axis=None (legacy)
+    moves the combined meter AND mirrors the delta onto both axes, so the split never goes stale.
+    A no_heat (bought) car never moves off 0."""
     if s.flags.get("no_heat"):
         s.heat = 0.0
+        s.flags["car_heat"] = 0.0
+        s.flags["personal_heat"] = 0.0
         return 0.0
     lo = _floor(s)
     before = s.heat
-    s.heat = round(max(lo, min(100.0, s.heat + delta)), 1)
+    if axis in AXES:
+        key = f"{axis}_heat"
+        ax_before = s.flags.get(key, 0.0)
+        s.flags[key] = round(max(lo, min(100.0, ax_before + delta)), 1)
+        s.heat = round(max(lo, min(100.0, _combined(s))), 1)
+        real = round(s.flags[key] - ax_before, 1)   # log the AXIS change — a card mark records even
+        #                                             when the car already dominates the combined meter
+    else:
+        # legacy / untyped: move the combined meter, and apply the same delta to both axes
+        s.heat = round(max(lo, min(100.0, s.heat + delta)), 1)
+        for a in AXES:
+            k = f"{a}_heat"
+            s.flags[k] = round(max(lo, min(100.0, s.flags.get(k, before) + delta)), 1)
+        real = round(s.heat - before, 1)
     s.flags["peak_heat"] = max(s.flags.get("peak_heat", 0), round(s.heat))  # for the scorecard
-    real = round(s.heat - before, 1)
     if abs(real) >= 0.1 and reason:
         log = s.flags.setdefault("heat_log", [])
         log.append({"d": real, "r": reason, "k": kind, "day": s.day,
-                    "odo": round(s.odometer_mi, 1)})
+                    "odo": round(s.odometer_mi, 1), "x": axis or "both"})
         del log[:-LOG_KEEP]
     return s.heat
 
@@ -152,8 +187,15 @@ def dashboard(s: GameState) -> str:
     armed = bool(s.flags.get("desperado"))
     filled = round(h / 5)
     bar = "█" * filled + "·" * (20 - filled)
+    ch, ph = round(car_heat(s)), round(personal_heat(s))
+    hotter = "CAR" if ch >= ph else "DRIVER"
+    fix = ("change her looks — swap the plate, the hood, last resort a respray." if hotter == "CAR"
+           else "hide your face — ball cap, pay CASH, skip the ATM, lie low.")
     lines = [f"HEAT REPORT  ·  {band(s.heat, armed)}   ({h}/100)",
-             f"  [{bar}]   {_BAND_GLOSS[band(s.heat, armed)]}"]
+             f"  [{bar}]   {_BAND_GLOSS[band(s.heat, armed)]}",
+             f"  CAR HEAT {ch:>3}  (the white Z — BOLO, the spade, people clocking her)",
+             f"  DRIVER HEAT {ph:>3}  (YOU — your face on a camera, your card, the ATM)",
+             f"  → {hotter} heat is setting the meter. To cool it: {fix}"]
     hurts, helps = _aggregate(s)
     odo = s.odometer_mi
 
@@ -242,7 +284,7 @@ def social_arrival(s: GameState) -> dict | None:
     # TAGGED — a hard inquiry
     handle = _TAGGERS[_social_rng(s, 2).randrange(len(_TAGGERS))]
     spike = 12 + _social_rng(s, 3).randint(0, 8) + (4 if vis == 3 else 0)
-    add(s, spike, f"tagged by {handle}", "spike")
+    add(s, spike, f"tagged by {handle}", "spike", axis="car")
     s.flags["last_tag_turn"] = s.turn
     s.flags["instagram_tags"] = s.flags.get("instagram_tags", 0) + 1
     events.append(f"SOCIAL: {handle} just posted the car — geotagged, {spike} new eyes on the plate. "
@@ -293,7 +335,7 @@ def clerk_resolve(s: GameState, humble: bool) -> list:
                 "out before he frames the plate. He posts a blurry tire. Nobody cares."]
     handle = "@" + _TAGGERS[_social_rng(s, 9).randrange(len(_TAGGERS))].lstrip("@")
     spike = 10 + _social_rng(s, 8).randint(0, 6)
-    add(s, spike, f"the gas-station clerk posted you ({handle})", "spike")
+    add(s, spike, f"the gas-station clerk posted you ({handle})", "spike", axis="car")
     s.flags["instagram_tags"] = s.flags.get("instagram_tags", 0) + 1
     s.flags["last_tag_turn"] = s.turn
     return [f"CLERK: you let him get the shot — and the caption. {handle}: 'CARTALK plate, the "
@@ -308,7 +350,7 @@ def untag(s: GameState) -> list:
         return ["UNTAG: too late — that post's already screenshotted and reposted. Outrun it instead."]
     s.flags["untag_used_turn"] = s.turn
     back = 6.0
-    add(s, -back, "damage control — got the post taken down", "lower")
+    add(s, -back, "damage control — got the post taken down", "lower", axis="car")
     return [f"UNTAG: she DMs the poster something charming and a little threatening, and the post "
             f"vanishes. −{back:.0f}. The screenshots are out there, but the heat eased to {s.heat:.0f}."]
 
