@@ -85,8 +85,12 @@ def _clamp_heat(state: GameState) -> None:
     if state.flags.get("no_heat"):            # she's legally yours — nobody's looking anymore
         state.heat = 0.0
         return
-    floor = DESPERADO_HEAT_FLOOR if state.flags.get("desperado") else 0.0
+    from engine import heat as _heat
+    floor = _heat._floor(state)               # desperado floor OR the rising BOLO floor, whichever's higher
     state.heat = round(max(floor, min(100.0, state.heat)), 1)
+    # the CAR axis also can't sit below the BOLO floor (the description has spread to that level)
+    if not state.flags.get("desperado"):
+        state.flags["car_heat"] = round(max(state.flags.get("car_heat", state.heat), floor), 1)
 
 
 def set_ending(state: GameState, key: str) -> None:

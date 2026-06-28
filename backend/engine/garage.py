@@ -305,6 +305,7 @@ def swap_plate(s: GameState) -> list:
         return ["PLATE: can't even cover that right now."]
     s.flags["plate_swapped"] = True
     _heat.add(s, -PLATE_SWAP_HEAT_DROP, "swapped the plate — reads clean to every camera", "lower", axis="car")
+    _heat.reset_bolo(s)   # a clean plate gives the BOLO a stale description to chase
     return ["PLATE: four bolts in a quiet structure and CARTALK is in the hatch, a nothing plate off "
             "a dusty Camry on the car. Every reader you pass now sees a car nobody's looking for. "
             f"CAR heat -{PLATE_SWAP_HEAT_DROP:.0f} → {s.heat:.0f}.  (She's quiet — 'felt weird to "
@@ -331,6 +332,7 @@ def swap_hood(s: GameState) -> list:
     s.flags["hood_swapped"] = True
     _heat.add(s, -HOOD_SWAP_HEAT_DROP, "detached the ace-of-spades hood — lost the tell",
               "lower", axis="car")
+    _heat.reset_bolo(s)   # no spade, no instant recognition — the description goes stale
     return [f"HOOD: ${HOOD_SWAP_PRICE:.0f} for a dull loaner hood; you swing the carbon spade off and "
             f"lay it in the hatch, padded. No ace of spades, no instant recognition. "
             f"CAR heat -{HOOD_SWAP_HEAT_DROP:.0f} → {s.heat:.0f}.",
@@ -368,6 +370,7 @@ def respray(s: GameState) -> list:
     s.flags["sprayed_distress"] = True
     _heat.add(s, -RESPRAY_HEAT_DROP, "rattle-canned over the PPF — a different-colored car entirely",
               "lower", axis="car")
+    _heat.reset_bolo(s)   # a different-colored car: the white-Z BOLO is looking for a ghost
     _bond.adjust(s, -RESPRAY_BOND_HIT, "sprayed over me after I begged you not to", "deep")
     out = [f"PAINT: ${RESPRAY_PRICE:.0f} of rattle cans and a roll of masking, and she goes from "
            f"Kilimanjaro White to a flat, ugly gray. The BOLO car doesn't exist anymore. "

@@ -85,10 +85,35 @@ def exposure(s: GameState) -> int:
 
 
 # --------------------------------------------------------------- the meter
+# THE BOLO FLOOR — the real long-game pressure. The longer the white Z is out with the SAME face, the
+# more of the West has its description: the floor under CAR heat RISES with each day since you last
+# changed her identity, so you can drive quiet for a while but you cannot stay quiet forever on the same
+# plate and the same spade. CHANGING THE CAR resets it — a swapped plate, a detached spade hood, a
+# rattle-can respray each give the BOLO a stale description to chase. Surviving to New Year's on the
+# original car is meant to be HARD; the answer is to change her, or to buy her free. (Ben's call.)
+BOLO_FLOOR_PER_DAY = 1.15      # ~+1.2 floor/day since the last identity change
+BOLO_FLOOR_MAX = 58.0         # caps in the FLAGGED band — enough to force a disguise, not an auto-loss
+
+
+def bolo_floor(s: GameState) -> float:
+    if meter_frozen(s) or s.flags.get("report_withdrawn"):
+        return 0.0
+    reset_day = s.flags.get("bolo_reset_day", 1)
+    days = max(0, s.day - reset_day)
+    return round(min(BOLO_FLOOR_MAX, days * BOLO_FLOOR_PER_DAY), 1)
+
+
+def reset_bolo(s: GameState) -> None:
+    """Call when the car's IDENTITY changes (plate swap / hood detach / respray) — the old description
+    goes stale and the floor starts climbing again from today."""
+    s.flags["bolo_reset_day"] = s.day
+
+
 def _floor(s: GameState) -> float:
     if meter_frozen(s):
         return 0.0
-    return DESPERADO_HEAT_FLOOR if s.flags.get("desperado") else 0.0
+    base = DESPERADO_HEAT_FLOOR if s.flags.get("desperado") else 0.0
+    return max(base, bolo_floor(s))
 
 
 # Two-axis heat: CAR heat (the white Z is a recognizable stolen show car — a BOLO on the plate/spade)
@@ -214,6 +239,11 @@ def dashboard(s: GameState) -> str:
              f"  CAR HEAT {ch:>3}  (the white Z — BOLO, the spade, people clocking her)",
              f"  DRIVER HEAT {ph:>3}  (YOU — your face on a camera, your card, the ATM)",
              f"  → {hotter} heat is setting the meter. To cool it: {fix}"]
+    bf = bolo_floor(s)
+    if bf >= 12:
+        lines.append(f"  ⚠ BOLO FLOOR {bf:.0f} — her description has spread; CAR heat can't drop below "
+                     "this. It only CLIMBS the longer she wears the same face. Change her — swap the "
+                     "plate / detach the spade / respray — to give the BOLO a stale photo and reset it.")
     hurts, helps = _aggregate(s)
     odo = s.odometer_mi
 

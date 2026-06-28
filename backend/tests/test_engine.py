@@ -2972,3 +2972,31 @@ def test_green_clutch_stalls_in_town_sf_is_worst_competent_never():
 
 def test_stick_skill_survives_rewind():
     assert "stick_skill" in game.META_PERSIST           # you keep what you learned across a fold
+
+
+# ================================================================== BOLO floor (heat is the long game)
+def test_bolo_floor_rises_over_time_and_resets_on_disguise():
+    from engine import heat
+    s = fresh()
+    s.day = 1;  assert heat.bolo_floor(s) == 0.0
+    s.day = 30; assert 28 <= heat.bolo_floor(s) <= 38      # NOTICED-ish by a month in
+    s.day = 54; assert heat.bolo_floor(s) >= 55            # TRENDING by NYE on the original car
+    heat.reset_bolo(s)                                     # change the car → stale description
+    assert heat.bolo_floor(s) == 0.0
+    # bought / no_heat = no floor
+    s.flags["no_heat"] = True; s.day = 54
+    assert heat.bolo_floor(s) == 0.0
+
+def test_heat_clamps_up_to_the_bolo_floor():
+    from engine import heat, rules
+    s = fresh(); s.day = 40; s.heat = 8; s.flags["car_heat"] = 8
+    rules._clamp_heat(s)
+    assert s.heat >= heat.bolo_floor(s) - 0.1             # rural fade can't sink below the spreading BOLO
+
+def test_plate_swap_resets_the_bolo_floor():
+    from engine import garage, heat
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.day = 40
+    s.flags["car_heat"] = 50; s.heat = 50
+    assert heat.bolo_floor(s) > 30
+    garage.swap_plate(s)
+    assert heat.bolo_floor(s) == 0.0                      # the swap gave the BOLO a stale plate
