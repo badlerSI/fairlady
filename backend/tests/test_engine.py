@@ -203,8 +203,8 @@ def test_origin_questions_reveal_lore_and_destinations():
     res2 = game.handle(s, "where did you grow up")
     assert "oakland" in res2["scene"].lower()
     assert "oakland_aisha" in s.flags.get("revealed", [])
-    # both lore POIs exist with bespoke scenes
-    for pid, scene in (("richmond_koinoya", "koinoya"), ("oakland_aisha", "oakland_aisha")):
+    # both lore POIs exist with bespoke scenes (oakland_aisha now wired to its Codex plate)
+    for pid, scene in (("richmond_koinoya", "koinoya"), ("oakland_aisha", "wm_oakland_aisha")):
         poi = world.get_poi(pid)
         assert poi is not None and poi.scene == scene
 
@@ -1054,6 +1054,7 @@ def test_lie_low_diminishes_and_resets_on_a_drive():
         h = s.heat; game.handle(s, "lie low"); drops.append(round(h - s.heat, 1))
     assert drops[0] > drops[1] > drops[2]              # each cools less
     s.place = world.get_poi("berlin_nv"); s.fuel_l = 40.0
+    s.flags["cold_start_known"] = True                 # you've been driving — a cold morning won't stop you
     game.handle(s, "drive to tonopah")                 # a real drive resets the streak
     assert s.flags.get("lielow_streak") == 0
 
@@ -2110,7 +2111,8 @@ def _run_to_title_drop(seed=77):
 def _run_through_onboarding(s):
     game.handle(s, "call me Sam")              # name
     game.handle(s, "she/her, thanks")          # pronouns
-    game.handle(s, "I'm 29")                   # age → arms the stick question
+    game.handle(s, "I'm 29")                   # age → asks the are-you-rested question
+    game.handle(s, "good to go, slept fine")   # rested → arms the stick question
 
 
 def test_stick_question_lands_after_onboarding_and_answer_sets_the_flag():
@@ -2132,7 +2134,8 @@ def test_onboarding_reads_name_pronouns_and_age_and_explains_riz_to_elders():
     assert s.flags.get("player_pronouns") == "they/them" and s.flags.get("pronoun_stance") == "affirming"
     r = game.handle(s, "born in 1979")
     assert s.flags.get("refs_era") == "classic" and s.flags.get("explained_riz")
-    assert s.flags.get("onboarded")
+    game.handle(s, "wiped, honestly")          # the new are-you-rested question
+    assert s.flags.get("onboarded") and s.flags.get("started_tired")
 
 
 def test_ace_is_she_not_it_and_handles_a_dismissive_stance_gracefully():
@@ -2437,9 +2440,12 @@ def test_BLOCKER_nye_does_not_repossess_an_owned_car():
 
 def test_BLOCKER_passes_command_does_not_crash():
     s = fresh()
-    for cmd in ["passes", "snow", "weather", "is tioga open", "road conditions", "what passes are open"]:
+    for cmd in ["passes", "snow", "is tioga open", "road conditions", "what passes are open"]:
         r = game.handle(s, cmd)
         assert r["info"] and "MOUNTAIN PASSES" in r["info"], cmd
+    # 'weather' is now its own report (split from the passes/closures report)
+    rw = game.handle(s, "weather")
+    assert rw["info"] and "WEATHER" in rw["info"]
 
 
 def test_BLOCKER_rizzbreaker_poker_is_not_an_infinite_money_loop():
@@ -2698,7 +2704,9 @@ def test_spelled_out_adult_age_clears_the_gate_end_to_end():
         game.handle(s, "she/her")                              # pronouns
         game.handle(s, answer)                                 # age
         assert not s.flags.get("age_blocked"), answer          # the bug bricked all of these
-        assert s.flags.get("onboarded") and s.flags.get("player_age", 0) >= 18, answer
+        assert s.flags.get("player_age", 0) >= 18, answer
+        game.handle(s, "good to go")                            # the are-you-rested question
+        assert s.flags.get("onboarded"), answer
 
 def test_adult_signal_overrides_a_bogus_low_age_but_not_a_real_teen():
     # Defect #2: the block check used to run BEFORE honoring an explicit adult signal, so a stray
@@ -2706,6 +2714,7 @@ def test_adult_signal_overrides_a_bogus_low_age_but_not_a_real_teen():
     s = _run_to_title_drop(seed=334)
     game.handle(s, "call me Sam"); game.handle(s, "she/her")
     game.handle(s, "two, but old enough to know better")       # parses age 2 + adult signal
+    game.handle(s, "good to go")                               # the are-you-rested question
     assert not s.flags.get("age_blocked") and s.flags.get("onboarded")
     # …but bravado does NOT spring a genuine 13–17 minor — the gate holds for a real teenager.
     s2 = _run_to_title_drop(seed=335)
@@ -3338,3 +3347,177 @@ def test_sell_a_valuable_find_pays_cash_in_a_town():
     assert r and "SELL" in r[0]
     assert not inventory.has(s, "rolex") and s.cash > cash0   # gone from the hatch, cash in pocket
     assert (s.cash - cash0) <= rolex.get("value", 0)          # ...at a pawn haircut, not full retail
+
+
+# ================================================================== weather + cold-start + heat/cover/ID batch
+def _wx_at(s, pid, iso):
+    from engine import world
+    from datetime import datetime
+    s.place = world.get_poi(pid); s.clock = datetime.fromisoformat(iso); s.flags.pop("weather_cache", None)
+    from engine import weather
+    return weather.daily(s)
+
+def test_weather_is_deterministic_desert_warm_mountains_cold():
+    s = fresh()
+    vegas = _wx_at(s, "las_vegas", "2025-11-07T08:00:00")
+    tahoe = _wx_at(s, "south_lake_tahoe", "2025-11-07T08:00:00")
+    assert vegas["high_f"] > tahoe["high_f"] and vegas["low_f"] > tahoe["low_f"]   # desert beats the crest
+    assert 55 <= vegas["high_f"] <= 80                       # plausible early-Nov Vegas
+    # same (seed, day, place) is reproducible
+    again = _wx_at(s, "las_vegas", "2025-11-07T08:00:00")
+    assert again == vegas
+
+def test_real_storm_overlay_brings_snow_and_chains_a_pass():
+    from engine import season, weather, world
+    s = fresh()
+    w = _wx_at(s, "south_lake_tahoe", "2025-12-22T08:00:00")   # the great Sierra storm window
+    assert w["snow"] and w["storm"] and w["precip_in"] >= 1.0
+    assert season.chain_controlled(s, world.get_poi("truckee"))   # the storm chains the grade early
+
+def test_weather_forecast_telegraphs_an_incoming_front():
+    from engine import weather, world
+    from datetime import datetime
+    s = fresh(); s.place = world.get_poi("reno"); s.clock = datetime.fromisoformat("2025-12-18T09:00:00")
+    rep = "\n".join(weather.report(s))
+    assert "FORECAST" in rep                                 # you can read the storm coming
+
+def test_cold_start_blocks_until_asked_then_known():
+    from engine import weather, world
+    from datetime import datetime
+    s = fresh(); s.place = world.get_poi("reno"); s.fuel_l = 40.0
+    s.flags["favor_filled"] = True
+    s.clock = datetime.fromisoformat("2025-12-01T07:30:00")   # a cold mountain morning
+    assert weather.cold_start_needed(s)
+    r = game.handle(s, "drive to carson city")
+    assert any(e.startswith("COLD-START") for e in r["events"]) and s.place.poi_id == "reno"  # blocked
+    game.handle(s, "she won't start")                        # ask → she teaches it
+    assert s.flags.get("cold_start_known")
+    assert "cold_start_known" in game.META_PERSIST           # you keep the knowledge across a rewind
+
+def test_onboarding_tired_question_seeds_fatigue():
+    from engine import onboarding
+    s = fresh(); onboarding.begin(s)
+    onboarding.handle(s, "Sam"); onboarding.handle(s, "she/her"); onboarding.handle(s, "31")
+    assert onboarding.pending(s) == "rested"                 # the new step lands after age
+    r = onboarding.handle(s, "honestly I'm exhausted")
+    assert r["arm_stick"] and s.flags.get("started_tired") and s.fatigue > 0
+
+def test_sema_merch_and_trickle_charger_open_the_inventory():
+    from engine import inventory
+    s = game.new_game(seed=9)                                # prologue on
+    game.handle(s, "what's around")
+    assert s.flags.get("sema_merch_shown") and s.flags.get("cover_available")
+    for line in ["what are you?", "sure, I'll get you gas"]:
+        game.handle(s, line)
+    assert s.flags.get("pending_turnkey")
+    game.handle(s, "unplug the charger")
+    assert s.flags.get("charger_in_hatch") and inventory.has(s, "trickle_charger")
+
+def test_phone_is_a_tracker_and_ditching_goes_dark():
+    from engine import heat, world, rules
+    s = fresh(); s.place = world.get_poi("beatty")
+    s.flags["personal_heat"] = 72.0; s.flags["car_heat"] = 20.0; s.heat = 72.0
+    ev = []; rules._register_arrival(s, world.get_poi("beatty"), ev)
+    assert any(e.startswith("PHONE") for e in ev)            # guaranteed ping when FLAGGED
+    p0 = s.flags["personal_heat"]
+    game.handle(s, "ditch the phone")
+    assert s.flags.get("has_phone") is False and s.flags["personal_heat"] < p0
+    ev2 = []; rules._register_arrival(s, world.get_poi("beatty"), ev2)
+    assert not any(e.startswith("PHONE") for e in ev2)       # dark now — no more pings
+
+def test_card_swipe_scales_with_heat_and_freezes_at_the_top():
+    from engine import rules, economy, world
+    s = fresh(); s.place = world.get_poi("las_vegas")
+    s.flags["personal_heat"] = 60.0; s.flags["car_heat"] = 20.0; s.heat = 60.0
+    ev = []; p0 = s.flags["personal_heat"]; rules._card_mark(s, s.place, ev, "filled up")
+    assert (s.flags["personal_heat"] - p0) > rules.card_swipe_heat(s, s.place)   # amplified by heat
+    # freeze at MOST WANTED → card refused, ATM still works
+    s2 = fresh(); s2.place = world.get_poi("las_vegas"); s2.heat = 92.0; s2.flags["personal_heat"] = 92.0
+    assert rules.check_card_freeze(s2, [])
+    s2.cash = 0.0
+    assert economy.pay(s2, 50.0, prefer="card")["ok"] is False               # plastic dead
+    r = game.handle(s2, "atm for 200"); assert s2.cash > 0                    # account access still works
+
+def test_no_id_motel_and_fake_id_dodge_the_desk_scan():
+    from engine import world
+    s = fresh(); s.place = world.get_poi("mesquite"); s.cash = 2000.0; s.last_sleep_iso = s.clock_iso
+    s.flags["personal_heat"] = 55.0; s.flags["car_heat"] = 20.0; s.heat = 55.0
+    r = game.handle(s, "sleep at a motel that doesn't ask questions")
+    assert any("no-questions" in e or "never asks" in e.lower() for e in r["events"])
+    assert not any("real license" in e for e in r["events"])                 # no ID spike at a no-ID dive
+    # a real motel while hot DOES scan you
+    s2 = fresh(); s2.place = world.get_poi("mesquite"); s2.cash = 2000.0; s2.last_sleep_iso = s2.clock_iso
+    s2.flags["personal_heat"] = 55.0; s2.flags["car_heat"] = 20.0; s2.heat = 55.0
+    r2 = game.handle(s2, "sleep at a motel, cash")
+    assert any("real license" in e for e in r2["events"])
+
+def test_get_fake_id_is_risky_but_works():
+    from engine import world, luck
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.riz = 50
+    _r = luck.roll; luck.roll = lambda st, salt=0: 0.01      # force the success roll
+    try:
+        r = game.handle(s, "get a fake id")
+    finally:
+        luck.roll = _r
+    assert s.flags.get("has_fake_id") and any("FAKE ID" in e or "fake" in e.lower() for e in r["events"])
+
+def test_no_gas_town_warns_when_low():
+    from engine import rules, world
+    s = fresh(); s.fuel_l = 8.0
+    dry = world.get_poi("rachel")
+    ev = []; rules._register_arrival(s, dry, ev)
+    assert any(e.startswith("SERVICES") and "no pump" in e for e in ev)
+
+
+# ================================================================== batch-sweep fix regressions (#85)
+def test_low_desert_and_coast_never_snow():
+    from engine import weather, world
+    from datetime import datetime
+    s = fresh()
+    for pid in ("death_valley", "san_francisco", "lake_havasu", "los_angeles"):
+        s.place = world.get_poi(pid); s.clock = datetime.fromisoformat("2025-12-24T08:00:00")
+        s.flags.pop("weather_cache", None)
+        w = weather.daily(s)
+        assert not w["snow"] and w["low_f"] >= 36, pid           # the warm-override floor holds
+
+def test_card_freeze_keys_off_personal_not_a_hot_car():
+    from engine import rules
+    s = fresh(); s.flags["car_heat"] = 95.0; s.flags["personal_heat"] = 5.0; s.heat = 95.0
+    assert rules.check_card_freeze(s, []) is False              # a hot CAR doesn't freeze YOUR accounts
+    s.flags["personal_heat"] = 95.0
+    assert rules.check_card_freeze(s, []) is True               # a hot DRIVER does
+
+def test_cold_morning_blocks_before_a_transit_chat():
+    import config
+    from engine import world
+    from datetime import datetime
+    old = config.DRIVE_CONVERSATIONS; config.DRIVE_CONVERSATIONS = True
+    try:
+        s = fresh(); s.place = world.get_poi("truckee"); s.fuel_l = 40.0
+        s.flags["favor_filled"] = True; s.clock = datetime.fromisoformat("2025-12-02T08:00:00")
+        r = game.handle(s, "drive to reno")
+        assert any(e.startswith("COLD-START") for e in r["events"]) and not s.flags.get("transit")
+    finally:
+        config.DRIVE_CONVERSATIONS = old
+
+def test_no_id_motel_is_cash_only():
+    from engine import world
+    s = fresh(); s.place = world.get_poi("mesquite"); s.cash = 0.0; s.last_sleep_iso = s.clock_iso
+    r = game.handle(s, "sleep at a motel that doesn't ask questions")
+    assert any("cash only" in e.lower() for e in r["events"])   # the no-questions guy won't take your card
+
+def test_counted_nouns_do_not_misparse_as_age():
+    from engine import onboarding
+    for ans in ("I have two kids", "grown, got three teenagers", "I've got 2 dogs"):
+        s = fresh(); onboarding.begin(s)
+        onboarding.handle(s, "Sam"); onboarding.handle(s, "she/her"); onboarding.handle(s, ans)
+        assert not s.flags.get("age_blocked"), ans              # 'two kids' must not read as age 2
+
+def test_bob_and_owned_skip_the_cold_start():
+    from engine import weather, world
+    from datetime import datetime
+    s = fresh(); s.place = world.get_poi("truckee"); s.clock = datetime.fromisoformat("2025-12-02T08:00:00")
+    assert weather.cold_start_needed(s)                          # cold morning, the white Z
+    s.flags["bob_mode"] = True;  assert not weather.cold_start_needed(s)   # the loaner is a modern automatic
+    s.flags.pop("bob_mode"); s.flags["no_heat"] = True
+    assert not weather.cold_start_needed(s)                      # a car that's legally yours, maintained

@@ -183,7 +183,7 @@
     "food"
    ],
    "blurb": "726 feet of Depression-era concrete holding back Lake Mead. Last gas in Boulder City.",
-   "scene": "hoover_dam"
+   "scene": "wm_hoover_dam"
   },
   {
    "id": "tonopah",
@@ -199,7 +199,7 @@
    ],
    "blurb": "Old silver town, the darkest skies in the lower 48, halfway up the middle of nowhere.",
    "gas_price": 4.55,
-   "scene": "great_basin"
+   "scene": "wm_great_basin"
   },
   {
    "id": "rachel",
@@ -240,7 +240,7 @@
    "services": [],
    "blurb": "Wheeler Peak, bristlecone pines older than writing, the Lehman Caves. Almost nobody comes.",
    "terrain": 1.2,
-   "scene": "great_basin"
+   "scene": "wm_great_basin"
   },
   {
    "id": "reno",
@@ -255,7 +255,7 @@
     "food"
    ],
    "blurb": "The Biggest Little City, up against the Sierra. A long way from the show.",
-   "scene": "reno"
+   "scene": "wm_reno"
   },
   {
    "id": "carson_city",
@@ -299,7 +299,7 @@
    ],
    "blurb": "The world's tallest thermometer and a Greek diner. Gateway to Death Valley from I-15.",
    "gas_price": 5.19,
-   "scene": "death_valley"
+   "scene": "wm_death_valley"
   },
   {
    "id": "barstow",
@@ -361,7 +361,7 @@
    "blurb": "282 feet below sea level, the hottest place on Earth. Gas here costs what they want it to.",
    "gas_price": 6.49,
    "terrain": 1.15,
-   "scene": "death_valley"
+   "scene": "wm_death_valley"
   },
   {
    "id": "stovepipe",
@@ -393,7 +393,7 @@
    ],
    "blurb": "Wind turbines, a spaceport, and rows of mothballed airliners in the dry air.",
    "gas_price": 4.95,
-   "scene": "mojave"
+   "scene": "wm_mojave"
   },
   {
    "id": "willow_springs",
@@ -454,7 +454,7 @@
    ],
    "blurb": "The Corkscrew. Eleven turns dropping through the Monterey hills like a dare.",
    "terrain": 1.1,
-   "scene": "laguna_seca"
+   "scene": "wm_laguna_seca"
   },
   {
    "id": "thunderhill",
@@ -490,7 +490,7 @@
    "lon": -115.901,
    "services": [],
    "blurb": "Where the Mojave meets the Colorado desert and the trees throw their arms up. No gas inside.",
-   "scene": "joshua_tree"
+   "scene": "wm_joshua_tree"
   },
   {
    "id": "yosemite",
@@ -505,7 +505,7 @@
    ],
    "blurb": "El Capitan, Half Dome, the granite cathedral. Tioga Pass closes with the snow.",
    "terrain": 1.25,
-   "scene": "yosemite"
+   "scene": "wm_yosemite"
   },
   {
    "id": "sequoia",
@@ -520,7 +520,7 @@
    ],
    "blurb": "The biggest living things that have ever stood. The road up is all switchbacks.",
    "terrain": 1.25,
-   "scene": "sequoia"
+   "scene": "wm_sequoia"
   },
   {
    "id": "kings_canyon",
@@ -534,7 +534,7 @@
    ],
    "blurb": "A glacial gorge deeper than the Grand Canyon, and far emptier.",
    "terrain": 1.2,
-   "scene": "canyonlands"
+   "scene": "wm_canyonlands"
   },
   {
    "id": "disneyland",
@@ -548,7 +548,7 @@
     "food"
    ],
    "blurb": "The original. A monorail, a Matterhorn, and a parking structure the size of a town.",
-   "scene": "disneyland"
+   "scene": "wm_disneyland"
   },
   {
    "id": "knotts",
@@ -601,7 +601,7 @@
     "food"
    ],
    "blurb": "The Giant Dipper, salt air, and 1907 still running on the sand.",
-   "scene": "santa_monica"
+   "scene": "wm_santa_monica"
   },
   {
    "id": "seaworld_sd",
@@ -627,7 +627,7 @@
     "food"
    ],
    "blurb": "The Pacific Wheel and the end of Route 66, where the road runs out of country.",
-   "scene": "santa_monica"
+   "scene": "wm_santa_monica"
   },
   {
    "id": "los_angeles",
@@ -660,7 +660,7 @@
    "language": "ja",
    "voice": "jf_alpha",
    "npc": "the okamisan at a Little Tokyo counter",
-   "scene": "sf_japantown"
+   "scene": "wm_sf_japantown"
   },
   {
    "id": "east_la",
@@ -741,7 +741,7 @@
    "language": "ja",
    "voice": "jf_alpha",
    "npc": "a shopkeeper in the Japan Center",
-   "scene": "sf_japantown"
+   "scene": "wm_sf_japantown"
   },
   {
    "id": "sf_chinatown",
@@ -854,7 +854,7 @@
    ],
    "blurb": "Under Mt. Whitney, where a thousand Westerns were shot in the Alabama Hills.",
    "gas_price": 5.15,
-   "scene": "lone_pine"
+   "scene": "wm_lone_pine"
   },
   {
    "id": "lee_vining",
@@ -870,7 +870,7 @@
    "blurb": "Mono Lake's tufa towers and the eastern gate to Yosemite, 9,943 feet up when it's open.",
    "gas_price": 5.39,
    "terrain": 1.3,
-   "scene": "yosemite"
+   "scene": "wm_yosemite"
   },
   {
    "id": "palm_springs",
@@ -982,7 +982,7 @@
    ],
    "blurb": "Someone bought the actual London Bridge and shipped it here, stone by stone.",
    "gas_price": 3.99,
-   "scene": "lake_havasu"
+   "scene": "wm_lake_havasu"
   },
   {
    "id": "sedona",
@@ -999,7 +999,7 @@
    "blurb": "Red-rock spires, art galleries, and people who will tell you about the vortexes.",
    "gas_price": 4.29,
    "terrain": 1.1,
-   "scene": "sedona"
+   "scene": "wm_sedona"
   },
   {
    "id": "page",
@@ -1090,7 +1090,7 @@
    "lon": -111.1666,
    "services": [],
    "blurb": "A forest of giant cactus standing watch over Tucson, arms raised against the dusk.",
-   "scene": "saguaro"
+   "scene": "wm_saguaro"
   },
   {
    "id": "petrified_forest",
@@ -1101,7 +1101,7 @@
    "lon": -109.8068,
    "services": [],
    "blurb": "Stone logs of a vanished jungle and the banded Painted Desert. No services, long miles.",
-   "scene": "petrified_forest"
+   "scene": "wm_petrified_forest"
   },
   {
    "id": "monument_valley",
@@ -1115,7 +1115,7 @@
     "food"
    ],
    "blurb": "The mittens and the buttes on the Navajo line, the most filmed horizon in America.",
-   "scene": "monument_valley"
+   "scene": "wm_monument_valley"
   },
   {
    "id": "meteor_crater",
@@ -1128,7 +1128,7 @@
     "food"
    ],
    "blurb": "A 50,000-year-old hole in the desert, three-quarters of a mile across, off old 66.",
-   "scene": "meteor_crater"
+   "scene": "wm_meteor_crater"
   },
   {
    "id": "st_george",
@@ -1173,7 +1173,7 @@
    "services": [],
    "blurb": "Navajo sandstone walls 2,000 feet high, the Narrows, Angels Landing. The trip everyone tries to make on a splash of gas.",
    "terrain": 1.2,
-   "scene": "zion"
+   "scene": "wm_zion"
   },
   {
    "id": "cedar_city",
@@ -1219,7 +1219,7 @@
    ],
    "blurb": "An amphitheater of orange hoodoos at 8,000 feet. Cold at night, even in summer.",
    "terrain": 1.25,
-   "scene": "bryce"
+   "scene": "wm_bryce"
   },
   {
    "id": "capitol_reef",
@@ -1233,7 +1233,7 @@
    ],
    "blurb": "A hundred-mile wrinkle in the earth, orchards in the desert, petroglyphs on the cliffs.",
    "terrain": 1.15,
-   "scene": "capitol_reef"
+   "scene": "wm_capitol_reef"
   },
   {
    "id": "goblin_valley",
@@ -1244,7 +1244,7 @@
    "lon": -110.708,
    "services": [],
    "blurb": "A valley of mushroom-shaped hoodoos you can walk among, like a planet left unfinished.",
-   "scene": "goblin_valley"
+   "scene": "wm_goblin_valley"
   },
   {
    "id": "moab",
@@ -1271,7 +1271,7 @@
    "lon": -109.5925,
    "services": [],
    "blurb": "Over 2,000 stone arches, Delicate Arch alone on the rim against the La Sals.",
-   "scene": "arches"
+   "scene": "wm_arches"
   },
   {
    "id": "canyonlands",
@@ -1282,7 +1282,7 @@
    "lon": -109.8783,
    "services": [],
    "blurb": "Where the Green and the Colorado carve the earth into Islands in the Sky. No gas, no water.",
-   "scene": "canyonlands"
+   "scene": "wm_canyonlands"
   },
   {
    "id": "salt_lake_city",
@@ -1340,7 +1340,7 @@
    "lon": -113.8932,
    "services": [],
    "blurb": "Thirty thousand acres of dead-flat salt where land-speed records are made. The horizon curves.",
-   "scene": "bonneville"
+   "scene": "wm_bonneville"
   },
   {
    "id": "fallon",
@@ -1355,7 +1355,7 @@
     "food"
    ],
    "gas_price": 4.39,
-   "scene": "fallon",
+   "scene": "wm_fallon",
    "blurb": "Naval Air Station Fallon — TOPGUN moved here. Hornets tear the desert sky open low and loud."
   },
   {
@@ -1368,7 +1368,7 @@
    "services": [
     "food"
    ],
-   "scene": "sphere",
+   "scene": "wm_sphere",
    "heat_zone": true,
    "blurb": "A 366-foot eyeball made of LEDs, blinking at the freeway. It is looking at you. It is always looking."
   },
@@ -1408,7 +1408,7 @@
    "lat": 37.8199,
    "lon": -122.4783,
    "services": [],
-   "scene": "golden_gate",
+   "scene": "wm_golden_gate",
    "blurb": "International orange swallowed by fog. The towers come and go like a rumor."
   },
   {
@@ -1419,7 +1419,7 @@
    "lat": 36.6814,
    "lon": -117.563,
    "services": [],
-   "scene": "death_valley",
+   "scene": "wm_death_valley",
    "terrain": 1.2,
    "blurb": "The sailing stones. Rocks that move themselves across the mud and leave trails, and no one watching."
   },
@@ -1444,7 +1444,7 @@
    "services": [
     "lodging"
    ],
-   "scene": "death_valley",
+   "scene": "wm_death_valley",
    "blurb": "A lone opera house in the empty desert where a dancer painted herself an audience on the walls."
   },
   {
@@ -1459,7 +1459,7 @@
     "food"
    ],
    "gas_price": 4.59,
-   "scene": "great_basin",
+   "scene": "wm_great_basin",
    "blurb": "Once the biggest city in Nevada, now a few hundred souls, a haunted hotel, and a yard of welded art cars."
   },
   {
@@ -1470,7 +1470,7 @@
    "lat": 34.2961,
    "lon": -116.4044,
    "services": [],
-   "scene": "joshua_tree",
+   "scene": "wm_joshua_tree",
    "blurb": "A white dome built from alien instructions for rejuvenation and time travel. Sound baths now. Sure."
   },
   {
@@ -1539,7 +1539,7 @@
    "services": [
     "food"
    ],
-   "scene": "oakland_aisha",
+   "scene": "wm_oakland_aisha",
    "blurb": "A 1926 red-brick garage downtown, AiSHALLC hand-painted across the roofline, a kanji on the roll-up door, the skyline rising behind. Where Ace grew up.",
    "origin": "grew"
   },
@@ -1892,7 +1892,7 @@
    "services": [],
    "terrain": 1.05,
    "blurb": "A silver-rush ghost town nobody bothered to tear down — and behind it, under a shed, the bones of fifty-foot sea monsters that died here when Nevada was an ocean.",
-   "scene": "berlin_nv"
+   "scene": "wm_berlin_nv"
   },
   {
    "id": "winnemucca",

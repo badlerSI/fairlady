@@ -22,8 +22,40 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low.startswith("load"):
         return ("load", {"name": low[4:].strip() or "autosave"})
 
-    if low in ("look", "l", "status", "state", "look around", "hud"):
+    if low in ("look", "l", "status", "state", "look around", "hud",
+               "what's around", "whats around", "what's here", "whats here", "what is around",
+               "what's around here", "whats around here", "what can i see", "have a look around"):
         return ("look", {})
+
+    # ditch your phone — it's a tracker when the heat's on you
+    if (low in ("ditch the phone", "ditch my phone", "ditch phone", "ditch the cell", "toss the phone",
+                "toss my phone", "throw out my phone", "throw away my phone", "destroy my phone",
+                "break my phone", "smash my phone", "lose the phone", "get rid of my phone",
+                "get rid of the phone", "kill my phone", "pull the sim", "go dark", "burner")
+            or (any(w in low for w in ("ditch", "toss", "destroy", "smash", "break", "trash", "dump",
+                                       "lose", "kill", "get rid of")) and "phone" in low)):
+        return ("ditchphone", {})
+
+    # pop the SEMA trickle charger off the battery (opens your inventory)
+    if (low in ("unplug", "unplug it", "unplug the charger", "unplug the trickle charger", "disconnect",
+                "disconnect the charger", "disconnect it", "pop the charger", "pop the trickle charger",
+                "pull the charger", "unplug her", "remove the charger", "take off the charger")
+            or ("unplug" in low and any(w in low for w in ("charger", "her", "it", "cord")))
+            or (any(w in low for w in ("disconnect", "pop", "pull", "remove")) and "charger" in low)):
+        return ("unplug", {})
+
+    # cold-start ritual: she won't catch on a freezing morning without the pump-pump-hold (you learn it
+    # by asking her). Matched BEFORE turnkey so 'she won't start' on a cold morning reaches the ritual.
+    if (low in ("cold start", "cold-start", "she won't start", "she wont start", "it won't start",
+                "it wont start", "won't turn over", "wont turn over", "won't catch", "wont catch",
+                "she won't turn over", "she wont turn over", "how do i start her", "how do i start her cold",
+                "how do i start her on a cold morning", "prime her", "prime the carbs", "prime the engine",
+                "pump the gas", "pump it", "pump the pedal", "pump pump hold", "hold the key", "she won't fire",
+                "she wont fire", "won't fire", "wont fire", "she's not starting", "shes not starting")
+            or ("won't" in low and any(w in low for w in ("start", "catch", "fire", "turn over")))
+            or ("wont" in low and any(w in low for w in ("start", "catch", "fire", "turn over")))
+            or ("pump" in low and any(w in low for w in ("gas", "pedal", "hold", "prime", "three")))):
+        return ("coldstart", {})
 
     # the two-step commit: turn the key all the way (the opening button)
     if (low in ("turn the key all the way", "turn the key", "turnkey", "turn her all the way",
@@ -557,9 +589,16 @@ def parse(raw: str) -> Tuple[str, dict]:
         m = re.search(r"(?:drive|take the wheel|autopilot)(?:\s+(?:to|toward|for|us to|me to|over to))\s+(.+)$", low)
         return ("autodrive", {"dest": (m.group(1).strip(" .") if m else None)})
 
+    # the sky right here — temperature, conditions, and any front the radio's tracking
+    if (low in ("weather", "forecast", "the weather", "the forecast", "how's the weather",
+                "hows the weather", "what's the weather", "whats the weather", "temperature",
+                "how cold is it", "how cold", "how's it looking", "is it cold", "any storms")
+            or ("weather" in low and any(w in low for w in ("how", "what", "check", "the")))):
+        return ("weather", {})
+
     # the mountain-pass / season report
     if (low in ("passes", "mountain passes", "the passes", "road conditions", "conditions",
-                "what's closed", "whats closed", "what passes are open", "snow", "weather",
+                "what's closed", "whats closed", "what passes are open", "snow",
                 "is tioga open", "are the passes open", "season", "what's the season")
             or ("pass" in low and any(w in low for w in ("open", "closed", "snow", "condition")))):
         return ("closures", {})
@@ -651,6 +690,15 @@ def parse(raw: str) -> Tuple[str, dict]:
             args["fill"] = True
         return ("fuel", args)
 
+    # get a fake / stolen ID — eases no-questions check-ins, but it's risky
+    if (low in ("steal an id", "steal a wallet", "lift a wallet", "get a fake id", "buy a fake id",
+                "get fake id", "fake id", "get an id", "forge an id", "score a fake id", "find a fake id",
+                "get a no-id", "pickpocket someone", "pick a pocket", "lift an id", "steal an identity")
+            or (any(w in low for w in ("steal", "lift", "buy", "get", "forge", "score", "find", "make"))
+                and any(w in low for w in ("fake id", "fake i.d", "id", "wallet", "license", "identity"))
+                and "card" not in low and "kid" not in low)):
+        return ("fakeid", {})
+
     # sleep
     if _is_sleep(low):
         args = {}
@@ -662,7 +710,12 @@ def parse(raw: str) -> Tuple[str, dict]:
         if any(w in low for w in ("airbnb", "air bnb", "private", "rental", "alias", "off the books",
                                   "under a name", "under an alias", "vrbo")):
             args["kind"] = "airbnb"
-        if "cash" in low:
+        # a no-questions / no-ID motel — costs more, but no front-desk ID check
+        if any(w in low for w in ("no id", "no-id", "no questions", "no-questions", "doesn't ask",
+                                  "dont ask", "don't ask", "cash only motel", "cash-only motel",
+                                  "fleabag", "no name", "takes cash no", "off-grid motel", "dive motel")):
+            args["kind"] = "no_id_motel"
+        if "cash" in low and args.get("kind") != "no_id_motel":
             args["prefer"] = "cash"
         elif "card" in low:
             args["prefer"] = "card"

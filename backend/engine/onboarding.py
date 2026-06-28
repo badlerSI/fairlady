@@ -23,7 +23,7 @@ import re
 
 from engine.state import GameState
 
-STEPS = ("name", "pronouns", "age")
+STEPS = ("name", "pronouns", "age", "rested")
 
 # Multi-word deflects can match anywhere; bare single words must be the WHOLE answer, so a name like
 # "Skipper" or "Driver" isn't mistaken for "skip"/"drive".
@@ -97,7 +97,44 @@ QUESTION = {
                  "Bogart at a teenager.",
                  "One more, just so we click: what's your vintage? Tell me a number or a decade. I "
                  "contain multitudes of references and I'd like to use the right ones on you."]},
+    "rested": {
+        "cue": "she asks, gently and practically, how they're DOING right now — are they rested and good "
+               "to drive, or running on fumes? she's been watching them work the show floor for six days "
+               "and she'd rather know up front than find out at 2am on a dark road; caring, not nagging",
+        "stub": ["And — real question, because I'll be the one in the dark with you — how are you DOING? "
+                 "You good to drive, or are you running on fumes? Six days of SEMA is a lot. No wrong "
+                 "answer, I just want to know if I'm carrying a fresh driver or a tired one tonight.",
+                 "Before I hand you my whole self: are you actually awake? Rested, or wiped? If you're "
+                 "beat we just don't push far the first night — I'd rather a short clean leg than a "
+                 "microsleep on the 15."]},
 }
+
+_TIRED = ("tired", "exhausted", "wiped", "wiped out", "beat", "knackered", "fumes", "no sleep",
+          "didn't sleep", "didnt sleep", "haven't slept", "havent slept", "up all night", "drained",
+          "dead on my feet", "shattered", "sleepy", "worn out", "burnt out", "burned out", "fried",
+          "long day", "rough day", "could sleep for a week", "barely awake", "half asleep", "running low",
+          "spent", "zonked", "bushed", "dog tired", "dog-tired", "wrecked", "destroyed", "rough", "rough night")
+_RESTED = ("rested", "fresh", "wired", "wide awake", "slept well", "full night", "ready to roll",
+           "never better", "energized", "amped", "good to go", "raring", "i slept", "well rested",
+           "well-rested", "feeling great", "feeling good", "feel good", "feel great", "all good")
+
+
+def _parse_rested(raw: str):
+    """Return (is_tired: bool, stance). Honest 'I'm wiped' or 'I'm good' is affirming; a brush-off is
+    neutral. A flat refusal is handled upstream as a deflect."""
+    low = (raw or "").lower()
+    tired = any(t in low for t in _TIRED)
+    rested = any(r in low for r in _RESTED)
+    if tired and not rested:
+        return True, "affirming"
+    if rested and not tired:
+        return False, "affirming"
+    # bare yes/no to "you good to drive?" — 'yes/good/fine' = rested, 'no/not really' = tired
+    if low.strip() in ("no", "nope", "not really", "not great"):
+        return True, "affirming"
+    if low.strip() in ("yes", "yeah", "yep", "good", "fine", "i'm good", "im good", "i'm fine", "im fine"):
+        return False, "neutral"
+    return False, "neutral"
 
 
 # --------------------------------------------------------------- parsing the answers
@@ -211,7 +248,20 @@ _ADULT_SIGNALS = ("old enough", "grown", "grown up", "grown-up", "adult", "of ag
                   "old lady", "boomer", "millennial", "gen x", "retired", "middle aged", "middle-aged")
 
 
+_COUNTED_NOUN_RE = re.compile(
+    r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|a couple of|a few|several)\s+"
+    r"(kids?|children|grandkids?|grandchildren|teens?|teenagers?|dogs?|cats?|cars?|"
+    r"years ago|decades?|siblings?|brothers?|sisters?|exes?|ex-wives|ex-husbands)\b", re.I)
+
+
+def _strip_counted_nouns(low: str) -> str:
+    """Drop 'two kids' / 'three teenagers' / '2 dogs' so a count of OTHER things isn't read as the
+    player's age (or as a minor signal)."""
+    return _COUNTED_NOUN_RE.sub(" ", low)
+
+
 def _age_signal(low: str) -> str | None:
+    low = _strip_counted_nouns(low)                          # 'got three teenagers' isn't a minor signal
     if any(p in low for p in _MINOR_SIGNALS):
         return "minor"
     if any(p in low for p in _ADULT_SIGNALS):
@@ -222,6 +272,12 @@ def _age_signal(low: str) -> str | None:
 def _parse_age(raw: str):
     """Return (age|None, birth_year|None). Accepts a number, a year, a worded number, or a decade hint."""
     low = (raw or "").lower()
+    # a number describing something OTHER than the player's age ("I have two kids", "three teenagers",
+    # "got 2 dogs") must not be read as THEIR age — strip those counted-noun phrases first.
+    low = re.sub(r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|a couple of|a few|several)\s+"
+                 r"(kids?|children|grandkids?|grandchildren|teens?|teenagers?|dogs?|cats?|cars?|"
+                 r"years ago|decades?|siblings?|brothers?|sisters?|exes?|ex-wives|ex-husbands)\b",
+                 " ", low)
     m = re.search(r"\b(19\d\d|20[01]\d)\b", low)               # a birth year (up to 2019)
     if m:
         yr = int(m.group(1))
@@ -374,29 +430,57 @@ def handle(s: GameState, raw: str) -> dict:
                                         "house rules on this ride. How old are you?"]}}
         s.flags["player_age"] = age
         s.flags["player_birth_year"] = year
-        s.flags["onboarded"] = True
-        s.flags.pop("onboard", None)
+        s.flags["onboard"] = "rested"            # one more human question before the stick test
         pre_1990 = bool(year and year < 1990) or bool(age and age >= 36)
         if pre_1990:
             s.flags["explained_riz"] = True
             s.flags["refs_era"] = "classic"
             mom = {"cue": "they're older — born before 1990 — so she warmly recalibrates to classic "
                           "references AND takes a second to explain 'riz', the word she keeps using: "
-                          "short for charisma, the gen-Z clipping of it, your raw ability to charm; "
-                          "she's charmed to have someone who'll get her Bogart and Steve McQueen jokes",
+                          "short for charisma, the gen-Z clipping of it, your raw ability to charm; then "
+                          "she asks, caring, whether they're rested enough to drive tonight",
                    "stub": ["Oh, good — you'll get my references, then. Steve McQueen, Bogart, a manual "
                             "choke. …And since you predate the term: 'riz'. It's what the kids whittled "
                             "'charisma' down to — your raw ability to charm the impossible into "
-                            "happening. You've got some, or I wouldn't be talking to you. Now — can you "
-                            "actually drive a stick?"]}
+                            "happening. You've got some, or I wouldn't be talking to you. …One human "
+                            "thing, though, before we roll: you good to drive, or are you wiped? Six days "
+                            "of show floor is a lot."]}
         else:
             s.flags["refs_era"] = "modern"
             mom = {"cue": "they're younger; she's delighted, says she'll keep the references current, "
-                          "and segues to the thing she actually needs to know before the road — the "
-                          "stick question",
-                   "stub": ["Noted — I'll keep it current, no dad-rock unless you ask. Okay. Enough "
-                            "about you, briefly. The one thing I HAVE to know before I hand you the "
-                            "whole West: can you drive a stick?"]}
+                          "then asks the caring practical question — are they actually rested enough to "
+                          "drive tonight, or running on fumes after the show",
+                   "stub": ["Noted — I'll keep it current, no dad-rock unless you ask. …Okay, one real "
+                            "one before we go: are you actually AWAKE? You good to drive, or wiped after "
+                            "six days of SEMA? No wrong answer — I just want to know who I'm riding with "
+                            "tonight."]}
+        return {"done": False, "arm_stick": False, "moment": mom}
+
+    if step == "rested":
+        tired, stance = _parse_rested(raw)
+        s.flags["player_rested"] = not tired
+        s.flags["rested_stance"] = stance
+        s.flags["onboarded"] = True
+        s.flags.pop("onboard", None)
+        addr = name if name and name != "ace" else "ace"
+        if tired:
+            s.flags["started_tired"] = True
+            s.fatigue = min(140.0, s.fatigue + 30.0)     # you're starting the road already worn
+            mom = {"cue": "they admit they're tired / running on fumes; she takes it seriously and kind, "
+                          "promises a short clean first leg and to flag a motel before they're "
+                          "dangerous, then — gently — asks the one thing she still needs before the "
+                          "wheel: can they drive a stick",
+                   "stub": [f"Yeah, I figured — six days does that. Okay: short clean leg tonight, and I'll "
+                            f"holler the second there's a real bed, {addr}, before either of us does "
+                            f"something stupid at 2am. Deal. …Last thing, and it's the one I actually "
+                            f"need: can you drive a stick?"]}
+        else:
+            mom = {"cue": "they say they're good / rested / ready; she's pleased and a little fond, says "
+                          "good, because she's got a lot of West to show them, then asks the one thing "
+                          "she still needs before the wheel: can they drive a stick",
+                   "stub": [f"Good. Because I've got a LOT of West to show you and I wasn't planning on "
+                            f"going easy. …Okay, {addr} — the one thing I have to know before I hand you "
+                            f"the keys to all of it: can you actually drive a stick?"]}
         return {"done": True, "arm_stick": True, "moment": mom}
 
     # shouldn't happen — close it out safely

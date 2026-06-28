@@ -61,6 +61,10 @@ LITERS_PER_GALLON = 3.785411784
 DEFAULT_GAS_PRICE = {"NV": 4.25, "CA": 4.95, "AZ": 3.95, "UT": 3.89}  # $/gal, Nov 2025-ish
 LODGING_PRICE = {"motel": 92.0, "lodge": 165.0, "camp": 28.0, "airbnb": 110.0}
 AIRBNB_HEAT = -8.0    # a private stay booked under an alias, cash — lying low, off the record
+MOTEL_ID_CHECK_HEAT = 45.0    # at/above this PERSONAL heat, a real motel's front-desk ID scan is a fresh mark
+MOTEL_ID_CHECK_SPIKE = 16.0   # your real name on the register while they're hunting it
+FAKE_ID_HEAT_CAUGHT = 18.0    # busted lifting a wallet / passing a forgery
+FAKE_ID_GET_ODDS = 0.55       # base odds of scoring a fake ID (riz + low heat help; high heat/desperado hurt)
 FOOD_PRICE = 16.0
 START_CASH = 40.0
 CARD_LIMIT = 10000.0          # $10k before the card gets rejected; swipes spike heat fast (HEAT_SWIPE_*)
@@ -85,6 +89,10 @@ RESPRAY_BOND_HIT = 30.0     # she BEGS you not to — and spraying her over cras
 HEAT_START = 8.0
 HEAT_PATROL_THRESHOLD = 45.0
 HEAT_DECLINE_CARD_THRESHOLD = 70.0   # lodging/stations get nervous about the card
+HEAT_CARD_FREEZE = 90.0              # MOST WANTED — cops freeze the cards/accounts (permanent, cash only)
+HEAT_CARD_FREEZE_DESPERADO = 70.0   # armed + named, they move faster: frozen at FLAGGED
+CARD_SWIPE_HEAT_AMP = 0.04          # each swipe's heat scales by this × current personal heat (the hotter, the worse)
+CARD_SWIPE_HEAT_AMP_MAX = 3.0       # ...capped here, so one fill can't insta-spike you to the roadblock
 HEAT_ROADBLOCK_THRESHOLD = 90.0
 HEAT_SWIPE_BASE = 2.0
 HEAT_SWIPE_HOTZONE = 4.0
@@ -184,6 +192,10 @@ SEASON_SNOW_START = "2025-11-01"   # day 0 of the descending snow line
 SNOW_LINE_HIGH = 1.40              # terrain threshold open in early Nov (nothing closed)
 SNOW_LINE_LOW = 1.10               # by deep winter, even the 1.15 passes shut
 SNOW_LINE_DESCENT = 0.005          # per day the snow line drops this much in terrain-units
+
+# --- Weather (deterministic climatology + real-storm overlay; see engine/weather.py) ----
+COLD_START_TEMP = 38.0             # at/below this morning low (deg F) she needs the pump-pump-hold
+WEATHER_ELEV_LAPSE_F = 130.0       # deg F colder per terrain-unit above 1.0 (terrain is an approx grade/elev proxy)
 
 # --- The calendar bites: two dated set-pieces on top of the snow line ------------
 # 1) Salt Lake City, first week of December — the owner (and the APC crew) catch up with you there.

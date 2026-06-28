@@ -13,7 +13,7 @@ from config import (
 from engine.state import GameState
 from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
                     endings, gadgets, season, bond, heat, cameras, survival, inventory, luck, romance,
-                    places, onboarding, rizzbreaker, alma, bobmode)
+                    places, onboarding, rizzbreaker, alma, bobmode, weather)
 from engine.commands import parse, _bare_number, _money, spec_hits as _spec_hits
 from adapters import get_narrator
 from adapters.base import voices
@@ -193,6 +193,77 @@ def _story_on_arrival(s: GameState):
     return None
 
 
+def _get_fake_id(s: GameState) -> list:
+    """Lift a wallet / buy a forgery — a risky way to a no-questions check-in. Helps with riz, hurts with
+    heat; a desperado is watched too closely. Backfire spikes personal heat (rewind-recoverable)."""
+    from config import FAKE_ID_GET_ODDS, FAKE_ID_HEAT_CAUGHT
+    from engine import luck, heat as _heat
+    if s.flags.get("has_fake_id"):
+        return ["ID: you've already got a clean fake in your wallet — one's plenty, unless it gets burned."]
+    if not (s.place.kind == "city" or s.place.has("lodging") or s.place.has("gas")):
+        return ["ID: nobody out here to lift a wallet off or buy paper from. Try a town with some people in it."]
+    odds = FAKE_ID_GET_ODDS + min(0.25, s.riz * 0.01) - _heat.personal_heat(s) * 0.004
+    if s.flags.get("desperado"):
+        odds -= 0.15                                    # they're watching for your face already
+    odds = max(0.1, min(0.9, odds))
+    if luck.roll(s, 77) < odds:
+        s.flags["has_fake_id"] = True
+        inventory.ITEMS.setdefault("fake_id", {"name": "a clean fake ID", "cuft": 0.0, "price": 0,
+                                               "kind": "contraband", "desc": "a passable forged license — "
+                                               "good for a no-questions check-in until it gets flagged"})
+        inventory.add(s, "fake_id", 1)
+        return ["ID: a guy two stools down at a dive bar does 'paper' for cash; an hour and a few "
+                "twenties later you've got a license with your face and a stranger's name. Front desks "
+                "and no-questions motels are a lot less frightening now. (You have a FAKE ID.)"]
+    spike = FAKE_ID_HEAT_CAUGHT
+    _heat.add(s, spike, "got made trying to score a fake ID", "spike", axis="personal")
+    return [f"ID: it goes wrong — the mark feels your hand, or the forger's a narc, and suddenly there's "
+            f"a raised voice and you're walking fast and not looking back. No ID, and a face people now "
+            f"remember. Driver heat +{spike:.0f} → {s.heat:.0f}. ('rewind' if you'd rather you hadn't tried.)"]
+
+
+def _unplug_charger(s: GameState) -> list:
+    """Pop the SEMA trickle charger off the battery and coil it into the hatch — which is also the
+    moment your INVENTORY opens, with a one-line tutorial. Idempotent (grant the item + tutorial once)."""
+    s.flags["charger_unplugged"] = True
+    if s.flags.get("charger_in_hatch"):
+        return []
+    s.flags["charger_in_hatch"] = True
+    inventory.ITEMS.setdefault("trickle_charger",
+                               {"name": "battery trickle charger", "cuft": 0.15, "price": 25,
+                                "kind": "gear", "desc": "the SEMA-stand battery tender — keeps a parked "
+                                "classic topped off so she'll always crank"})
+    inventory.add(s, "trickle_charger", 1)
+    return ["HATCH: you coil the charger's cord and drop it in the hatch behind the seats — and that's "
+            "your cargo hold now. ('inventory' shows what's back there; at stations you can 'buy' water, "
+            "tools, jerry cans, a tent; you'll also find things on the road. The 240Z hatch holds about "
+            "7.5 cubic feet — pack smart for the empty quarter.)"]
+
+
+def _cold_start(s: GameState) -> list:
+    """The pump-pump-hold ritual. The FIRST cold morning you have to ask her how (she teaches it); after
+    that you know it. Starting her marks the engine warm for the day so the next drive just goes."""
+    if not weather.cold_start_needed(s):
+        if weather.daily(s)["low_f"] <= 45:
+            return ["START: she's cool but not stone-cold — turns over on the first crank. No ritual "
+                    "needed right now."]
+        return ["START: she's warm, ace — she'll fire the instant you ask. (Save the pump-pump-hold for "
+                "a freezing morning.)"]
+    first = not s.flags.get("cold_start_known")
+    s.flags["cold_start_known"] = True
+    weather.mark_started(s)
+    if first:
+        from engine import bond as _bond
+        _bond.adjust(s, 1.0, "learned how to start me right on a cold morning", "warm")
+        return ["COLD-START: 'Okay — listen, because I'll only feel like a coffee grinder if you don't. "
+                "Pump the gas pedal all the way down, slow, THREE times — that primes the carbs. Then "
+                "turn the key and HOLD it, and do NOT pump while she cranks.' …You do it. Rrr — rrr — and "
+                "she CATCHES, settles into a fast cold idle. 'There. Pump three, then hold. Remember it "
+                "and you'll never strand us on a cold morning.' (You know the trick now.)"]
+    return ["COLD-START: pump the pedal three times, key over and hold — she cranks cold, coughs once, "
+            "and catches. Fast idle smoothing as she warms. (She's started for the day.)"]
+
+
 def _palm_loop_check(s: GameState, dest):
     """The Palm Springs groundhog loop, shared by BOTH the manual-drive and autodrive branches so the
     self-driving secret can't bypass it. Returns one of:
@@ -292,7 +363,7 @@ META_PERSIST = ("timeline", "cp_seq", "rewinds", "rewinds_here", "last_rewind_se
                 "bond_worst", "bond_echoes", "chase_learned", "stick_skill", "peak_riz", "peak_bond",
                 # the 18+ gate + who you told her you are survive a rewind (no folding past the gate)
                 "age_blocked", "onboarded", "player_age", "player_birth_year", "player_name",
-                "player_pronouns", "pronoun_stance", "refs_era",
+                "player_pronouns", "pronoun_stance", "refs_era", "cold_start_known", "has_phone",
                 "events_seen", "beats_seen")   # the loop is HERS — she remembers (incl. what's happened)
 
 # how much of your best survives a failure/rewind — you never face a wall again with LESS.
@@ -533,6 +604,11 @@ def snapshot(s: GameState) -> dict:
         "bowels": round(float(s.flags.get("need_bowels", 0.0))),
         "bac": round(float(s.flags.get("bac", 0.0)), 3),
         "alertness": survival.alertness(s),
+        # the sky — temp, conditions, storm, and whether she needs a cold-start this morning
+        "weather": weather.snapshot(s),
+        "phone": bool(s.flags.get("has_phone", True)),                # your phone — a tracker when hot
+        "cards_frozen": bool(s.flags.get("cards_frozen")),           # cops froze the plastic — cash only
+        "has_fake_id": bool(s.flags.get("has_fake_id")),             # a no-questions ID in your pocket
     }
 
 
@@ -1000,7 +1076,7 @@ def handle(s: GameState, raw: str) -> dict:
     # drop. They must come BEFORE the command parser, because an answer like "I was born in '81" or
     # "they/them" would otherwise be read as a lore question or a stray command. A few status verbs
     # still pass through so you can glance at the map mid-introduction.
-    _ONBOARD_PASSTHRU = ("look", "map", "range", "heatreport", "scorecard", "bondreport", "closures")
+    _ONBOARD_PASSTHRU = ("look", "map", "range", "heatreport", "scorecard", "bondreport", "closures", "weather")
     _blank = not (raw or "").strip()                     # an empty answer is still an answer (→ default)
     if onboarding.pending(s) and (verb not in _ONBOARD_PASSTHRU or _blank):
         s.turn += 1
@@ -1131,12 +1207,12 @@ def handle(s: GameState, raw: str) -> dict:
         # SENTENCE that merely parses as one ("...filled her tank where she asked, officer...") is
         # SPEECH and must reach him, so only SHORT deliberate status commands are exempt (look always is).
         if (verb == "look"
-                or (verb in ("heatreport", "range", "map", "scorecard", "bondreport", "closures")
+                or (verb in ("heatreport", "range", "map", "scorecard", "bondreport", "closures", "weather")
                     and len(raw.split()) <= 4)):
             _autosave(s)
             _info = {"look": _look_text(s), "heatreport": heat.dashboard(s), "range": _range_text(s),
                      "map": _map_text(s, args.get("service")), "scorecard": endings.scorecard(s),
-                     "bondreport": bond.dashboard(s),
+                     "bondreport": bond.dashboard(s), "weather": "\n".join(weather.report(s)),
                      "closures": season.closures_text(s)}.get(verb, _look_text(s))
             scene, voice, audio = _narrate(s, [], "(takes stock)", drama={
                 "cue": "the driver glances over the dash mid-encounter — she answers in a "
@@ -1160,6 +1236,12 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "heatreport":
         from engine import heat as _heat
         return _result(s, [], "", info=_heat.dashboard(s))
+    if verb == "coldstart" and not prologue.active(s):
+        events = _cold_start(s)
+        scene, voice, audio = _narrate(s, events, raw)
+        return _result(s, events, scene, voice=audio)
+    if verb == "weather":            # the sky here, plus any front the radio's tracking
+        return _result(s, [], "", info="\n".join(weather.report(s)))
     if verb == "closures":           # the mountain-pass / season report
         return _result(s, [], "", info=season.closures_text(s))
     if verb == "scorecard":          # the running tally / how it ended
@@ -1189,6 +1271,31 @@ def handle(s: GameState, raw: str) -> dict:
 
     # ---- the favor — the prologue owns every turn until you say yes ----
     if prologue.active(s):
+        # "what's around?" on the show floor — she points out the last of the merch (and the car cover)
+        if verb in ("look", "map") and not s.flags.get("sema_merch_shown"):
+            s.flags["sema_merch_shown"] = True
+            s.flags["cover_available"] = True
+            s.turn += 1
+            _autosave(s)
+            scene, voice, audio = _narrate(s, [], "(takes in the booth)", drama={
+                "cue": "the driver looks over her SEMA stand; she gives them the tour of what's left on "
+                       "the table, wry and a little wistful that the show's tearing down: a few BUMPER "
+                       "STICKERS still in the box — including the one that matches the little one on her "
+                       "own bumper, 'I can do all things through Claude who strengthens me' — the Ace "
+                       "T-SHIRTS are all gone (sold out day two, she's weirdly proud), and there's a soft "
+                       "CAR COVER folded in the back they can grab if they want it; no pressure, just "
+                       "what's here",
+                "stub": ["Around? Ha — it's a teardown, ace, the magic's mostly in boxes. There's a few "
+                         "bumper stickers left in that crate — including the one that's on MY bumper, "
+                         "'I can do all things through Claude who strengthens me', take one, they're "
+                         "free now. The Ace T-shirts? Gone. Sold out day two, thank you very much. …Oh — "
+                         "and there's a car cover folded in the back. Soft one. Grab it if you want it; "
+                         "a draped car is an invisible car, and we might want invisible later.",
+                         "Not much — show's coming down. Stickers in the box (that 'all things through "
+                         "Claude' one is mine, take a twin), shirts are sold out, and a car cover in the "
+                         "back you're welcome to. That's the gift shop. Anything else before we go?"]})
+            return _result(s, [], scene, voice=audio,
+                           info="(grab the car cover for later, or just say yes to the favor and let's roll)")
         # the fast bad ending: walk off and leave her on the floor for the night → towed at teardown
         if verb == "sleep":
             s.turn += 1
@@ -1211,18 +1318,31 @@ def handle(s: GameState, raw: str) -> dict:
 
     # ---- the two-step commit: you agreed — now disconnect the trickle charger and turn the key ----
     if s.flags.get("pending_turnkey"):
+        if verb == "unplug":                            # you can pop the charger first — opens the hatch
+            s.turn += 1
+            ev = _unplug_charger(s) or ["CHARGER: already off and stowed, ace — now turn the key all "
+                                        "the way and let's roll."]
+            _autosave(s)
+            scene, voice, audio = _narrate(s, ev, "", drama={
+                "cue": "they popped the trickle charger off her battery and dropped it in the hatch; she "
+                       "approves, says good, now turn the key ALL the way and let's go",
+                "stub": ["Good — light's out, cord's in the back. Now turn the key ALL the way over, not "
+                         "just to accessory, and we roll."]})
+            return _result(s, ev, scene, voice=audio,
+                           info="(charger's stowed — now 'turn the key all the way')")
         if verb == "turnkey":
             s.flags.pop("pending_turnkey", None)
             s.flags["prologue_done"] = True
-            s.flags["charger_unplugged"] = True
             s.flags["gas_target"] = "sema_chevron"     # the ONLY easy destination until the tank's full
             s.flags["awaiting_cash_ask"] = True         # she asks how much cash you're carrying next turn
             s.turn += 1
             chevron = world.get_poi("sema_chevron")
             rt = world.route(s.place, chevron)          # OSRM if online, haversine fallback
+            charger_ev = _unplug_charger(s)             # the charger → hatch (opens the inventory)
             events = ["IGNITION: you reach past her left fender and pop the trickle charger off the "
                       "battery — the little red light dies. Then you turn the key all the way. She "
                       "catches on the second crank and drops into a lumpy, delighted idle."]
+            events += charger_ev
             events.append(f"NAV: '{rt['distance_mi']:.1f} miles — basically a straight shot. Out of "
                           "the lot, two blocks up Paradise, the Chevron's on the right. I'll call it.'")
             events += rules.drive(s, chevron)           # two blocks of neon
@@ -1411,7 +1531,7 @@ def handle(s: GameState, raw: str) -> dict:
         elif verb == "camo":
             events += _heat.clerk_resolve(s, humble=True)        # you dressed her down — slid by
         elif verb not in ("look", "heatreport", "map", "range", "untag", "lielow",
-                          "uncamo", "stereo", "text", "scorecard", "closures"):
+                          "uncamo", "stereo", "text", "scorecard", "closures", "weather"):
             events += _heat.clerk_resolve(s, humble=False)       # lingered at the pump — he got it
         if s.flags.pop("chevron_cover", None):   # the OPENING cover-story is resolved — she drops the act
             s.flags["cover_done"] = True
@@ -1491,6 +1611,7 @@ def handle(s: GameState, raw: str) -> dict:
                 and rt["duration_h"] >= TRANSIT_MIN_HOURS and not s.flags.get("transit")
                 and rt["distance_mi"] <= s.range_mi + 1.0      # don't open a chat for a leg you can't finish
                 and not s.flags.get("broken_down")             # a holed-piston car gets the BROKEN refusal, not a chat
+                and not weather.cold_start_needed(s)           # a cold morning won't even start — no transit chat
                 and not _loop_break_events                     # the Palm Springs escape must resolve + show its beat
                 and not _too_tired and not _snowed):           # ...or one she'll refuse (sleep / snowed pass)
             conv = min(4, max(2, round(rt["duration_h"] * 1.5)))
@@ -1597,6 +1718,18 @@ def handle(s: GameState, raw: str) -> dict:
             events = [f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
                       "not switching to English."]
         player_text = raw
+    elif verb == "unplug":                      # the charger's long since stowed by now
+        events = (["CHARGER: it's already coiled in the hatch from the SEMA lot, ace — nothing to unplug."]
+                  if s.flags.get("charger_in_hatch")
+                  else ["CHARGER: no charger on her right now."])
+        player_text = ""
+    elif verb == "ditchphone":                  # go dark on the cell net
+        from engine import heat as _heat
+        events = _heat.ditch_phone(s)
+        player_text = ""
+    elif verb == "fakeid":                       # lift a wallet / buy a forgery — risky
+        events = _get_fake_id(s)
+        player_text = ""
     elif verb == "look":
         player_text = "(takes stock)"
         info = _look_text(s)                    # the promised ledger: place + numbers
@@ -1803,8 +1936,11 @@ def handle(s: GameState, raw: str) -> dict:
             events = ["BUY: there's no one to buy her from yet. The man who built her finds you "
                       "when the trail runs hot enough — keep moving through the cities."]
         player_text = ""
-    elif verb == "turnkey":                     # she's already running by now
-        events = ["IGNITION: she's already turned over and idling, ace — we're past that."]
+    elif verb == "turnkey":                     # she's already running by now — unless it's a cold start
+        if weather.cold_start_needed(s):
+            events = _cold_start(s)
+        else:
+            events = ["IGNITION: she's already turned over and idling, ace — we're past that."]
         player_text = ""
     elif verb in ("disarm", "draw"):            # the gun, with nothing to point it at
         events = ["GUN: nobody's holding a gun on you right now." if verb == "disarm"

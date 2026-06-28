@@ -19,8 +19,10 @@ def lodging_options(place: Place) -> list:
         return []
     if place.kind == "park":
         return [("lodge", LODGING_PRICE["lodge"]), ("camp", LODGING_PRICE["camp"])]
-    # towns: a traceable motel, a quiet private rental, or a campsite
-    return [("motel", LODGING_PRICE["motel"]), ("airbnb", LODGING_PRICE["airbnb"]),
+    # towns: a traceable motel, a quiet private rental, a no-questions dive (pricey, no ID), or a campsite
+    return [("motel", LODGING_PRICE["motel"]),
+            ("no_id_motel", round(LODGING_PRICE["motel"] * 1.6)),
+            ("airbnb", LODGING_PRICE["airbnb"]),
             ("camp", LODGING_PRICE["camp"])]
 
 
@@ -33,14 +35,18 @@ def pay(state: GameState, amount: float, prefer: Optional[str] = None) -> dict:
     order = []
     first = (prefer or state.pay_method)
     order = ["cash", "card"] if first == "cash" else ["card", "cash"]
+    frozen = bool(state.flags.get("cards_frozen"))            # cops flagged the plastic — cash only
     for m in order:
         if m == "cash" and state.cash + 1e-9 >= amount:
             state.cash = round(state.cash - amount, 2)
             return {"ok": True, "method": "cash", "amount": amount, "message": "Paid cash."}
-        if m == "card" and state.credit_available + 1e-9 >= amount:
+        if m == "card" and not frozen and state.credit_available + 1e-9 >= amount:
             state.card_balance = round(state.card_balance + amount, 2)
             return {"ok": True, "method": "card", "amount": amount,
                     "message": "Swiped the card."}
+    if frozen and state.credit_available + 1e-9 >= amount:
+        return {"ok": False, "method": None, "amount": amount,
+                "message": "Card DECLINED — it's been flagged in the system. Cash only now; they're closing in."}
     return {"ok": False, "method": None, "amount": amount,
             "message": "Declined. Not enough cash and the card won't cover it."}
 

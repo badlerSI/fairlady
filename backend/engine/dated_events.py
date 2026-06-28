@@ -19,8 +19,9 @@ except Exception:
 # stop-words: drop the city-noise AND the generic geographic words that over-match across towns
 # ("beach" must not let a Bombay-Beach event fire at Venice Beach / Long Beach).
 _STOP = {"the", "las", "city", "downtown", "strip", "of", "valley", "national", "park", "area", "county",
-         "north", "south", "lake", "mount", "state", "and", "st", "santa", "fort", "center", "stadium",
-         "beach", "sea", "springs", "mesa", "dunes", "hills", "hill", "river", "creek", "ranch", "rock"}
+         "north", "south", "lake", "mount", "mountain", "state", "and", "st", "santa", "fort", "center",
+         "stadium", "arena", "field", "america", "beach", "sea", "springs", "mesa", "dunes", "hills",
+         "hill", "river", "creek", "ranch", "rock"}
 # marquee venues whose name doesn't contain the city — map them to the host poi so the event fires there
 # (and ONLY there). Keys are matched as WHOLE tokens, ALL required, so 'thomas mack' != 'Mackay Stadium'.
 _VENUE_HUB = {
@@ -29,6 +30,7 @@ _VENUE_HUB = {
     "venetian": "las_vegas", "bellagio": "las_vegas", "convention center": "las_vegas",
     "grand sierra": "reno", "footprint": "phoenix",
     "state farm stadium": "phoenix", "chase field": "phoenix", "phoenix raceway": "phoenix",
+    "mountain america": "phoenix",  # ASU's stadium in Tempe (Phoenix metro); no Tempe poi exists
 }
 
 

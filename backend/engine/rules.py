@@ -11,7 +11,7 @@ from config import (
     HEAT_SWIPE_HOTZONE, HEAT_SWIPE_FIRST_DAY, HEAT_DECAY_PER_HOUR,
     HEAT_STATELINE_MULT, HEAT_PUSH_DRIVE, HEAT_SLEEP_LODGING, HEAT_LINGER,
     FATIGUE_PER_HOUR, ROUGH_SLEEP_HEAT, AWAKE_WARN_HOURS, AWAKE_FORCE_HOURS,
-    DESPERADO_HEAT_FLOOR,
+    DESPERADO_HEAT_FLOOR, MOTEL_ID_CHECK_HEAT, MOTEL_ID_CHECK_SPIKE,
 )
 from engine.state import GameState, Place
 from engine import world, economy
@@ -72,13 +72,44 @@ def card_swipe_heat(state: GameState, place: Place) -> float:
 
 
 def _card_mark(state: GameState, place: Place, events: list, what: str) -> None:
-    """A card swipe = a derogatory mark on the record (traceable). Logged for the dashboard."""
+    """A card swipe = a derogatory mark on the record (traceable). The hotter YOU already are, the more
+    a swipe gives them — a name they're hunting lights up the whole fraud-alert apparatus. Logged."""
     from engine import heat as _heat
-    dh = card_swipe_heat(state, place)
+    from config import CARD_SWIPE_HEAT_AMP, CARD_SWIPE_HEAT_AMP_MAX
+    base = card_swipe_heat(state, place)
+    amp = min(CARD_SWIPE_HEAT_AMP_MAX, 1.0 + CARD_SWIPE_HEAT_AMP * _heat.personal_heat(state))  # ×1 cold … ×3 hot
+    dh = round(base * amp, 1)
     state.flags["card_swipes"] = state.flags.get("card_swipes", 0) + 1   # the owner's trail
-    _heat.add(state, dh, "credit card swipe — your name, your face", "mark", axis="personal")
-    events.append(f"HEAT: {what} on the card — that's a mark on YOU, not the car. "
-                  f"Driver heat +{dh:.0f} → {state.heat:.0f}.")
+    reason = ("credit card swipe — your name, your face"
+              if amp < 1.5 else f"credit card swipe while HOT — ×{amp:.1f}, every alert in the system")
+    _heat.add(state, dh, reason, "mark", axis="personal")
+    events.append(f"HEAT: {what} on the card — a mark on YOU, not the car"
+                  + (f" (×{amp:.1f} — you're already hot, so the swipe screams)" if amp >= 1.5 else "")
+                  + f". Driver heat +{dh:.0f} → {state.heat:.0f}.")
+    check_card_freeze(state, events)
+
+
+def check_card_freeze(state: GameState, events: list = None) -> bool:
+    """Past a threshold the cops freeze the cards and accounts — permanently for this run. Mostly a
+    Desperado problem (armed + named freezes at FLAGGED 70; otherwise at MOST-WANTED 90). On the road
+    this is the tell the fuzz is closing in. ATM withdrawals still work — that's account access, not a
+    POS swipe. Returns True if newly frozen."""
+    from config import HEAT_CARD_FREEZE, HEAT_CARD_FREEZE_DESPERADO
+    from engine import heat as _heat
+    if state.flags.get("cards_frozen") or state.flags.get("no_heat"):
+        return False
+    thresh = HEAT_CARD_FREEZE_DESPERADO if state.flags.get("desperado") else HEAT_CARD_FREEZE
+    # freezing your accounts means they know WHO you are — key off PERSONAL (identity) heat, not the car's
+    # BOLO. A hot car with a cold driver gets you pulled over, not your bank locked.
+    if _heat.personal_heat(state) < thresh:
+        return False
+    state.flags["cards_frozen"] = True
+    if events is not None:
+        events.append("CARDS FROZEN: your card declines at the pump and your banking app won't load — "
+                      "they've flagged the accounts. That's not a glitch, ace. That's them telling you "
+                      "they KNOW your name and they're close. Cash only from here. (The ATM still works "
+                      "— for now — but every withdrawal is a camera and a location.)")
+    return True
 
 
 def _clamp_heat(state: GameState) -> None:
@@ -91,6 +122,8 @@ def _clamp_heat(state: GameState) -> None:
     # the CAR axis also can't sit below the BOLO floor (the description has spread to that level)
     if not state.flags.get("desperado"):
         state.flags["car_heat"] = round(max(state.flags.get("car_heat", state.heat), floor), 1)
+    if not state.flags.get("cards_frozen") and check_card_freeze(state, None):
+        state.flags["cards_just_froze"] = True   # announce it where events are available (law_check)
 
 
 def set_ending(state: GameState, key: str) -> None:
@@ -106,6 +139,11 @@ def law_check(state: GameState, events: list) -> None:
         return
     if state.flags.get("report_withdrawn"):
         return                                  # the owner called it off; the law lost interest
+    if state.flags.pop("cards_just_froze", None):   # the freeze crossed a threshold on the road
+        events.append("CARDS FROZEN: out on the road your phone buzzes — card declined, banking app "
+                      "locked. They flagged your accounts. The fuzz isn't behind you anymore, ace; "
+                      "they're AROUND you. Cash only now, and don't linger. (The ATM still pays — each "
+                      "pull is a camera.)")
     rng = _rng(state)
     if state.heat >= HEAT_ROADBLOCK_THRESHOLD:
         if rng.random() < 0.45 + (state.heat - HEAT_ROADBLOCK_THRESHOLD) / 20.0:
@@ -132,6 +170,31 @@ def _register_arrival(state: GameState, place: Place, events: list) -> None:
     if place.kind in ADVENTURE_KINDS and place.name not in state.adventures:
         state.adventures.append(place.name)
         events.append(f"ADVENTURE: reached {place.name} ({place.kind}). Adventures: {len(state.adventures)}.")
+    # an atmosphere line, but only when the sky is doing something worth mentioning (snow/storm/wind/bitter cold)
+    from engine import weather
+    w = weather.daily(state)
+    if w["snow"] or w["storm"] or w["wind_mph"] >= 35 or w["low_f"] <= 22:
+        events.append(weather.line(state))
+    # your phone is a tracker when YOUR heat is up — a tower ping tightens the net (ditch it to go dark)
+    from engine import heat as _heat
+    _heat.phone_ping(state, events)
+    # towns aren't all full-service: flag a dry town when you're low, and a bed-less one when you're beat —
+    # but only ONCE per town per game (no nagging the same place over and over).
+    if state.status == "playing" and place.poi_id:
+        warned = state.flags.setdefault("services_warned", [])
+        if not place.has("gas") and state.fuel_l < state.tank_l * 0.45 and f"gas:{place.poi_id}" not in warned:
+            near = world.nearest_with_service(place, "gas", limit=1)
+            if near:
+                warned.append(f"gas:{place.poi_id}")
+                events.append(f"SERVICES: no pump in {place.name} — nearest gas is {near[0][1].name}, "
+                              f"~{near[0][0]:.0f} mi. (Mind the tank; the desert doesn't do favors.)")
+        if (not place.has("lodging") and hours_awake(state) >= AWAKE_WARN_HOURS
+                and f"bed:{place.poi_id}" not in warned):
+            near = world.nearest_with_service(place, "lodging", limit=1)
+            if near:
+                warned.append(f"bed:{place.poi_id}")
+                events.append(f"SERVICES: no rooms in {place.name} — nearest beds are {near[0][1].name}, "
+                              f"~{near[0][0]:.0f} mi. (Or 'pull over' and sleep rough.)")
 
 
 # --------------------------- driving ------------------------------------------
@@ -167,6 +230,22 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         return events
     chains_on = season.chain_controlled(state, dest)   # you have chains and the grade's controlled
 
+    # the road's open — but a COLD MORNING won't catch on the first crank. She needs the pump-pump-hold.
+    # The first time you have to ASK her how (she teaches it); after that it's just a beat of friction.
+    from engine import weather
+    if weather.cold_start_needed(state) and not selfdrive and not state.flags.get("self_driving"):
+        if state.flags.get("cold_start_known"):
+            weather.mark_started(state)
+            events.append("COLD-START: pump the gas three times, turn the key and HOLD it — she cranks "
+                          "cold, coughs, then catches on the second turn, like you've done it a hundred "
+                          "times. (Cold morning — but you know her now.)")
+        else:
+            events.append("COLD-START: you turn the key and she just cranks — rrr-rrr-rrr — and won't "
+                          "catch. It's freezing, the carbs are bone dry, and she's a carbureted classic, "
+                          "not a key-fob crossover. She knows the trick cold. ASK her how to start her "
+                          "('cold start' / 'she won't start').")
+            return events
+
     from engine import survival as _surv
     eff_awake = hours_awake(state) - _surv.caffeine_offset(state)   # coffee buys you a few more hours
     if not selfdrive and eff_awake >= AWAKE_FORCE_HOURS:
@@ -189,11 +268,13 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         events.append(f"NAV: you're already at {dest.name}.")
         return events
 
+    from engine import weather
     push_fuel = 1.15 if push else 1.0
     push_time = 0.85 if push else 1.0
     terrain = max(1.0, dest.terrain)
     limp = 1.25 if state.flags.get("limp") else 1.0      # a gremlin makes her thirsty
-    lpm = liters_per_mile(state) * terrain * push_fuel * limp
+    wx = weather.fuel_factor(state, dest)                # cold carbs + thin air drink a little harder
+    lpm = liters_per_mile(state) * terrain * push_fuel * limp * wx
     need_l = dist * lpm
 
     # She does the math out loud. A leg beyond the tank gets ONE warning — repeat the
@@ -545,7 +626,12 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
         kind = "camp" if "camp" in options else next(iter(options))
     price = options[kind]
 
-    pref = "cash" if (kind == "airbnb" and not prefer) else prefer   # alias bookings are cash
+    # a no-questions dive is CASH ONLY — a card would defeat the whole point (a name on the statement).
+    if kind == "no_id_motel" and state.cash + 1e-9 < price:
+        events.append(f"SLEEP: the no-questions place is cash only — ${price:.0f}, and you're short on "
+                      "cash. (Hit an ATM, take a regular motel, or sleep rough.)")
+        return events
+    pref = "cash" if kind in ("airbnb", "no_id_motel") else prefer   # off-book stays are cash, period
     paid = economy.pay(state, price, prefer=pref)
     if not paid["ok"]:
         events.append(f"SLEEP: a {kind} is ${price:.0f} and you can't cover it. "
@@ -557,24 +643,64 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
     from config import AIRBNB_HEAT
     _sleep_until_morning(state)
     state.fatigue = min(140.0, state.flags.pop("_wake_debt", 0.0))   # a real bed, minus the caffeine you owe
+    pers_at_checkin = _heat.personal_heat(state)          # the ID scan reads your heat BEFORE the night cools you
     airbnb = kind == "airbnb"
-    _heat.add(state, AIRBNB_HEAT if airbnb else HEAT_SLEEP_LODGING,
-              "private stay, booked off the record" if airbnb else "a night off the road, lying low",
+    off_book = kind in ("airbnb", "no_id_motel")          # no front desk / no ID logged
+    _heat.add(state, AIRBNB_HEAT if off_book else HEAT_SLEEP_LODGING,
+              "private stay, booked off the record" if off_book else "a night off the road, lying low",
               "lower")
-    if state.last_sleep_poi and state.last_sleep_poi == place.poi_id and not airbnb:
+    if state.last_sleep_poi and state.last_sleep_poi == place.poi_id and not off_book:
         _heat.add(state, HEAT_LINGER, "lingered — second night, same town", "mark")
         events.append("HEAT: second night in the same town — you start to get noticed.")
     state.last_sleep_poi = place.poi_id
-    place_word = "a private place off a quiet street in" if airbnb else f"a {kind} at"
+    place_word = ("a private place off a quiet street in" if airbnb
+                  else "a no-questions dive at the edge of" if kind == "no_id_motel"
+                  else f"a {kind} at")
     events.append(
         f"SLEEP: {place_word} {place.name}, ${price:.0f} ({paid['method']}). Rested. "
         f"Heat {state.heat:.0f}. {_clock_str(state)}."
     )
+    if kind == "no_id_motel":
+        events.append("ID: the guy at the desk takes cash, slides you a key, and never asks for a "
+                      "license — costs more, but your name never touches the register. Worth it when "
+                      "you're hot.")
+    # a real motel runs your ID at the desk. With heat on YOU, that logged license is a fresh mark —
+    # unless you slid them a fake one.
+    if kind == "motel" and not state.flags.get("no_heat"):
+        if state.flags.get("has_fake_id"):
+            # the fake usually holds — but the hotter you are, the likelier a sharp clerk or a flagged
+            # number burns it. If it goes, you lose the ID and take the full scan.
+            uses = state.flags.get("used_fake_id_count", 0)
+            burn_odds = 0.06 + pers_at_checkin * 0.002 + uses * 0.05
+            from engine import luck as _luck
+            if _luck.roll(state, 73) < burn_odds:
+                state.flags["has_fake_id"] = False
+                from engine import inventory as _inv
+                _inv.remove(state, "fake_id", 1)
+                _heat.add(state, MOTEL_ID_CHECK_SPIKE, "the fake ID got flagged at the desk — they have "
+                          "your face AND a forgery charge now", "spike", axis="personal")
+                events.append(f"ID: the clerk frowns at the license, types the number twice, picks up the "
+                              f"phone — the fake's BURNED. You walk, fast, but they got a long look. "
+                              f"Driver heat +{MOTEL_ID_CHECK_SPIKE:.0f} → {state.heat:.0f}, and the fake's "
+                              f"gone. ('rewind' if you'd rather it hadn't.)")
+                check_card_freeze(state, events)
+            else:
+                state.flags["used_fake_id_count"] = uses + 1
+                events.append("ID: you slide the fake across; the night clerk copies it, bored, and hands "
+                              "it back. The name on the register isn't yours. (No mark — the forgery held.)")
+        elif pers_at_checkin >= MOTEL_ID_CHECK_HEAT:
+            _heat.add(state, MOTEL_ID_CHECK_SPIKE,
+                      "front-desk ID scan while wanted — your real name on the book", "spike", axis="personal")
+            events.append(f"ID: the clerk runs your real license through the reader — required at a real "
+                          f"motel, no way around it — and your name lands on a registry the wrong people "
+                          f"watch. Driver heat +{MOTEL_ID_CHECK_SPIKE:.0f} → {state.heat:.0f}. (A "
+                          f"'no-questions motel', or a fake ID, dodges this. 'rewind' if that stung.)")
+            check_card_freeze(state, events)
     # a private stay is booked under an alias in cash — no front-desk paper trail.
-    if paid["method"] == "card" and not airbnb:
+    if paid["method"] == "card" and kind in ("motel", "lodge", "camp"):
         desk = "the campground kiosk" if kind == "camp" else "the front desk"
         _card_mark(state, place, events, desk + " stay")
-    elif paid["method"] == "card" and airbnb:
+    elif paid["method"] == "card" and off_book:
         _card_mark(state, place, events, "a card-booked rental (so much for the alias)")
     # a real bed: the recurring dream of the cyan woman comes back (content reserved for Ben)
     from engine import romance

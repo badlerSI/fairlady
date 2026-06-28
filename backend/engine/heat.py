@@ -449,6 +449,55 @@ def untag(s: GameState) -> list:
             f"vanishes. −{back:.0f}. The screenshots are out there, but the heat eased to {s.heat:.0f}."]
 
 
+# ------------------------------------------------------------------ your phone is a tracker
+PHONE_PING_LO = 45.0          # at TRENDING personal heat the phone starts pinging towers
+PHONE_PING_HI = 70.0          # FLAGGED — it pings every leg, guaranteed
+DITCH_PHONE_DROP = 15.0       # going dark on the cell net buys you a real step back
+
+
+def phone_ping(s: GameState, events: list) -> None:
+    """Your own phone helps them find YOU. While your PERSONAL heat is up it handshakes towers and they
+    tighten the net — a tell, and a tax. No effect once you've ditched it, or when the meter's frozen
+    (Bob), or she's legally yours. Ditch it ('ditch the phone') to go dark."""
+    if not s.flags.get("has_phone", True) or meter_frozen(s) or s.flags.get("no_heat"):
+        return
+    p = personal_heat(s)
+    if p < PHONE_PING_LO:
+        return
+    from engine import luck
+    # a PRESSURE, not a death spiral: it fires often when you're hot but never every leg, and the bump is
+    # small enough that clean miles still net-cool you slowly — so the phone makes hiding HARDER, not
+    # impossible. (Ditch it to remove the pressure entirely.)
+    fire_odds = 0.65 if p >= PHONE_PING_HI else 0.45
+    if luck.roll(s, 91) >= fire_odds:
+        return
+    bump = min(2.0, 100.0 - p)                                 # +2 max, and never shove you off the top
+    if bump <= 0:
+        return
+    add(s, bump, "your phone pinged a tower — they're triangulating YOU", "mark", axis="personal")
+    events.append("PHONE: your phone shakes hands with a cell tower and somewhere a screen narrows the "
+                  "search to this county. Your OWN phone is doing their work. ('ditch the phone' to go "
+                  "dark — you lose calls and maps, but so do they.)")
+
+
+def ditch_phone(s: GameState) -> list:
+    """One-time: pull the SIM and kill the phone. Big personal-heat drop, and you're a ghost on the cell
+    net — at the cost of calls, posts, and any nav but hers. A choice, so it persists across a rewind."""
+    if not s.flags.get("has_phone", True):
+        return ["PHONE: already gone — you ditched it back down the road. You're a ghost on the network."]
+    s.flags["has_phone"] = False
+    drop = 0.0
+    if not meter_frozen(s) and not s.flags.get("no_heat"):
+        before = personal_heat(s)
+        add(s, -DITCH_PHONE_DROP, "ditched your phone — went dark on the cell net", "lower", axis="personal")
+        drop = round(before - personal_heat(s), 0)
+    return [f"PHONE: you pull the SIM, snap the phone in half, and drop the pieces in a dumpster behind "
+            f"the station. No more pings, no more tower handshakes — they lose your name on the network."
+            + (f" Driver heat −{drop:.0f} (now {personal_heat(s):.0f})." if drop else "")
+            + " (You've got no phone now: no calls, no maps but hers, no posting. Worth it when they're "
+            "close — and you can't take it back.)"]
+
+
 def lie_low(s: GameState) -> list:
     """An ACTIVE way down — cool off deliberately at a low-key spot. Better than waiting, but with
     diminishing returns: the first hour out of sight does the work, the fifth does nothing. You have

@@ -47,13 +47,20 @@ def snow_line(s: GameState) -> float:
 
 
 def pass_closed(s: GameState, dest) -> str | None:
-    """If `dest` is a snow pass the season has shut, return a player-facing reason; else None."""
+    """If `dest` is a snow pass the season has shut, return a player-facing reason; else None.
+    A severe ACTIVE storm can also slam a pass shut before the seasonal line reaches it."""
     pid = getattr(dest, "poi_id", None)
     if pid not in SNOW_PASSES:
         return None
-    if float(getattr(dest, "terrain", 1.0)) < snow_line(s):
+    from engine import weather
+    seasonally = float(getattr(dest, "terrain", 1.0)) >= snow_line(s)
+    if not seasonally and not weather.storm_closes(s, dest):
         return None
     when = s.clock.strftime("%b %-d")
+    if not seasonally:           # a storm shut it early
+        return (f"SNOW: {dest.name} is shut RIGHT NOW — the storm closed the pass, gate down, plows "
+                f"pulled off it, drifts to the mirrors. Not the season, the STORM. Wait it out a few "
+                f"days somewhere low, take another road, or 'rewind' before you ran into it.")
     return (f"SNOW: {dest.name} is closed for the season — the pass is chained-and-gated, drifts "
             f"over the road, and it's only {when}; it won't open till spring, and a stolen car "
             f"doesn't have till spring. Pick a lower road, or get there before the snow beat you "
@@ -79,10 +86,14 @@ CHAIN_ZONES = {
 
 def chain_controlled(s: GameState, dest) -> bool:
     """True if the road to `dest` is under a chain control right now (snowing on a mountain grade, not
-    yet fully closed). Restricted to real snow country; independent of whether YOU carry chains."""
+    yet fully closed). Restricted to real snow country; independent of whether YOU carry chains.
+    An ACTIVE storm chains the grade even before the seasonal line gets there."""
     pid = getattr(dest, "poi_id", None)
     if pid not in CHAIN_ZONES and pid not in SNOW_PASSES:
         return False
+    from engine import weather
+    if weather.storm_chains(s, dest):                # it's snowing on the grade RIGHT NOW
+        return True
     terr = float(getattr(dest, "terrain", 1.0))
     line = snow_line(s)
     return (line - CHAIN_BAND) <= terr < line        # snowy band, below the full-closure threshold
