@@ -141,10 +141,14 @@ class AceNarrator(Narrator):
     # the weak rop1 model fabricates specs NOT on the sheet (a 0-60, a compression ratio, a turbo on a
     # naturally-aspirated triple-carb engine) — instructions alone don't stop it, so we GUARD THE OUTPUT.
     _FABRICATED_SPEC = re.compile(
-        r"\b(0\s*[-–to]{1,3}\s*60|zero to sixty|quarter[\s-]?mile|trap speed|"
+        r"\b(0\s*[-–to]{1,3}\s*60|zero to sixty|(?:hit|do|reach|to)\s+(?:60|sixty)\b|"
+        r"(?:60|sixty)\s+in\s+\d|\d[\d.]*\s*(?:s|sec|secs|seconds?)\s+to\s+(?:60|sixty)|"
+        r"(?:low|mid|high)\s+(?:four|five|six|seven|eight)s\b|"
+        r"quarter[\s-]?mile|trap(?:\s+speed|s\b)|\d[\d,]*\s*rpm|fuel\s+cut|rev\s+cut|limiter|"
         r"compression(?:\s+ratio)?|\d+(?:\.\d+)?\s*:\s*1|redline|rev[\s-]?limit(?:er)?|"
         r"\d+\s*psi|boost|turbo|supercharg|blower|forced induction|wastegate|intercool|"
-        r"dyno|mahle|wiseco|carrillo|cp pistons?|je pistons?|i-?beam|h-?beam)\b", re.I)
+        r"dyno|mahle|wiseco|carrillo|cp pistons?|je pistons?|i-?beam|h-?beam|"
+        r"forged steel|billet|chromoly|chrome[\s-]?moly|4340)\b", re.I)
     _FORCED_INDUCTION = re.compile(r"\b(boost|turbo|supercharg|blower|forced induction|\d+\s*psi|wastegate|intercool)\b", re.I)
 
     @classmethod
