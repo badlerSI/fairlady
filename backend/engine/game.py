@@ -430,6 +430,10 @@ def snapshot(s: GameState) -> dict:
         "married_alma": bool(s.flags.get("married_alma")),
         "pending_turnkey": bool(s.flags.get("pending_turnkey")),   # show the [Turn the key] button
         "gas_run": bool(s.flags.get("prologue_done") and not s.flags.get("favor_filled")),
+        # the whole OPENING phase (prologue → turnkey → gas run) — suppress gas-nagging here
+        "opening": bool(prologue.active(s) or s.flags.get("pending_turnkey")
+                        or (s.flags.get("prologue_done") and not s.flags.get("favor_filled"))),
+        "spec_sheet": list(_CAR.get("spec_sheet", [])),            # canonical build — the source of truth
         "desperado": bool(s.flags.get("desperado")) and not s.flags.get("no_heat"),
         "bought": bool(s.flags.get("bought")),
         "no_heat": bool(s.flags.get("no_heat")),
@@ -1544,8 +1548,16 @@ def handle(s: GameState, raw: str) -> dict:
             checkpoint(s, "she drives herself now")
         player_text = ""
     else:  # say — conversation, or leaning on the clerk at a manned pump
-        if (s.place.has("gas") and not encounters.standoff_active(s)
-                and encounters.gas_aggression(raw) >= 2):
+        _agg = s.place.has("gas") and not encounters.standoff_active(s) and encounters.gas_aggression(raw) >= 2
+        # the DM gut-checks it: aggression that's really just the player MESSING (trolling, a joke,
+        # breaking the fourth wall) doesn't pull a real gun at the pump. You can mess with her safely.
+        if _agg:
+            from engine import judge
+            if judge.assess(s, "standoff", raw,
+                            context="at a manned gas pump — is this a REAL robbery/threat to the clerk, "
+                                    "or just the driver talking/joking?").get("messing"):
+                _agg = False
+        if _agg:
             events = encounters.start_standoff(s)
             drama_ev = encounters.STANDOFF_WHISPER
             player_text = ""
@@ -1565,6 +1577,21 @@ def handle(s: GameState, raw: str) -> dict:
                                                    "tell me about", "what are you", "what's it like",
                                                    "your past", "your name")))
             bond.converse(s, about_her=about_her)
+            # a genuinely CLEVER line earns Riz — judged by the DM (online) or a conservative rubric
+            # (offline). Cooldowned + diminishing so you can't farm it, and trolling earns nothing
+            # (the DM flags `messing`) but also can't break anything — you can mess with her freely.
+            if (len(low.split()) >= 4 and not romance_beat and not payoff
+                    and s.turn - s.flags.get("banter_riz_turn", -99) >= 3):
+                from engine import judge
+                v = judge.assess(s, "banter", raw, context="the driver is chatting with the car")
+                if v.get("clever") and not v.get("messing"):
+                    n = s.flags.get("banter_count", 0)
+                    gain = round(3.0 * (0.7 ** n), 1)
+                    if gain >= 0.2:
+                        s.riz = round(s.riz + gain, 1)
+                        s.flags["banter_count"] = n + 1
+                        s.flags["banter_riz_turn"] = s.turn
+                        events.append(f"RIZ: that landed — sharp, in-character, hers. Riz +{gain:.0f} → {s.riz:.0f}.")
 
     if pre:                          # the glovebox default landed this turn — show it first
         events = pre + events

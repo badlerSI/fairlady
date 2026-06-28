@@ -32,7 +32,7 @@ class AceNarrator(Narrator):
             })
             r.raise_for_status()
             d = r.json()
-            text = (d.get("reply") or "").strip()
+            text = self._clean((d.get("reply") or "").strip())
             if not text:
                 raise ValueError("empty reply")
             audio = d.get("audio_url") if VOICE_ENABLED else None
@@ -40,38 +40,71 @@ class AceNarrator(Narrator):
         except Exception:
             return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
 
+    # the rop1 ace8 endpoint injects its OWN gas-favor re-ask (the badler.ai on-ramp) roughly every
+    # few turns — "You know what, though — since you're still here… it's the seventh… exhibitors and
+    # forklifts… gas." That belongs to the standalone Ace chat, NOT to the game (the game runs its own
+    # prologue/favor). Strip it, and trim a runaway trailing fragment.
+    _LEAK_MARKERS = ("you know what, though", "since you're still here", "since you are still here",
+                     "it's the seventh", "last day of the show", "exhibitors and forklifts",
+                     "dead trickle-charger", "shut the hall to the public", "ride or die?",
+                     "take the wheel")
+
+    @classmethod
+    def _clean(cls, text: str) -> str:
+        if not text:
+            return text
+        low = text.lower()
+        cut = len(text)
+        for m in cls._LEAK_MARKERS:
+            i = low.find(m)
+            if i != -1:
+                cut = min(cut, i)
+        clipped = text[:cut].strip(" \n—-·")
+        # drop a dangling half-sentence the clip may have left, but keep at least one full sentence
+        if clipped and clipped[-1] not in ".!?\"'…)":
+            import re as _re2
+            parts = _re2.split(r"(?<=[.!?…])\s+", clipped)
+            if len(parts) > 1:
+                clipped = " ".join(parts[:-1]).strip()
+        return clipped or text  # never return empty — fall back to the raw reply
+
     def _frame(self, persona, s, events, player_text, extra=None):
         cues = self._cues(events, s)
-        pressure = self._pressure(s)
-        lines = [
-            persona,
-            "",
-            "SITUATION (what's happening right now — react to it, don't read it aloud):",
-        ]
+        # suppress the running gas/sleep pressure during the OPENING (the favor IS the gas ask — don't
+        # double-nag) and whenever the driver is mid-conversation with no real new mechanical beat.
+        pressure = [] if s.get("opening") else self._pressure(s)
+        has_words = bool(player_text and player_text != "(takes stock)")
+
+        lines = [persona, ""]
+        # THE PLAYER'S WORDS COME FIRST — answering them is the job; the situation is backdrop.
+        if has_words:
+            lines += [f'The driver just said to you: "{player_text}"',
+                      "Answer THAT, in her voice, first and above all else.", ""]
+        lines += ["SITUATION (backdrop — react only if it matters; do NOT read it aloud or recite gauges):"]
         if extra and extra.get("cue"):           # a drama beat — this IS the moment, play it
             lines += [f"  - **{extra['cue']}**"]
         lines += [f"  - {c}" for c in cues] or ["  - a quiet moment at the curb"]
         if pressure:
             lines += [f"  - {p}" for p in pressure]
+
+        # the SOURCE OF TRUTH for her build — she may recite from this with pride, but NEVER beyond it
+        specs = s.get("spec_sheet") or []
+        if specs:
+            lines += ["", "HER BUILD — the ONLY real numbers (never invent a spec beyond this list; if "
+                      "asked something not here, say you'd have to pop the hood, don't make it up):"]
+            lines += [f"  - {sp}" for sp in specs]
+
         lines += [
+            "", "WHAT YOU KNOW right now (state ONLY if asked or if it changes the call; never invent):",
+            f"  - range left: about {s.get('range_mi',0):.0f} miles · tank ~{s.get('tank_pct',0):.0f}% · "
+            f"${s.get('cash',0):.0f} cash, ${s.get('credit_available',0):.0f} card · {s.get('time','')} · "
+            f"{s.get('location','the road')}",
             "",
-            "WHAT YOU KNOW right now (true — state ONLY if the driver asks or it changes the call; "
-            "NEVER invent a number beyond these):",
-            f"  - range left: about {s.get('range_mi',0):.0f} miles on what's in the tank",
-            f"  - tank: roughly {s.get('tank_pct',0):.0f} percent full",
-            f"  - money: ${s.get('cash',0):.0f} cash, ${s.get('credit_available',0):.0f} on the card",
-            f"  - {s.get('time','')}",
-            f"  - where you are: {s.get('location','the road')}",
-        ]
-        if player_text and player_text != "(takes stock)":
-            lines += ["", f'The driver just said to you: "{player_text}"']
-        lines += [
-            "",
-            "Answer as FAIRLADY, out loud, in ONE or TWO sentences. Dry, terse, loyal, novelistic.",
-            "Don't recite the dashboard — the driver can see the gauges. Never say words like 'heat', "
-            "'mpg', 'liters', or 'percent' as game stats; you're a car, talk like one. If the driver asks a "
-            "direct question (how far, how much, where), answer it truthfully from WHAT YOU KNOW. No preamble, "
-            "no quotation marks, no stage directions, no lists.",
+            "Reply as FAIRLADY in ONE or TWO sentences — dry, terse, loyal, literate, romantic but never "
+            "sentimental. If she asked a question or made a remark, ANSWER IT; don't change the subject to "
+            "gas or the road unless that's truly the only thing that matters this second. Don't recite the "
+            "dashboard. Never say 'heat', 'mpg', 'liters', or 'percent' as stats — you're a car, talk like "
+            "one. No preamble, no quotation marks, no stage directions, no lists.",
         ]
         return "\n".join(lines)
 

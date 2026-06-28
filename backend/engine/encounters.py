@@ -188,6 +188,17 @@ def stop_turn(s: GameState, text: str) -> dict:
     tired_riz = _luck.riz_fatigue_penalty(s)   # a tired charmer is a worse charmer — rizz dulls
     total = (st["score"] + (1 if s.riz >= 25 else 0) - (1 if s.heat >= 70 else 0)
              - survived - armed_pen - plate_pen - body_pen - tired_riz)
+    # the DM weighs the actual pitch (online a reasoning referee, offline the keyword rubric): a line
+    # that's clever and in-character helps; trolling the officer (messing) tanks it — you can't talk
+    # your way out by breaking the fourth wall.
+    from engine import judge
+    jv = judge.assess(s, "traffic_stop", text, difficulty=int(s.heat // 20),
+                      facts=f"heat {s.heat:.0f}, plate {'clean' if s.flags.get('plate_swapped') else 'CARTALK runs to a 1980 Cedric'}, "
+                            f"you've talked clear of {survived} stops before, no license or registration on you")
+    if jv.get("messing"):
+        total -= 4
+    elif jv.get("score", 50) >= 78:
+        total += 1
     rng = _rng(s)
     from engine import rules
 
