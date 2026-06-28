@@ -3092,15 +3092,20 @@ def test_pea_soup_fills_you_up():
 
 # ================================================================== town encounters (KoL/WoL layer)
 def test_town_encounter_fires_once_on_arrival():
-    from engine import town_encounters
-    s = fresh(); s.fuel_l = 40.0; s.place = world.get_poi("goldfield")
-    r = game.handle(s, "drive to tonopah")               # Tonopah = a city with the Clown Motel vignette
-    assert any(e.startswith("·") for e in r["events"])   # the odd little encounter surfaced
-    assert "tonopah" in s.flags.get("town_enc_seen", [])
-    # and it does NOT repeat on a second visit
-    s.place = world.get_poi("goldfield")
-    r2 = game.handle(s, "drive to tonopah")
-    assert not any(e.startswith("·") for e in r2["events"])
+    import config
+    from engine import drama
+    old = config.DRIVE_CONVERSATIONS; config.DRIVE_CONVERSATIONS = False   # arrive immediately, no drive-chat
+    _md = drama.maybe_event; drama.maybe_event = lambda s: None            # no random drama owning the arrival
+    try:
+        s = fresh(); s.fuel_l = 40.0; s.place = world.get_poi("goldfield")
+        r = game.handle(s, "drive to tonopah")           # Tonopah = a city with the Clown Motel vignette
+        assert any(e.startswith("·") for e in r["events"])   # the odd little encounter surfaced
+        assert "tonopah" in s.flags.get("town_enc_seen", [])
+        s.place = world.get_poi("goldfield")             # ...and it does NOT repeat on a second visit
+        r2 = game.handle(s, "drive to tonopah")
+        assert not any(e.startswith("·") for e in r2["events"])
+    finally:
+        config.DRIVE_CONVERSATIONS = old; drama.maybe_event = _md
 
 def test_town_encounters_catalog_covers_cities():
     from engine import town_encounters
