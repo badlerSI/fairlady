@@ -2582,3 +2582,85 @@ def test_drowsy_only_fires_when_exhausted():
     assert luck.drowsy_chance(s) == 0.0                  # fresh driver, no risk
     s.last_sleep_iso = (s.clock - timedelta(hours=19)).isoformat()   # ~19h at the wheel
     assert luck.drowsy_chance(s) > 0.0
+
+
+# ================================================================== BOB MODE
+def _at_carson(s):
+    s.place = world.get_poi("carson_parents")
+    return s
+
+def test_bob_discovery_gated_then_revealed():
+    from engine import bobmode
+    s = fresh()
+    # can't park before you know the address
+    r = game.handle(s, "park ace and take bob")
+    assert not bobmode.active(s) and "registration" in " ".join(r["events"]).lower()
+    # the registration question is gated: needs a quiet place + her trust
+    s.place = world.Place(name="a dark pullout", lat=39.0, lon=-117.0, region="NV", kind="spot", services=[])
+    s.bond = 70
+    game.handle(s, "whose name is on the registration?")
+    assert s.flags.get("knows_registration")
+    assert "carson_parents" in s.flags.get("revealed", [])
+
+def test_bob_enter_freezes_heat_without_marking_bought():
+    from engine import bobmode, heat
+    s = _at_carson(fresh()); s.flags["knows_registration"] = True
+    s.heat = 60; s.flags["car_heat"] = 60
+    game.handle(s, "park ace and take bob")
+    assert bobmode.active(s)
+    assert game.snapshot(s)["car_name"] == "BOB"
+    # the SAFETY property: meter frozen at 0 but NOT 'bought' (bond ledger must stay live)
+    heat.add(s, 80, "spike", "spike", axis="car")
+    assert s.heat == 0.0 and not s.flags.get("bought") and not s.flags.get("no_heat")
+    # Ace's stashed heat is preserved for a possible lapse
+    assert s.flags["ace_car"]["car_heat"] == 60
+
+def test_bob_calling_keeps_her_warm():
+    from engine import bobmode
+    s = _at_carson(fresh()); s.flags["knows_registration"] = True
+    game.handle(s, "park ace and take bob")
+    b = s.bond
+    game.handle(s, "call ace")
+    game.handle(s, "call her")
+    assert s.flags.get("bob_calls") == 2 and s.bond > b
+
+def test_bob_buy_is_a_win_and_forgives_everything():
+    from engine import bobmode
+    s = _at_carson(fresh()); s.flags["knows_registration"] = True
+    game.handle(s, "park ace and take bob")
+    s.day = 31; s.cash = 9000.0; _at_carson(s)
+    r = game.handle(s, "buy bob")
+    assert s.status == "won" and s.flags.get("ending_key") == "bob"
+    assert s.flags.get("bob_owned") and s.flags.get("no_heat") and s.flags.get("report_withdrawn")
+    assert s.cash == 2000.0
+
+def test_bob_buy_blocked_until_family_home():
+    s = _at_carson(fresh()); s.flags["knows_registration"] = True
+    game.handle(s, "park ace and take bob")
+    s.cash = 9000.0; s.day = 5; _at_carson(s)
+    r = game.handle(s, "buy bob")
+    assert s.status == "playing" and "Portugal" in " ".join(r["events"])
+
+def test_bob_cold_betrayal_phones_home():
+    from engine import bobmode, bond
+    s = _at_carson(fresh()); s.flags["knows_registration"] = True
+    game.handle(s, "park ace and take bob")
+    # drive her cold while she sits on the wifi, then sleep → she phones the owner herself
+    s.bond = -30.0
+    assert bond.armed(s)
+    ev = []
+    bobmode.check_bob_deadline(s, ev)
+    assert s.status != "playing"          # the run ends — betrayed by neglect
+
+def test_bob_aftergame_talk_gag():
+    s = _at_carson(fresh()); s.flags["knows_registration"] = True
+    game.handle(s, "park ace and take bob")
+    s.day = 31; s.cash = 9000.0; _at_carson(s); game.handle(s, "buy bob")
+    s.cash = 25000.0
+    r = game.handle(s, "make bob talk")
+    assert s.flags.get("bob_talks") and s.cash == 5000.0
+
+def test_bob_mode_disables_parts_race_show():
+    s = _at_carson(fresh()); s.flags["knows_registration"] = True
+    game.handle(s, "park ace and take bob")
+    assert "stock as a fridge" in game.handle(s, "parts")["info"]

@@ -58,9 +58,20 @@ VIS_WORD = {0: "nowhere — no eyes for miles", 1: "low-key", 2: "busy, a few ph
             3: "paparazzi-bright — phones everywhere"}
 
 
+def meter_frozen(s: GameState) -> bool:
+    """The heat meter is OFF. Two reasons, kept distinct on purpose: `no_heat` means she's BOUGHT
+    (the game is essentially won — bond retired, anti-theft disarmed); `bob_no_heat` means you parked
+    the hot white Z and are driving forgettable Bob this week (the meter's frozen, but Ace is very much
+    still keeping score about Bob — see bobmode). Only the heat-METER paths use this; bond.py must keep
+    reading `no_heat` alone so Bob doesn't accidentally retire the relationship."""
+    return bool(s.flags.get("no_heat") or s.flags.get("bob_no_heat"))
+
+
 def exposure(s: GameState) -> int:
     """How exposed she actually is HERE, after disguise: a cover hides her completely; the Z camo,
     a swapped-off ace-of-spades hood, and a respray each knock a notch off how recognizable she is."""
+    if s.flags.get("bob_no_heat"):
+        return 0                                  # you're in Bob — a brown nothing-Datsun; no eyes
     if s.flags.get("no_heat"):
         return visibility(s.place)
     if s.flags.get("covered"):
@@ -75,7 +86,7 @@ def exposure(s: GameState) -> int:
 
 # --------------------------------------------------------------- the meter
 def _floor(s: GameState) -> float:
-    if s.flags.get("no_heat"):
+    if meter_frozen(s):
         return 0.0
     return DESPERADO_HEAT_FLOOR if s.flags.get("desperado") else 0.0
 
@@ -103,8 +114,8 @@ def add(s: GameState, delta: float, reason: str, kind: str = "mark", axis: str =
     """The one true heat mutator: clamp, apply, record the factor. `axis` in {'car','personal'}
     routes the delta to that axis and re-derives s.heat = max(car, personal). axis=None (legacy)
     moves the combined meter AND mirrors the delta onto both axes, so the split never goes stale.
-    A no_heat (bought) car never moves off 0."""
-    if s.flags.get("no_heat"):
+    A no_heat (bought) car never moves off 0; a frozen meter (driving Bob) holds at 0 too."""
+    if meter_frozen(s):
         s.heat = 0.0
         s.flags["car_heat"] = 0.0
         s.flags["personal_heat"] = 0.0

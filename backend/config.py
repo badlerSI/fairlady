@@ -140,6 +140,12 @@ OWNER_MIN_SWIPES = 3          # ...and a trail to work
 OWNER_DEADLINE_DAYS = 7       # the mid outcome: "one week — bring her home whole"
 OWNER_DEADLINE_HEAT = 40.0    # blow the deadline and he calls it in
 
+# --- BOB MODE: park the hot white Z at the registered address, borrow forgettable Bob -----------
+BOB_PRICE = 7000.0            # buy Bob, everything forgiven — the cheapest, gentlest good ending
+BOB_PARENTS_HOME_DAY = 30     # the parents are away the whole first month; they're back on/after day 30
+BOB_GRACE_DAYS = 5            # after they're home, the $7k offer stays open this many more days
+BOB_TALK_PRICE = 20000.0     # AFTERGAME gag: pay this to give Bob a (dim, warm, Homer-ish) voice
+
 # --- Garage: claims, ATM, the glovebox, parts, ownership -------------------------
 # A trust-the-player economy (this is the GTA of AI-interaction games): you narrate what
 # you're carrying, within reason, and the engine holds you to it.

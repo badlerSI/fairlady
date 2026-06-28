@@ -101,6 +101,34 @@ def parse(raw: str) -> Tuple[str, dict]:
                                "where was the spade", "who painted the spade"))
             or ("paint" in low and any(q in low for q in ("where", "who", "your", "the spade")))):
         return ("origin", {"which": "painted"})
+    # ask about the REGISTRATION — whose name is on her papers (→ the Carson City address, Bob mode)
+    if (any(p in low for p in ("registration", "registered to", "registered address", "whose name is on",
+                               "who's it registered", "who is it registered", "name on the reg",
+                               "name on your papers", "the address on", "address on the reg",
+                               "whose car are you", "who owns the title", "the title says"))
+            or ("papers" in low and any(q in low for q in ("name", "whose", "who", "address")))):
+        return ("origin", {"which": "registration"})
+
+    # ---- BOB MODE: park Ace at the registered address, take the loaner, call her, buy Bob ----
+    if (low in ("park ace", "park her", "stash ace", "stash her", "leave her here", "leave ace here",
+                "take bob", "swap to bob", "borrow bob", "park ace and take bob", "get in bob",
+                "drive bob", "park ace take bob")
+            or ("take bob" in low) or (("park" in low or "stash" in low) and ("ace" in low or "her" in low))
+            or (("swap" in low or "borrow" in low or "get in" in low) and "bob" in low)):
+        return ("parkbob", {})
+    if (low in ("call ace", "call her", "phone ace", "phone her", "ring ace", "ring her",
+                "facetime ace", "check in with ace", "call ace and check in")
+            or (low.startswith(("call ", "phone ", "ring ", "tell ace ", "say to ace ")) and
+                any(w in low for w in ("ace", "her")))):
+        rest = re.sub(r"^(?:call|phone|ring|tell|say to)\s+(?:ace|her)\b[:,]?\s*", "", low).strip()
+        return ("callace", {"text": rest})
+    if low in ("buy bob", "purchase bob", "buy bob from him", "buy the loaner", "pay for bob",
+               "buy bob for 7000", "buy bob for $7000", "buy bob for seven thousand"):
+        return ("buybob", {})
+    if (low in ("make bob talk", "give bob a voice", "upgrade bob", "bob talk", "make bob speak",
+                "upgrade bob to talk", "give bob a voice box") or ("bob" in low and "talk" in low and
+                any(w in low for w in ("make", "give", "upgrade", "want")))):
+        return ("bobtalk", {})
 
     # take her home (her home is the Oakland garage; or name a place in NV/CA/AZ/UT)
     if low.startswith(("home is ", "set home ", "my home is ", "home in ", "home's ")):

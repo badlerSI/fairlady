@@ -25,7 +25,7 @@ PARDON_POIS = {"carson_city", "sacramento", "phoenix", "salt_lake_city"}
 PARDON_COST = 50000.0          # the farcical going rate for the state to forget your face
 FAKE_DEATH_COST = 3000.0       # a junk Z shell, a drum of accelerant, a tow to the cliff edge
 
-WIN_KEYS = ("owned", "border", "container", "pardon", "selfdrive", "fake_death", "new_year")
+WIN_KEYS = ("owned", "border", "container", "pardon", "selfdrive", "fake_death", "new_year", "bob")
 
 ENDING_TEXT = {
     "owned": ("LEGAL & FREE",
@@ -65,6 +65,13 @@ ENDING_TEXT = {
                  "up empty — because you found the AirTag weeks ago and left it on a northbound truck. "
                  "The ball drops. The road trip you stole becomes the life you chose. CES opens without "
                  "its headline car. Happy New Year, ace. We made it."),
+    "bob": ("BOB & FORGIVEN",
+            "Seven thousand dollars and a brown Datsun with a badly-cut sunroof and, for the first time, "
+            "nobody's name on the papers but yours. The white Z is back in the garage where she was "
+            "always going to end up — and the man who built her shook your hand instead of calling the "
+            "law. Everything's forgiven: the show floor, the plate, the whole long run. You drove the "
+            "wrong car home and it turned out to be the right one. You gave the man his ghost back and "
+            "kept the honest one. Sunroof down, dog-dish hubcaps, a clean conscience. 心."),
     # losses get a scorecard too
     "ces": ("COLLECTED FOR CES",
             "He never needed the law. There was an AirTag behind the dash the whole time — slipped in "
@@ -327,8 +334,12 @@ def _award_list(s: GameState) -> list:
     f = s.flags
     peak = f.get("peak_heat", round(s.heat))
     a = []
-    if f.get("bought"):
+    if f.get("bought") and f.get("ending_key") != "bob":
         a.append(("TRUE LOVE", "you bought her, fair and square"))
+    if f.get("ending_key") == "bob":
+        a.append(("THE HONEST CAR", "you bought Bob and gave the ghost back, everything forgiven"))
+        if f.get("bob_calls", 0) >= 5:
+            a.append(("YOU CALLED EVERY DAY", "she never once sat in that garage wondering"))
     if f.get("ending_key") in ("border", "container", "fake_death"):
         a.append(("RIDE OR DIE", "you got out — together"))
     if f.get("ending_key") == "fake_death":
@@ -392,8 +403,10 @@ def _tally(s: GameState) -> int:
     pts += round(max(0, s.cash) * 0.02)
     pts += f.get("dates", 0) * 90
     pts += f.get("robbed_banks", 0) * 400
-    if f.get("bought"):
+    if f.get("bought") and f.get("ending_key") != "bob":
         pts += 3000
+    if f.get("ending_key") == "bob":
+        pts += 1500              # a real win, scored below the heist-scale escapes — the gentle one
     if f.get("ending_key") in ("border", "container", "pardon"):
         pts += 2000
     if f.get("ending_key") == "fake_death":

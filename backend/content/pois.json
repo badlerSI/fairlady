@@ -273,6 +273,20 @@
    "scene": "wm_carson_city"
   },
   {
+   "id": "carson_parents",
+   "name": "the registered address — a quiet street in Carson City",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 39.1701,
+   "lon": -119.7510,
+   "services": [
+    "lodging"
+   ],
+   "heat_zone": false,
+   "blurb": "A '70s ranch house up under the foothills, blinds drawn, a month of newspapers on the step. The name on the registration is the name on the mailbox. Nobody home — they're in Portugal till the end of the month. There's a brown Datsun under a sheet in the garage.",
+   "scene": "wm_carson_city"
+  },
+  {
    "id": "baker_ca",
    "name": "Baker",
    "kind": "gas",

@@ -132,7 +132,14 @@ def is_stripped(s: GameState) -> bool:
     return len(sold(s)) >= 3
 
 
+def _in_bob(s: GameState) -> bool:
+    return bool(s.flags.get("bob_mode") and not s.flags.get("bob_owned"))
+
+
 def parts_text(s: GameState) -> str:
+    if _in_bob(s):
+        return "PARTS: that's Bob — stock as a fridge, dog-dish hubcaps and all. Nothing to strip, and "\
+               "he isn't yours to sell. Ace's build is parked back in the garage."
     lines = ["ON THE CAR (sell at a town with a shop — 'sell the carbon hood'):"]
     done = sold(s)
     for pid, p in PARTS.items():
@@ -405,6 +412,8 @@ def peel_paint(s: GameState) -> list:
 
 
 def sell_part(s: GameState, pid: str) -> list:
+    if _in_bob(s):
+        return ["SELL: that's Bob — he's stock and he isn't yours to part out. Nothing to sell here."]
     if not (s.place.has("gas") or s.place.kind == "city"):
         return ["SELL: no one out here to buy parts. A town with a shop."]
     if pid in sold(s):
@@ -431,6 +440,9 @@ def _rng(s: GameState, salt: int):
 
 
 def race(s: GameState) -> list:
+    if _in_bob(s):
+        return ["RACE: in BOB? He'd be lapped by the pace car, ace. The race car's parked back at the "
+                "house. (And Bob is, mercifully, beneath the law's notice.)"]
     if s.place.kind != "track":
         return ["RACE: this isn't a track. Find a real circuit — Laguna Seca, Willow Springs, Sonoma."]
     if not s.flags.get("bought"):
@@ -477,6 +489,9 @@ def can_show(s: GameState) -> bool:
 
 
 def show(s: GameState) -> list:
+    if _in_bob(s):
+        return ["SHOW: you want to put BOB on a concours lawn? The dog-dish hubcaps alone would get you "
+                "escorted out. Ace is the show car, and she's parked at the house."]
     if not can_show(s):
         return ["SHOW: no show field here — a museum lawn, Monterey, the hall she debuted in."]
     if not s.flags.get("bought"):

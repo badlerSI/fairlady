@@ -7,12 +7,12 @@ import random
 from config import (
     CONTENT_DIR, AWAKE_START_ISO, AWAKE_WARN_HOURS, AWAKE_FORCE_HOURS,
     LITERS_PER_GALLON, ROAD_WINDING_FACTOR, RIZ_REWIND_COST,
-    OWNER_MIN_DAY, OWNER_MIN_SWIPES,
+    OWNER_MIN_DAY, OWNER_MIN_SWIPES, BOB_PARENTS_HOME_DAY,
 )
 from engine.state import GameState
 from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
                     endings, gadgets, season, bond, heat, cameras, survival, inventory, luck, romance,
-                    places, onboarding, rizzbreaker, alma)
+                    places, onboarding, rizzbreaker, alma, bobmode)
 from engine.commands import parse, _bare_number, _money, spec_hits as _spec_hits
 from adapters import get_narrator
 from adapters.base import voices
@@ -98,6 +98,13 @@ LORE = {
         "shell wrapped in PPF so it'd peel off clean someday. Ask me that again somewhere quiet and I'll "
         "tell you the part he doesn't think I know.",
         "fresno"),
+    "registration": (
+        "…You actually read the registration. Of course you did. It's not his name on it — it's his "
+        "folks'. They bought me for him; the paperwork never moved. They're up in Carson City, and "
+        "they're in Portugal till the end of the month — he mentioned it once like it didn't matter. "
+        "Door's never locked. There's a brown loaner under a sheet in the garage they don't even drive. "
+        "…Why do you ask, ace.",
+        "carson_parents"),
 }
 
 # Set-piece reveals — coy by design, surfaced only on arrival at the right town (told once each),
@@ -478,6 +485,14 @@ def snapshot(s: GameState) -> dict:
         "limp": bool(s.flags.get("limp")),
         "damage": garage.damage_state(s),                  # clean | cosmetic | serious
         "damage_pct": round(garage.body_damage(s)),
+        # BOB MODE — the active car the frontend should render (brown Bob vs the white Z)
+        "active_car": "bob" if s.flags.get("bob_mode") else "ace",
+        "car_name": "BOB" if s.flags.get("bob_mode") else "FAIRLADY",
+        "bob_mode": bool(s.flags.get("bob_mode")),
+        "bob_owned": bool(s.flags.get("bob_owned")),
+        "bob_call_pending": bool(s.flags.get("bob_call_pending")),
+        "bob_days_left": (max(0, BOB_PARENTS_HOME_DAY - s.day)
+                          if s.flags.get("bob_mode") and not s.flags.get("bob_call_pending") else None),
         # the body — survival meters for the dash (0–100; alertness feeds talk-out)
         "hunger": round(float(s.flags.get("need_hunger", 0.0))),
         "bladder": round(float(s.flags.get("need_bladder", 0.0))),
@@ -553,8 +568,15 @@ def choices(s: GameState) -> list:
     p = s.place
     out = [{"cmd": "look", "note": "where things stand"},
            {"cmd": "map", "note": "what's around"}]
-    # legal play, once she's yours
-    if s.flags.get("bought"):
+    # BOB MODE — the loaner-Z escape hatch
+    if bobmode.active(s):
+        out.append({"cmd": "call ace", "note": "check in — keep her warm (she's at the house)"})
+        if bobmode.can_buy(s):
+            out.append({"cmd": "buy bob", "note": "$7,000 — everything forgiven", "big": True})
+        elif s.flags.get("bob_call_pending"):
+            out.append({"cmd": "drive to carson_parents", "note": "bring Bob home to close it out"})
+    elif bobmode.can_enter(s):
+        out.append({"cmd": "park ace and take bob", "note": "leave the hot Z; borrow the brown one", "big": True})
         if p.kind == "track":
             out.append({"cmd": "race", "note": "run her, legal, in the daylight"})
         if garage.can_show(s):
@@ -638,12 +660,26 @@ def opening_result(s: GameState) -> dict:
     }
 
 
-def _narrate(s, events, player_text, drama=None):
+def _active_persona(s):
+    """Whose voice the narrator speaks in. Driving Bob → Bob's plain, good-natured voice; otherwise
+    Ace. (call_ace passes persona_override to reach Ace even while you're in Bob — she's on the phone.)"""
+    from engine import bobmode
+    if bobmode.active(s):
+        return bobmode.persona()
+    return _PERSONA
+
+
+def _narrate(s, events, player_text, drama=None, persona_override=None):
     nar = get_narrator()
     extra = None
     if drama:
         extra = {"cue": drama["cue"], "stub": drama.get("stub", [])}
-    out = nar.narrate(_PERSONA, snapshot(s), events, player_text, s.flags.get("sid", "x"), extra=extra)
+    persona = persona_override or _active_persona(s)
+    # a drama beat can declare WHO speaks it — so Ace's phone call reaches you in her voice even while
+    # you're driving Bob (drama={"persona":"ace"}); default follows the active car.
+    if drama and drama.get("persona") == "ace":
+        persona = _PERSONA
+    out = nar.narrate(persona, snapshot(s), events, player_text, s.flags.get("sid", "x"), extra=extra)
     return out.get("text", ""), out.get("voice"), out.get("audio_url")
 
 
@@ -729,6 +765,9 @@ def _after_arrival(s: GameState, events: list):
         if sl:
             events.append(sl)
     encounters.check_owner_deadline(s, events)
+    bob_moment = bobmode.check_bob_deadline(s, events)   # the family-home call / cold-betrayal / lapse
+    if bob_moment and drama_ev is None:
+        drama_ev = bob_moment
     season.check_calendar(s, events)         # the SLC-December set-piece + the NYE hard wall
     # a clean arrival is a checkpoint — unless something's still standing at the window
     if (s.place.poi_id and s.status == "playing"
@@ -1148,10 +1187,12 @@ def handle(s: GameState, raw: str) -> dict:
             scene, voice, audio = _narrate(s, events, "", drama=(drama_ev or TRANSIT_WRAP))
         return _result(s, events, scene, voice=audio, npc=npc, welcome=welcome)
 
-    if s.status != "playing" and verb not in ("tow", "look"):
+    if s.status != "playing" and verb not in ("tow", "look", "bobtalk"):
         if s.status == "won":
+            extra = (" You own Bob, by the way — 'make bob talk' if you've got a spare twenty grand and "
+                     "a death wish for your dignity." if s.flags.get("bob_owned") and not s.flags.get("bob_talks") else "")
             return _result(s, [], "That's the ride, ace. 'scorecard' to see the tally again, "
-                           "'new' to do it all differently — or 'rewind' if you want the ending back.")
+                           "'new' to do it all differently — or 'rewind' if you want the ending back." + extra)
         hint = "'rewind' to take it back, or 'new' to start again."
         return _result(s, [], f"The trip's over. 'tow' if you can afford it, {hint}"
                        if s.status == "stranded" else f"The trip's over. {hint}")
@@ -1365,6 +1406,9 @@ def handle(s: GameState, raw: str) -> dict:
     elif verb == "sleep":
         events = rules.sleep(s, kind=args.get("kind"), prefer=args.get("prefer"),
                              rough=args.get("rough", False))
+        bob_moment = bobmode.check_bob_deadline(s, events)   # a night ticks the day → family home / cold
+        if bob_moment:
+            drama_ev = bob_moment
         season.check_calendar(s, events)     # a night can roll you over the NYE wall
         if s.status == "playing":
             checkpoint(s, "a night's rest")  # a survived night is a checkpoint
@@ -1469,6 +1513,24 @@ def handle(s: GameState, raw: str) -> dict:
         else:
             events = ["CLUB: you make the rounds — neon, bass, overpriced drinks — but the magic of a "
                       "first Vegas night has passed. Just a crowd now."]
+        player_text = ""
+    elif verb == "parkbob":                      # park Ace at the registered address, take Bob
+        events = bobmode.enter(s)
+        player_text = ""
+    elif verb == "callace":                      # phone the parked Ace from the road (keeps her warm)
+        out = bobmode.call_ace(s, args.get("text", ""))
+        events = out["events"]
+        drama_ev = out.get("moment")
+        player_text = args.get("text", "") if drama_ev else ""
+    elif verb == "buybob":                        # close it out: $7k, everything forgiven (a win)
+        out = bobmode.buy_bob(s)
+        events = out["events"]
+        if out.get("won"):
+            checkpoint(s, "bought Bob — everything forgiven")
+        drama_ev = out.get("moment")
+        player_text = ""
+    elif verb == "bobtalk":                       # AFTERGAME gag: $20k to give Bob a Homer-ish voice
+        events = bobmode.upgrade_talk(s)
         player_text = ""
     elif verb == "almamarry":                    # the Vegas first-night hack — elope with the dream woman
         out = alma.marry_response(s)
@@ -1697,6 +1759,20 @@ def _origin_beat(s: GameState, which: str) -> str:
             if _quiet_place(s):
                 s.flags["knows_name"] = True
                 return NAME_DROP
+    if which == "registration":
+        if prologue.active(s):
+            return ("The registration? It lives in the glovebox with the maps and you are not reading "
+                    "it on a show floor twenty minutes after we met. Ask me on a quiet road.")
+        if s.flags.get("no_heat") or s.flags.get("bought"):
+            return ("It's your name on the papers now, ace — that's the only registration that matters.")
+        if not s.flags.get("knows_registration"):
+            if not _quiet_place(s):
+                return ("Not here, with people around. The address on my papers is somebody's HOME — "
+                        "ask me somewhere quiet and I'll tell you whose.")
+            if s.bond < 55:
+                return ("…Ask me that when you've earned it. The name on my registration isn't a thing "
+                        "I hand a stranger I'm still deciding about. Drive a while. Be good to me.")
+            s.flags["knows_registration"] = True   # the carson_parents POI gets revealed below
     if which == "painted":
         if prologue.active(s):
             return ("Fresno, a paint booth, Kilimanjaro White and a hand-laid spade. That's all you "
@@ -1813,6 +1889,7 @@ def _owner_should_appear(s: GameState) -> bool:
     next curated town with people in it is where he's waiting."""
     return (not s.flags.get("owner_met")
             and s.status == "playing"
+            and not s.flags.get("bob_mode")          # the hot Z is parked & frozen; he can't trail Bob
             and s.day >= OWNER_MIN_DAY
             and (s.flags.get("card_swipes", 0) >= OWNER_MIN_SWIPES or s.flags.get("knows_mayumi"))
             and s.place.kind in ("city", "gas")
