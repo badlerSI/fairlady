@@ -113,7 +113,10 @@ def parse(raw: str) -> Tuple[str, dict]:
     if (low in ("park ace", "park her", "stash ace", "stash her", "leave her here", "leave ace here",
                 "take bob", "swap to bob", "borrow bob", "park ace and take bob", "get in bob",
                 "drive bob", "park ace take bob")
-            or ("take bob" in low) or (("park" in low or "stash" in low) and ("ace" in low or "her" in low))
+            or ("take bob" in low)
+            # "park/stash" only as a LEADING verb — so "now that we're PARKED, that ACE of spades…" (a
+            # past-tense remark mentioning the ace of spades) doesn't fire the BOB handler
+            or (re.match(r"^(?:park|stash)\b", low) and ("ace" in low or "her" in low) and "spade" not in low)
             or (("swap" in low or "borrow" in low or "get in" in low) and "bob" in low)):
         return ("parkbob", {})
     if (low in ("call ace", "call her", "phone ace", "phone her", "ring ace", "ring her",
