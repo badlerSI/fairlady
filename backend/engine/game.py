@@ -266,7 +266,7 @@ def new_game(seed: int | None = None, prologue_on: bool = True, sid: str | None 
 # it's the wrong wall — go back further. And sometimes the loop simply doesn't reach far enough.
 TIMELINE_KEEP = 8
 META_PERSIST = ("timeline", "cp_seq", "rewinds", "rewinds_here", "last_rewind_seq", "rewind_tax",
-                "bond_worst", "bond_echoes", "chase_learned", "peak_riz", "peak_bond",
+                "bond_worst", "bond_echoes", "chase_learned", "stick_skill", "peak_riz", "peak_bond",
                 # the 18+ gate + who you told her you are survive a rewind (no folding past the gate)
                 "age_blocked", "onboarded", "player_age", "player_birth_year", "player_name",
                 "player_pronouns", "pronoun_stance", "refs_era",

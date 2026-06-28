@@ -258,6 +258,13 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         # The fix is premium (or rewind to the pump). This is also the rewind tutorial on the first fill.
         if state.status == "playing" and state.flags.get("knocking"):
             events += _luck.resolve_knock(state, push)
+        # GREEN CLUTCH — if you can't really drive stick yet, you stall pulling into town (SF is the
+        # final exam). Every stall (or a clean leg) teaches you a little — the skill climbs to competent.
+        if state.status == "playing" and not selfdrive:
+            if _luck.roll(state, 80) < _luck.stall_chance(state, dest):
+                events += _luck.resolve_stall(state, dest)
+            elif state.flags.get("stick_skill", 100) < 100:
+                state.flags["stick_skill"] = min(100, state.flags["stick_skill"] + 3)  # practice makes perfect
         # a FLAT — rough grades and broken two-lanes find a tire; pushing and exhaustion stack the odds
         if state.status == "playing" and _luck.roll(state, 58) < _luck.puncture_chance(state, dest, push):
             events += _luck.resolve_puncture(state, push)

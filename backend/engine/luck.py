@@ -222,6 +222,60 @@ def resolve_drowsy(s: GameState, dest, push: bool) -> list:
             "'That's IT. We are stopping. Now. Before the next one's a tree.'"]
 
 
+# --------------------------------------------------------------- green on the clutch (stalls + SF hell)
+_SF_HILLS = {"san_francisco", "golden_gate", "fishermans_wharf", "bay_bridge", "lombard", "coit",
+             "chinatown_sf", "japantown_sf", "haight"}
+
+
+def stall_chance(s: GameState, dest) -> float:
+    """If you can't really drive her dual-plate carbon clutch yet (stick_skill low), you stall in town
+    — at a light, on a hill, in front of people. San Francisco's grades are the final exam. Learning
+    (driven legs + surviving stalls) raises the skill; the loop is hers, so a rewound stall still taught
+    you something (edge of tomorrow)."""
+    skill = s.flags.get("stick_skill", 100)
+    if skill >= 85 or getattr(dest, "kind", "") not in ("city",):
+        return 0.0
+    base = (85 - skill) / 130.0                       # skill 25 → ~0.46, skill 70 → ~0.12
+    if (getattr(dest, "poi_id", "") in _SF_HILLS or "san franc" in (getattr(dest, "name", "") or "").lower()):
+        base = min(0.9, base * 2.2 + 0.25)            # the hills of SF are merciless on a green clutch
+    return min(0.85, base)
+
+
+_STALL_LINES = [
+    "STALL: you ease off the bite a hair too fast and she shudders, bucks, and DIES at the light — a "
+    "chorus of horns, somebody filming. You restart, ears burning. 'Clutch UP slower, gas DOWN sooner. "
+    "Again. You'll get it.' (+a little embarrassment, +a little skill)",
+    "STALL: green light, you dump the clutch, she lurches and stalls dead in the intersection. Cross "
+    "traffic, a guy leaning out a window with OPINIONS. 'Breathe. Find the bite. We are NOT grinding the "
+    "carbon. Restart.'",
+]
+_SF_STALL_LINES = [
+    "SF STALL: you stop on a 31% grade on a San Francisco hill, nose at the sky, and when the light goes "
+    "you roll BACKWARD into the bumper behind you while you fumble the clutch. A cable car clangs. A "
+    "tourist applauds. 'Handbrake start, ACE. Handbrake. This city eats green drivers for breakfast and "
+    "I would rather not be the side dish.' (a little heat — you made a scene)",
+    "SF STALL: Lombard Street, eight switchbacks, and you stall on the steepest one with a line of "
+    "rental cars behind you and a wedding photo shoot below. She stalls, you restart, she stalls. 'This "
+    "is my villain origin story. Left foot. LEFT foot. …okay, better. Roll.'",
+]
+
+
+def resolve_stall(s: GameState, dest) -> list:
+    """A comedic stall in town — costs a sliver of time/heat, but TEACHES (skill up). SF stalls are
+    worse and draw eyes (heat)."""
+    from engine import bond as _bond, heat as _heat
+    sf = (getattr(dest, "poi_id", "") in _SF_HILLS or "san franc" in (getattr(dest, "name", "") or "").lower())
+    s.flags["stick_skill"] = min(100, s.flags.get("stick_skill", 25) + (6 if sf else 9))  # you learn
+    if sf:
+        if not s.flags.get("no_heat"):
+            _heat.add(s, 4.0, "stalled and made a scene on a San Francisco hill", "mark", axis="personal")
+        line = _SF_STALL_LINES[rng(s, 81).randrange(len(_SF_STALL_LINES))]
+    else:
+        line = _STALL_LINES[rng(s, 82).randrange(len(_STALL_LINES))]
+    _bond.adjust(s, -0.4, "ground my clutch learning to drive me", "mark")
+    return [line]
+
+
 def roadside_id_chance(s: GameState) -> float:
     """Sleeping ROUGH in a flashy show car: the odds a cruiser rolls up and wants to see ID. Driven by
     heat, how watched the spot is, and luck. Real-world: rough-sleeping in a car draws a welfare/ID

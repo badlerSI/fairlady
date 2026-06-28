@@ -74,6 +74,7 @@ def answer_stick(s: GameState, raw: str) -> dict:
     strong_yes = any(p in low for p in _STICK_STRONG_YES)      # a brag breaks a yes/no tie toward YES
     if yes and (not no or strong_yes):
         s.flags["can_drive_stick"] = True
+        s.flags["stick_skill"] = 100                  # heel-and-toe from the jump — no stalls
         _bond.adjust(s, 4.0, "can actually drive her — heel-and-toe, the real thing", "warm")
         return {"moment": {"cue": "the stranger CAN drive stick and says so plainly; she's relieved "
                                   "and delighted and tries not to show how much it mattered; now she'll "
@@ -82,6 +83,7 @@ def answer_stick(s: GameState, raw: str) -> dict:
                                     "the way you found the bite point cold. We're going to be very good "
                                     "together. Here. Let me show you the whole West."]}}
     s.flags["can_drive_stick"] = False
+    s.flags["stick_skill"] = 25                       # green on the clutch — she'll stall in town until you learn
     _bond.adjust(s, -1.0, "doesn't really drive a manual yet — we learn slow", "mark")
     return {"moment": {"cue": "the stranger can't really drive stick, or hedges; she's anxious about "
                               "her clutch but committed to this person anyway — they'll learn slow, and "

@@ -2946,3 +2946,29 @@ def test_drive_on_regular_knocks_every_leg():
     s = fresh(); s.place = world.get_poi("las_vegas"); s.fuel_l = 40.0; s.flags["knocking"] = True
     ev = rules.drive(s, world.get_poi("primm") or world.get_poi("pahrump"), push=False)
     assert any(e.startswith("KNOCK") for e in ev) and s.flags.get("knock_legs") == 1
+
+
+# ================================================================== stick skill + stalls
+def test_stick_answer_sets_skill():
+    from engine import romance
+    s = fresh(); s.flags["awaiting_stick"] = True
+    romance.answer_stick(s, "heel and toe, all my life")
+    assert s.flags.get("stick_skill") == 100
+    s2 = fresh(); s2.flags["awaiting_stick"] = True
+    romance.answer_stick(s2, "no, never driven a manual")
+    assert s2.flags.get("stick_skill") == 25 and not s2.flags.get("can_drive_stick")
+
+def test_green_clutch_stalls_in_town_sf_is_worst_competent_never():
+    from engine import luck
+    s = fresh(); s.flags["stick_skill"] = 25
+    sf = world.get_poi("san_francisco"); town = world.get_poi("reno")
+    assert luck.stall_chance(s, sf) > luck.stall_chance(s, town) > 0
+    s2 = fresh(); s2.flags["stick_skill"] = 100
+    assert luck.stall_chance(s2, sf) == 0.0                 # competent → no stalls
+    # a stall teaches you (skill climbs) — edge-of-tomorrow learning
+    before = s.flags["stick_skill"]
+    luck.resolve_stall(s, town)
+    assert s.flags["stick_skill"] > before
+
+def test_stick_skill_survives_rewind():
+    assert "stick_skill" in game.META_PERSIST           # you keep what you learned across a fold
