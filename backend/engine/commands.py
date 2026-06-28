@@ -713,8 +713,9 @@ def _is_talk(low: str) -> bool:
 
 
 _DRIVE_PREFIX = re.compile(
-    r"^(?:drive|go|head|take me|navigate|route|let's go|lets go|set off for|"
-    r"set out for|make for|aim for|point (?:me|us) (?:at|to|toward))\b", re.I)
+    r"^(?:let'?s |let me |let us |we'?(?:ll| will) |can (?:you|we) |i'?(?:d| would)?\s*(?:like to |want to |wanna )?|please |okay,? )?"
+    r"(?:drive|go|head|take (?:me|us)|navigate|route|set off for|"
+    r"set out for|make for|aim for|roll (?:out )?(?:to|for)|point (?:me|us) (?:at|to|toward))\b", re.I)
 
 
 def _drive_dest(low: str) -> str | None:
