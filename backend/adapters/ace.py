@@ -143,7 +143,7 @@ class AceNarrator(Narrator):
     _FABRICATED_SPEC = re.compile(
         r"\b(0\s*[-–to]{1,3}\s*60|zero to sixty|(?:hit|do|reach|to)\s+(?:60|sixty)\b|"
         r"(?:60|sixty)\s+in\s+\d|\d[\d.]*\s*(?:s|sec|secs|seconds?)\s+to\s+(?:60|sixty)|"
-        r"(?:low|mid|high)\s+(?:four|five|six|seven|eight)s\b|"
+        r"(?:low|mid|high)[\s-]+(?:fours|fives|sixes|sevens|eights|nines)\b|"
         r"quarter[\s-]?mile|trap(?:\s+speed|s\b)|\d[\d,]*\s*rpm|fuel\s+cut|rev\s+cut|limiter|"
         r"compression(?:\s+ratio)?|\d+(?:\.\d+)?\s*:\s*1|redline|rev[\s-]?limit(?:er)?|"
         r"\d+\s*psi|boost|turbo|supercharg|blower|forced induction|wastegate|intercool|"
