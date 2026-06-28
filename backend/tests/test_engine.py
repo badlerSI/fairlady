@@ -2847,3 +2847,44 @@ def test_alma_win_scene_is_almas_voice():
     out = alma.club_turn(s, "run away with me, no last names, just the desert and whatever's chasing us")
     assert s.flags.get("alma_aboard")
     assert out["moment"]["persona"] == "alma"           # the climactic line speaks as Alma, not Ace
+
+
+# ================================================================== root-cause sweep fixes (round 2)
+def test_spec_question_does_not_trigger_armed_standoff():
+    from engine import encounters
+    # "give me the spec/number/time" is a normal request, NOT a holdup
+    assert encounters.gas_aggression("pistons — what brand, and give me the spec") == 0
+    assert encounters.gas_aggression("give me the number, how quick to sixty?") == 0
+    assert encounters.gas_aggression("give me the time") == 0
+    # real holdup language still fires
+    assert encounters.gas_aggression("give me the money or i'll shoot") >= 2
+    assert encounters.gas_aggression("this is a robbery, empty the register") >= 2
+
+def test_clean_handles_partial_wrapper_debris():
+    from adapters.ace import AceNarrator as A
+    assert A._clean('text": "Okay — long stretch ahead.') == "Okay — long stretch ahead."
+    assert A._clean('I run on 300 horsepower.]"') == "I run on 300 horsepower."
+    assert A._clean('...takes us."}]') == "...takes us."
+    assert A._clean('Reyes." Still here. I like that.') == "Reyes."
+    assert A._clean("She pulls hard past five grand.") == "She pulls hard past five grand."
+
+def test_malformed_residue_is_detected():
+    from adapters.ace import AceNarrator as A
+    assert A._looks_malformed('type": "text"')
+    assert not A._looks_malformed("Keep going, stranger.")
+
+def test_endpoint_session_is_fresh_per_prompt():
+    # the FAIRLADY narrate path must key the endpoint session to the PROMPT (no cross-turn accumulation)
+    from adapters.ace import AceNarrator
+    nar = AceNarrator.__new__(AceNarrator)
+    seen = {}
+    class FakeResp:
+        def raise_for_status(self): pass
+        def json(self): return {"reply": "x", "audio_url": None}
+    class FakeClient:
+        def post(self, url, data=None):
+            seen["sid"] = data["session_id"]; return FakeResp()
+    nar._client = FakeClient()
+    nar._ask("PROMPT-A", "persona", "game1"); a = seen["sid"]
+    nar._ask("PROMPT-B", "persona", "game1"); b = seen["sid"]
+    assert a != b                              # different prompts → different endpoint sessions

@@ -66,8 +66,11 @@ def _llm(kind, text, difficulty, context, facts, sid):
         "Now output ONLY the JSON verdict for that line."
     )
     try:
+        # fresh endpoint session per call (the rop1 ace8 endpoint accumulates + regurgitates otherwise)
+        import hashlib
+        eph = f"dm-{sid}-{hashlib.sha1(prompt.encode('utf-8')).hexdigest()[:12]}"
         r = _http().post(f"{ACE_BASE_URL}/chat",
-                         data={"text": prompt, "system": _SYS, "session_id": f"dm-{sid}"})
+                         data={"text": prompt, "system": _SYS, "session_id": eph})
         r.raise_for_status()
         reply = (r.json().get("reply") or "")
         m = re.search(r"\{[^{}]*\}", reply, re.S)

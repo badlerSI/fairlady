@@ -24,8 +24,15 @@ class AceNarrator(Narrator):
 
     # ---------------------------------------------------------------- FAIRLADY
     def _ask(self, prompt, persona, session_id):
+        # CRITICAL: a FRESH endpoint session per call. The rop1 ace8 endpoint accumulates conversation
+        # memory per session_id and regurgitates old lines (Ace's SEMA monologue bleeding into Alma's
+        # club voice, the prologue gas-pitch resurfacing in free-roam, the same spec stem collapsing
+        # across emotional turns). The game's deterministic engine already packs ALL needed context into
+        # `prompt` every turn, so the endpoint's memory is pure harm. Keying the session to the prompt's
+        # hash makes every distinct turn a clean-slate call — no accumulation, no regurgitation.
+        ephemeral = f"fl-{session_id}-{hashlib.sha1(prompt.encode('utf-8')).hexdigest()[:12]}"
         r = self._client.post(f"{ACE_BASE_URL}/chat", data={
-            "text": prompt, "session_id": f"fairlady-{session_id}", "system": persona})
+            "text": prompt, "session_id": ephemeral, "system": persona})
         r.raise_for_status()
         d = r.json()
         return (d.get("reply") or "").strip(), (d.get("audio_url") if VOICE_ENABLED else None)
@@ -58,7 +65,8 @@ class AceNarrator(Narrator):
                 text = self._clean(reply)
             if not text:
                 raise ValueError("empty reply")
-            if self._norm(text) in recent:       # still stuck after retries — deterministic fallback
+            # a still-repeating OR still-malformed reply → deterministic stub (never show the player junk)
+            if self._norm(text) in recent or self._looks_malformed(text):
                 return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
             return {"text": text, "audio_url": audio, "voice": "af_heart"}
         except Exception:
@@ -93,26 +101,41 @@ class AceNarrator(Narrator):
     # {"type":"text","text":"ACTUAL"}, a ["ACTUAL"] list, or a stray trailing \" / wrapping quotes.
     _WRAP = re.compile(r"""['"]text['"]\s*:\s*['"](?P<v>.+?)['"]\s*[}\]]*\s*$""", re.S)
 
+    # debris the endpoint leaks even WITHOUT a full wrapper: a bare leading  text": "  prefix, a trailing
+    # }]  /  "]  , a  \"\n\n  seam, and a recurring  "Still here. I like that."  tail from a spliced reply.
+    _LEAD_JUNK = re.compile(r'^\s*[\[{]*\s*["\']?\s*(?:type|text|reply|content)["\']?\s*:\s*["\']?', re.I)
+    _TAIL_JUNK = re.compile(r'(?:\\+["\']|["\']?\s*[}\]]+|\s*\\n)+\s*$')
+
     @classmethod
     def _strip_artifacts(cls, text: str) -> str:
         # 1) pull the real line out of a leaked dict wrapper if present
         m = cls._WRAP.search(text)
         if m:
             text = m.group("v")
-        # 2) peel matched wrapping brackets/quotes off the ends, plus stray escape/quote debris
-        for _ in range(3):
-            t = text.strip()
-            t = re.sub(r'^[\s\[\]{}]+', '', t)              # leading [ { whitespace
-            t = re.sub(r'[\s\[\]{}]+$', '', t)              # trailing ] } whitespace
-            t = re.sub(r'\\+["\']?\s*$', '', t)             # trailing \"  \'  \
+        # 2) peel partial-wrapper debris off the ends, then matched wrapping brackets/quotes
+        for _ in range(4):
+            t = cls._LEAD_JUNK.sub("", text)               # leading  text": "  / ["  / {  prefix
+            t = cls._TAIL_JUNK.sub("", t)                  # trailing  }]  /  "]  /  \"  /  \n
+            t = t.strip()
+            t = re.sub(r'^[\s\[\]{}]+', '', t)
+            t = re.sub(r'[\s\[\]{}]+$', '', t)
             if (t.startswith('"') and t.endswith('"')) or (t.startswith("'") and t.endswith("'")):
-                t = t[1:-1]                                 # one matched wrapping quote pair
-            t = re.sub(r'^["\']+', '', t)                   # leading stray quotes
-            t = re.sub(r'\s*\\?["”]\s*$', '', t)       # a lone trailing " / " / \"
+                t = t[1:-1]
+            t = re.sub(r'^["\']+', '', t)
+            t = re.sub(r'\s*\\?["”]\s*$', '', t).strip()
             if t == text.strip():
                 break
             text = t
+        # drop a recurring spliced regurgitation-tail the endpoint glues on (a session-memory artifact),
+        # then re-strip any quote it leaves dangling
+        text = re.sub(r'["\']?\s*\\?n?\s*still here[.,!]?\s*(?:i like that[.,!]?)?\s*$', '', text, flags=re.I).strip()
+        text = re.sub(r'\s*\\?["”]\s*$', '', text).strip()
         return text.strip()
+
+    @classmethod
+    def _looks_malformed(cls, text: str) -> bool:
+        """Residual JSON/serialization debris after cleaning → treat as a bad reply (fall back to stub)."""
+        return bool(re.search(r'(["\']?\w+["\']?\s*:\s*["\'])|(\}\s*\]|\]\s*\})|(\\["\'])', text))
 
     @classmethod
     def _clean(cls, text: str) -> str:

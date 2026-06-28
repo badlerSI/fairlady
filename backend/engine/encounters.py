@@ -551,12 +551,15 @@ def check_owner_deadline(s: GameState, events: list) -> None:
 # robbery / threat language (strong, worth 2) and merely hinky behavior (worth 1)
 # Holdup language must be UNAMBIGUOUS — bare 'the money'/'freeze'/'the register'/'shut up' were firing
 # an armed standoff on normal customer talk, so they're gone; the phrases that survive only mean a robbery.
-_ROB = ("give me the", "give me everything", "everything in the register", "in the register",
-        "hand it over", "hand over the", "empty the register", "empty the till", "empty the drawer",
-        "empty the safe", "all the money", "all the cash", "this is a robbery", "this is a holdup",
-        "stick up", "stick 'em up", "stick em up", "hands up", "don't you move", "i'll shoot",
-        "i will shoot", "do as i say", "open the register", "open the till", "open the safe",
-        "the cash drawer", "rob the", "gimme the", "or i'll shoot")
+# NB: "give me the"/"gimme the" must be MONEY-specific — "give me the spec / the number / the time" is a
+# normal request, NOT a holdup, and bare "give me the" was firing an armed standoff on a spec question.
+_ROB = ("give me the money", "give me the cash", "give me all the", "give me everything",
+        "gimme the money", "gimme the cash", "everything in the register", "in the register",
+        "hand it over", "hand over the cash", "hand over the money", "empty the register",
+        "empty the till", "empty the drawer", "empty the safe", "all the money", "all the cash",
+        "this is a robbery", "this is a holdup", "stick up", "stick 'em up", "stick em up", "hands up",
+        "don't you move", "i'll shoot", "i will shoot", "do as i say", "open the register",
+        "open the till", "open the safe", "the cash drawer", "rob the", "or i'll shoot")
 _HINKY = ("back off", "what're you looking at", "what are you looking at", "you got a problem",
           "mind your business", "keep your mouth", "you didn't see", "you saw nothing",
           "casing", "nervous", "twitchy", "don't try", "you're not calling")
