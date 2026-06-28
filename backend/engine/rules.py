@@ -254,6 +254,10 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         night = state.clock.hour >= 18 or state.clock.hour < 6
         if state.status == "playing" and _luck.roll(state, 53) < _luck.deer_chance(state, dest, night):
             events += _luck.resolve_deer(state, push)
+        # ENGINE KNOCK — she's on regular in a 10:1 stroker; every leg pings, escalating to a breakdown.
+        # The fix is premium (or rewind to the pump). This is also the rewind tutorial on the first fill.
+        if state.status == "playing" and state.flags.get("knocking"):
+            events += _luck.resolve_knock(state, push)
         # a FLAT — rough grades and broken two-lanes find a tire; pushing and exhaustion stack the odds
         if state.status == "playing" and _luck.roll(state, 58) < _luck.puncture_chance(state, dest, push):
             events += _luck.resolve_puncture(state, push)
@@ -312,8 +316,11 @@ def _clock_str(state: GameState) -> str:
 
 
 # --------------------------- fueling ------------------------------------------
+PREMIUM_UPCHARGE = 0.70   # $/gal more for 91+ (she takes premium ONLY)
+
+
 def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
-         fill=False, prefer=None) -> list:
+         fill=False, prefer=None, grade=None) -> list:
     events: list = []
     place = state.place
     if not place.has("gas"):
@@ -323,6 +330,9 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
     if state.fuel_l >= state.tank_l - 0.05:
         events.append("FUEL: the tank's already full.")
         return events
+    # GRADE — she runs 91+ ONLY. Unspecified = the cheap pump default = regular, and she WILL knock on
+    # it down the road. Asking for premium is the right move (and a tell she gives you at the pump).
+    is_premium = (grade == "premium")
 
     q = economy.quote_fuel(state, place, dollars=dollars, liters=liters,
                            gallons=gallons, fill=fill, prefer=prefer)
@@ -333,7 +343,8 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
             events.append("FUEL: nothing to add.")
         return events
 
-    paid = economy.pay(state, q["cost"], prefer=prefer)
+    cost = q["cost"] + (q["gallons"] * PREMIUM_UPCHARGE if is_premium else 0.0)
+    paid = economy.pay(state, cost, prefer=prefer)
     if not paid["ok"]:
         events.append("FUEL: " + paid["message"])
         return events
@@ -341,11 +352,28 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
     state.flags["last_fuel_cash"] = (paid["method"] == "cash")   # the 'paid cash' clause
 
     state.fuel_l = round(min(state.tank_l, state.fuel_l + q["liters"]), 3)
-    if state.flags.pop("limp", None):                    # a town pump = a mechanic; the gremlin's gone
+    # a knock (regular fuel) is a fuel problem, NOT a mechanical gremlin — a premium fill cures it; a
+    # mechanic does not. Only clear the deer/limp gremlin here if it's not the knock.
+    if not state.flags.get("knocking") and state.flags.pop("limp", None):
         events.append("FUEL: the station's mechanic sorted the miss while you fueled — she runs clean again.")
+    # GRADE bookkeeping: premium clears the knock (and any knock-limp); regular sets it.
+    if is_premium:
+        if state.flags.pop("knocking", None):
+            state.flags.pop("limp", None)
+            events.append("FUEL: the good stuff hits her fuel rail and the knock smooths right out — "
+                          "'…THAT'S it. 91 plus. Don't you ever feed me 87 again.'")
+        state.flags["fuel_grade"] = "premium"
+    else:
+        state.flags["fuel_grade"] = "regular"
+        state.flags["knocking"] = True
+        events.append("FUEL: …you pumped REGULAR. 'Ace. ACE. I take premium — 91 minimum. That 87's "
+                      "going to make me knock my head off the second we get on the gas. Fill me with the "
+                      "good stuff, or you'll hear about it down the road.'")
+    pump_cost = cost
     events.append(
-        f"FUEL: pumped {q['liters']:.1f} L ({q['gallons']:.1f} gal) at ${q['price']:.2f}/gal "
-        f"for ${q['cost']:.2f} ({paid['method']}). Tank {state.fuel_l:.1f}/{state.tank_l:.0f} L "
+        f"FUEL: pumped {q['liters']:.1f} L ({q['gallons']:.1f} gal) of "
+        f"{'PREMIUM' if is_premium else 'regular'} at ${q['price'] + (PREMIUM_UPCHARGE if is_premium else 0):.2f}/gal "
+        f"for ${pump_cost:.2f} ({paid['method']}). Tank {state.fuel_l:.1f}/{state.tank_l:.0f} L "
         f"(~{state.range_mi:.0f} mi)."
     )
     if q["capped_by"] == "tank":
@@ -501,7 +529,8 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
 def tow(state: GameState, prefer=None) -> list:
     """The one way off the shoulder — and a tow + a stolen car is exactly how you get caught."""
     events: list = []
-    if state.status != "stranded":
+    broke_down = state.flags.get("broken_down")
+    if state.status != "stranded" and not broke_down:
         events.append("TOW: nothing to tow. You're not stranded.")
         return events
     gas = world.nearest_with_service(state.place, "gas", limit=1)
@@ -519,15 +548,24 @@ def tow(state: GameState, prefer=None) -> list:
     paid = economy.pay(state, cost, prefer=prefer)
     _note_cash_fallback(state, paid, prefer, events)
     advance_clock(state, max(1.0, dist / 35.0) + 0.75)
-    state.fuel_l = 2.0
+    if not broke_down:
+        state.fuel_l = 2.0                       # a stranded car ran DRY; a broken one still has fuel
     state.status = "playing"
     state.ending = None
     state.fatigue = min(140.0, state.fatigue + 10.0)
     _register_arrival(state, dest, events)
-    events.append(
-        f"TOW: a flatbed hauls you {dist:.0f} mi to {dest.name} for ${cost:.0f} ({paid['method']}). "
-        f"Two liters of splash in the tank. {_clock_str(state)}."
-    )
+    if broke_down:
+        state.flags.pop("broken_down", None)
+        state.flags.pop("limp", None)
+        events.append(
+            f"TOW: a flatbed hauls you {dist:.0f} mi to {dest.name} for ${cost:.0f} ({paid['method']}). "
+            "A shop welds her back together — but she's STILL got 87 in the rail, so she'll knock again "
+            "the moment you drive off. Fill her with PREMIUM here before you go. "
+            f"{_clock_str(state)}.")
+    else:
+        events.append(
+            f"TOW: a flatbed hauls you {dist:.0f} mi to {dest.name} for ${cost:.0f} ({paid['method']}). "
+            f"Two liters of splash in the tank. {_clock_str(state)}.")
     # a tow driver who sees a hot car, plus a card record, is the worst kind of attention
     from engine import heat as _heat
     if paid["method"] == "card":

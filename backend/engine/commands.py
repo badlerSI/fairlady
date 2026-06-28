@@ -579,6 +579,16 @@ def parse(raw: str) -> Tuple[str, dict]:
             n = int(m.group(1)) if m else 1
         return ("drink", {"n": n})
 
+    # a bare grade request at the pump = a fuel command ("premium", "91", "the good stuff", "give me premium")
+    _bare = low.strip().rstrip("!.")
+    if (_bare in ("premium", "premium please", "the good stuff", "good stuff", "high octane", "91", "92",
+                  "93", "super", "top tier", "the expensive stuff", "the good gas")
+            or re.match(r"^(?:give me|i'?ll take|gimme|get me|fill (?:with|it with|her with|me with))\s+"
+                        r"(?:the\s+)?(?:premium|high[\s-]?octane|good stuff|good gas|91|92|93|super|top[\s-]?tier)\b", low)):
+        return ("fuel", {"fill": True, "grade": "premium"})
+    if _bare in ("regular", "regular please", "the cheap stuff", "cheap gas", "87", "unleaded", "the cheap one"):
+        return ("fuel", {"fill": True, "grade": "regular"})
+
     # fuel
     if _is_fuel(low):
         args = {}
@@ -597,6 +607,15 @@ def parse(raw: str) -> Tuple[str, dict]:
             args["prefer"] = "cash"
         elif "card" in low or "credit" in low:
             args["prefer"] = "card"
+        # FUEL GRADE — she takes PREMIUM only. Asking for it = premium; saying nothing or asking for the
+        # cheap stuff = regular (the trap: she'll knock down the road on 87).
+        if any(g in low for g in ("premium", "high octane", "high-octane", "the good stuff", "top tier",
+                                  "top-tier", "91", "92", "93", "super", "the good gas", "good gas",
+                                  "highest", "best gas", "the expensive")):
+            args["grade"] = "premium"
+        elif any(g in low for g in ("regular", "the cheap", "cheap stuff", "cheapest", "lowest", "87",
+                                    "85", "unleaded plain", "low octane", "save money")):
+            args["grade"] = "regular"
         if not any(k in args for k in ("fill", "dollars", "gallons", "liters")):
             args["fill"] = True
         return ("fuel", args)

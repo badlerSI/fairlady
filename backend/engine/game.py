@@ -485,6 +485,9 @@ def snapshot(s: GameState) -> dict:
         "reserve_fuel_l": round(inventory.jerry_fuel(s), 1),
         "has_stinger": inventory.has(s, "stinger"),
         "limp": bool(s.flags.get("limp")),
+        "knocking": bool(s.flags.get("knocking")),         # running regular in a 10:1 stroker → pinging
+        "fuel_grade": s.flags.get("fuel_grade"),           # premium | regular | None
+        "broken_down": bool(s.flags.get("broken_down")),   # holed a piston on bad gas — needs a tow
         "damage": garage.damage_state(s),                  # clean | cosmetic | serious
         "damage_pct": round(garage.body_damage(s)),
         # BOB MODE — the active car the frontend should render (brown Bob vs the white Z)
@@ -549,7 +552,7 @@ def choices(s: GameState) -> list:
             and s.place.poi_id == "sema_chevron"):
         out = [{"cmd": "pay cash", "note": "quiet — but you'll talk past the clerk inside"},
                {"cmd": "pay card", "note": "fast — and a trail with your face on it"}]
-        out.append({"cmd": "fill", "note": "fill the tank"})
+        out.append({"cmd": "fill with premium", "note": "91+ ONLY — she knocks on regular (she'll tell you)"})
         return out
 
     # mid-standoff: a gun is on you — talk him down or take it
@@ -604,7 +607,9 @@ def choices(s: GameState) -> list:
             out.append({"cmd": "parts", "note": "the build — sell bits for cash"})
     if p.has("gas"):
         price = economy.gas_price(p)
-        out.append({"cmd": "fill", "note": f"top off @ ${price:.2f}/gal"})
+        knock = s.flags.get("knocking")
+        out.append({"cmd": "fill with premium",
+                    "note": ("PREMIUM cures the knock!" if knock else f"premium 91+ @ ~${price+0.70:.2f}/gal — she only takes premium")})
         out.append({"cmd": "gas $20", "note": "buy a set amount"})
     if p.has("lodging"):
         opts = economy.lodging_options(p)
@@ -1425,7 +1430,7 @@ def handle(s: GameState, raw: str) -> dict:
         paying_cash = (args.get("prefer") or s.pay_method) == "cash"
         events = rules.fuel(s, dollars=args.get("dollars"), liters=args.get("liters"),
                             gallons=args.get("gallons"), fill=args.get("fill", False),
-                            prefer=args.get("prefer"))
+                            prefer=args.get("prefer"), grade=args.get("grade"))
         pumped = any(e.startswith("FUEL: pumped") for e in events)
         # the opening pay-and-talk dilemma: card at the pump leaves a fast trail; cash means going
         # inside, where the kid clocks the show car and you have to talk your way past him.

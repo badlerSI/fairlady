@@ -167,6 +167,36 @@ def resolve_puncture(s: GameState, push: bool) -> list:
             "to a tire before this gets expensive.'"]
 
 
+def resolve_knock(s: GameState, push: bool) -> list:
+    """She's running REGULAR in a 10:1 stroker that wants 91+. Every leg she pings and knocks, and it
+    escalates: a warning + the rewind tutorial on the first leg, a rough-running LIMP soon after, and a
+    real risk of a holed-piston BREAKDOWN if you keep flogging her on bad gas. The cure is a premium
+    fill (rules.fuel) — or rewind back to the pump and buy the good stuff. Pushing makes it all worse."""
+    from engine import bond as _bond
+    n = s.flags.get("knock_legs", 0) + 1
+    s.flags["knock_legs"] = n
+    if n == 1:
+        return ["KNOCK: the second you lean on it she starts to ping — a hard, metallic rattle under the "
+                "hood, pre-ignition, the 10:1 stroker hating the 87. 'Hear THAT? That's me eating myself "
+                "alive on cheap gas. We can fix this — rewind us back to the pump and ask for PREMIUM, or "
+                "find a station and fill me with 91. Your call, but don't make me beg.' ('rewind' to fold "
+                "back to the pump.)"]
+    # leg 2+: it bites. A rough-running limp, and a climbing chance of a real breakdown.
+    s.flags["limp"] = True
+    sev = 0.18 * (n - 1) * (1.6 if push else 1.0)
+    if roll(s, 71) < min(0.75, sev):
+        s.flags["broken_down"] = True
+        _bond.adjust(s, -4.0, "flogged me on regular until something let go", "deep")
+        return ["KNOCK: a sharp BANG and a sudden loss of power — you held it on the regular too long and "
+                "she's holed a piston, detonation finally winning. She's making smoke and barely runs "
+                "(LIMP, badly). 'I TOLD you. I told you about the gas. …Get me a tow. And premium. And a "
+                "long apology.' (You'll want a tow to a town, then premium — or 'rewind' to before this.)"]
+    _bond.adjust(s, -1.0, "kept running me on regular and I knocked the whole way", "mark")
+    return [f"KNOCK: she pings and misfires the whole leg, running ragged on the regular (LIMP). 'This is "
+            f"your {n}th leg poisoning me with 87, ace. Premium. Or rewind to the pump. I am not asking "
+            f"again.'"]
+
+
 def drowsy_chance(s: GameState) -> float:
     """Driving past tired (toward the hard awake-gate) risks nodding off. Caffeine holds it back."""
     from engine import rules, survival

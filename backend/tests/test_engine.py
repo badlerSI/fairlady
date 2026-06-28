@@ -2905,3 +2905,43 @@ def test_gas_push_stripped_only_when_tank_ok():
     from adapters.ace import AceNarrator as A
     assert A._clean("Stars are nice, but let's find a gas station.", tank_ok=True) == ""   # → stub fallback
     assert "gas station" in A._clean("Stars are nice, but let's find a gas station.", tank_ok=False)
+
+
+# ================================================================== premium gas + engine knock
+def test_regular_fuel_sets_knock_premium_cures_it():
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.cash = 300.0; s.fuel_l = 8.0
+    game.handle(s, "fill her up")                       # unspecified → regular (the trap)
+    assert s.flags.get("fuel_grade") == "regular" and s.flags.get("knocking")
+    s.fuel_l = 8.0
+    game.handle(s, "fill with premium")
+    assert s.flags.get("fuel_grade") == "premium" and not s.flags.get("knocking")
+
+def test_premium_parses_from_natural_phrasings():
+    from engine import commands
+    for t in ("fill with premium", "fill her up, the good stuff", "premium please", "give me 91",
+              "fill it with high octane"):
+        assert commands.parse(t)[1].get("grade") == "premium", t
+    for t in ("fill her up", "fill it with regular", "gimme the cheap stuff"):
+        assert commands.parse(t)[1].get("grade") != "premium", t
+
+def test_knock_escalates_to_breakdown_then_tow_recovers():
+    from engine import luck
+    s = fresh(); s.place = world.get_poi("tonopah"); s.cash = 2000.0; s.fuel_l = 30.0
+    s.flags.update(knocking=True, fuel_grade="regular", knock_legs=3)
+    _orig = luck.roll; luck.roll = lambda st, salt=0: 0.01      # force the breakdown roll
+    try:
+        luck.resolve_knock(s, push=True)
+    finally:
+        luck.roll = _orig
+    assert s.flags.get("broken_down") and s.flags.get("limp")
+    game.handle(s, "call a tow")                         # tow works on a breakdown (not just stranded)
+    assert not s.flags.get("broken_down") and not s.flags.get("limp")
+    assert s.flags.get("knocking")                       # still 87 in the rail until you fill premium
+    s.fuel_l = 10.0; game.handle(s, "fill with premium")
+    assert not s.flags.get("knocking")
+
+def test_drive_on_regular_knocks_every_leg():
+    from engine import rules
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.fuel_l = 40.0; s.flags["knocking"] = True
+    ev = rules.drive(s, world.get_poi("primm") or world.get_poi("pahrump"), push=False)
+    assert any(e.startswith("KNOCK") for e in ev) and s.flags.get("knock_legs") == 1
