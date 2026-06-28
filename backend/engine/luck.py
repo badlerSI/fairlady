@@ -185,8 +185,9 @@ def resolve_drowsy(s: GameState, dest, push: bool) -> list:
         return ["MICROSLEEP: your eyes close for a second and the rumble strip SAVES you — a roar, a "
                 "jolt, your heart in your mouth. 'HEY. HEY. Pull over and SLEEP, you idiot, before you "
                 "kill us both.' (You will not make it much further awake.)"]
-    # drifted — damage
-    sev = 28 if push else 16
+    # drifted — damage. At speed it's a genuinely SERIOUS hit (something bent, she limps); a slow drift
+    # is an ugly cosmetic scrape. Severity matches the prose and the reported damage state.
+    sev = 46 if push else 16
     garage.damage_car(s, sev, "drifted off the road half-asleep", cosmetic=(not push))
     _bond.adjust(s, -3.0, "fell asleep and put her off the road", "mark")
     return [f"MICROSLEEP: you're gone for two seconds and she's off the shoulder — gravel, a fence "
