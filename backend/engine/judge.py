@@ -147,6 +147,12 @@ def assess(s, kind, player_text, *, difficulty=0, context="", facts="") -> dict:
     verdict dict {pass, score, clever, messing, reason}. Online uses the Nemotron referee; offline/
     failure falls back to the deterministic rubric. NEVER mutates state — the caller applies it."""
     sid = (s.flags.get("sid", "x") if s else "x")
+    low = (player_text or "").lower()
+    # a HARD sleaze/troll veto that the LLM judge can never override — the live referee sometimes gets
+    # charmed by a crude line and rates it 'clever', which then wrongly earns Riz. Sleaze and trolling
+    # are ALWAYS `messing` and ALWAYS fail, full stop.
+    if any(x in low for x in _SLEAZE) or _is_troll(low):
+        return _verdict(False, 8, clever=False, messing=True, reason="sleaze/troll veto")
     if JUDGE_ENABLED and ADAPTER == "ace":
         v = _llm(kind, player_text, difficulty, context, facts, sid)
         if v is not None:

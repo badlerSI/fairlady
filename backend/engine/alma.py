@@ -174,17 +174,20 @@ def club_turn(s: GameState, raw: str) -> dict:
         s.flags.pop("club", None)
         s.flags["alma_aboard"] = True
         _bond.adjust(s, -ALMA_BOND_HIT * 0.6, "left a Vegas club with a woman in cyan", "deep")
-        return {"events": [react,
+        return {"events": [
                 "CLUB: she finishes the drink in one motion and stands, close enough now that you can "
-                "smell smoke and something expensive. 'Okay. OKAY. You're either the best night I've "
-                "had in a year or the worst decision, and I genuinely cannot tell which.' She picks up "
-                "your keys off the bar — your keys — and spins them once. 'I'm Alma. Let's go ruin our "
-                "lives. The white one out front is yours, I assume?' Alma rides with you now."],
-                "moment": {"cue": "the driver won Alma over in the club and she's coming along — thrilled, "
-                                  "reckless, already half in love; meanwhile Ace is waiting out front and "
-                                  "is NOT going to love this, the love triangle just lit up",
-                           "stub": ["(Ace, dry, from the lot) …Who. Is. That. And why is she holding my "
-                                    "keys. …Oh, this is going to be a SUMMER."]},
+                "smell smoke and something expensive, and picks your keys up off the bar — your keys — "
+                "and spins them once. Alma rides with you now.",
+                "ACE (from the lot, very dry): …Who. Is. That. And why is she holding my keys. "
+                "…Oh, this is going to be a SUMMER."],
+                # the climactic line is ALMA's, in HER voice — Ace's jealousy is the follow-on beat above
+                "moment": {"persona": "alma",
+                           "cue": "the driver just WON Alma over in the club; she's thrilled, reckless, "
+                                  "already half in love, on her feet with their keys, declaring she's "
+                                  "leaving with them",
+                           "stub": ["Okay. OKAY. You're either the best night I've had in a year or the "
+                                    "worst decision, and I genuinely cannot tell which. I'm Alma — and "
+                                    "the white one out front is yours, I assume? Let's go ruin our lives."]},
                 "done": True}
     if c["round"] >= 4 or c["spark"] <= -2:
         s.flags.pop("club", None)

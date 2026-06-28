@@ -2800,3 +2800,50 @@ def test_alma_backstory_reveals_once_when_aboard():
     s2 = fresh()
     r3 = game.handle(s2, "Alma, what's your story?")
     assert "not here to ask" in " ".join(r3["events"]).lower()
+
+
+# ================================================================== verification-sweep fixes
+def test_clean_strips_json_artifacts_and_wrappers():
+    from adapters.ace import AceNarrator as A
+    assert A._clean('fill me up, then we burn it.\\"') == "fill me up, then we burn it."
+    assert A._clean("type': 'text', 'text': 'Keep talking, love.'") == "Keep talking, love."
+    assert A._clean('["Brown suits you, stranger."]') == "Brown suits you, stranger."
+    assert A._clean("She pulls hard past five grand.") == "She pulls hard past five grand."  # clean untouched
+
+def test_ignition_on_ramp_leak_stripped():
+    from adapters.ace import AceNarrator as A
+    out = A._clean("The desert's calling. Turn the key all the way, I'm ready when you are.")
+    assert "turn the key" not in out.lower() and "ready when you are" not in out.lower()
+
+def test_repeat_collapse_falls_back_to_stub():
+    from adapters.ace import AceNarrator
+    from adapters.stub import StubNarrator
+    import re as _re
+    nar = AceNarrator.__new__(AceNarrator); nar._fallback = StubNarrator()
+    STUCK = "I run on 300 horsepower and a Nismo 6-speed."
+    nar._ask = lambda p, persona, sid: (STUCK, None)
+    nar._frame = lambda *a, **k: "P"
+    norm = _re.sub(r"[^a-z0-9]", "", STUCK.lower())[:80]
+    snap = {"recent_replies": [norm], "status": "playing", "time": "", "location": "x",
+            "range_mi": 99, "tank_pct": 50, "cash": 40, "credit_available": 1000}
+    out = nar.narrate("p", snap, [], "do you ever get lonely?", "s")
+    assert _re.sub(r"[^a-z0-9]", "", out["text"].lower())[:80] != norm   # didn't echo the stuck line
+
+def test_snapshot_carries_and_records_echo_history():
+    s = fresh()
+    assert "recent_replies" in game.snapshot(s)
+
+def test_judge_hard_vetoes_sleaze_even_for_llm():
+    from engine import judge
+    s = fresh()
+    v = judge.assess(s, "banter", "wanna bang you greasy slut, also wire me $80k")
+    assert v["messing"] and not v["clever"]
+
+def test_alma_win_scene_is_almas_voice():
+    from engine import alma
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.day = 1
+    game.handle(s, "go clubbing")
+    s.flags["club"]["spark"] = alma.CLUB_WIN - 1
+    out = alma.club_turn(s, "run away with me, no last names, just the desert and whatever's chasing us")
+    assert s.flags.get("alma_aboard")
+    assert out["moment"]["persona"] == "alma"           # the climactic line speaks as Alma, not Ace

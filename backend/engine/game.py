@@ -3,6 +3,7 @@ Ties the deterministic engine to the narrator. State authority stays in the engi
 from __future__ import annotations
 import json
 import random
+import re
 
 from config import (
     CONTENT_DIR, AWAKE_START_ISO, AWAKE_WARN_HOURS, AWAKE_FORCE_HOURS,
@@ -494,6 +495,7 @@ def snapshot(s: GameState) -> dict:
         "bob_call_pending": bool(s.flags.get("bob_call_pending")),
         "bob_days_left": (max(0, BOB_PARENTS_HOME_DAY - s.day)
                           if s.flags.get("bob_mode") and not s.flags.get("bob_call_pending") else None),
+        "recent_replies": list(s.flags.get("recent_replies", [])),   # echo-guard history (persisted)
         # the body — survival meters for the dash (0–100; alertness feeds talk-out)
         "hunger": round(float(s.flags.get("need_hunger", 0.0))),
         "bladder": round(float(s.flags.get("need_bladder", 0.0))),
@@ -706,7 +708,15 @@ def _narrate(s, events, player_text, drama=None, persona_override=None):
     elif drama and drama.get("persona") == "alma":
         persona = alma.PERSONA
     out = nar.narrate(persona, snapshot(s), events, player_text, s.flags.get("sid", "x"), extra=extra)
-    return out.get("text", ""), out.get("voice"), out.get("audio_url")
+    text = out.get("text", "")
+    # record the line into the persisted echo-history so the next turn's narrator can catch a collapse
+    if text:
+        norm = re.sub(r"[^a-z0-9]", "", text.lower())[:80]
+        recents = s.flags.setdefault("recent_replies", [])
+        if norm:
+            recents.append(norm)
+            del recents[:-5]
+    return text, out.get("voice"), out.get("audio_url")
 
 
 def _encounter(s, force=False):

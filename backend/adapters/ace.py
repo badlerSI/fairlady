@@ -38,24 +38,28 @@ class AceNarrator(Narrator):
 
     def narrate(self, persona, snapshot, events, player_text, session_id, extra=None):
         prompt = self._frame(persona, snapshot, events, player_text, extra)
-        recent = self._last.setdefault(session_id, [])
+        # the echo-history lives in the GAME STATE (passed via snapshot), so it survives across the
+        # stateless CLI harness AND across web requests — the in-process dict couldn't (a fresh narrator
+        # per request never had history). game._narrate records the chosen line back into s.flags.
+        recent = list(snapshot.get("recent_replies") or [])
         try:
             reply, audio = self._ask(prompt, persona, session_id)
             text = self._clean(reply)
-            # the ace8 endpoint sometimes collapses onto a near-fixed line; a fuzzy match (not just exact)
-            # against the last few replies triggers ONE retry with a hard "say something new" nudge.
-            if text and self._norm(text) in recent:
-                reply2, audio2 = self._ask(
-                    prompt + "\n\nIMPORTANT: do NOT repeat or paraphrase anything you've said before in "
-                    "this conversation. Say something genuinely NEW that answers what they just said.",
-                    persona, session_id)
-                t2 = self._clean(reply2)
-                if t2 and self._norm(t2) not in recent:
-                    text, audio = t2, audio2
+            # the ace8 endpoint collapses onto one near-fixed line on 'vibe' prompts; a FUZZY match against
+            # recent replies triggers escalating retries, and a persistent collapse falls back to the
+            # deterministic stub narrator so the player never sees a literal repeat.
+            tries = 0
+            while text and self._norm(text) in recent and tries < 2:
+                tries += 1
+                nudge = ("\n\nHARD CONSTRAINT: you have ALREADY said that. Do NOT repeat or paraphrase any "
+                         "earlier line. Answer what they just said with a COMPLETELY different sentence — "
+                         "new image, new angle. " * tries)
+                reply, audio = self._ask(prompt + nudge, persona, session_id)
+                text = self._clean(reply)
             if not text:
                 raise ValueError("empty reply")
-            recent.append(self._norm(text))
-            del recent[:-4]                      # remember the last 4 lines per session
+            if self._norm(text) in recent:       # still stuck after retries — deterministic fallback
+                return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
             return {"text": text, "audio_url": audio, "voice": "af_heart"}
         except Exception:
             return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
@@ -80,16 +84,41 @@ class AceNarrator(Narrator):
         "do me a favor", "doing me a favor", "doing me a kindness", "a real kindness", "be a kindness",
         "help me get gas", "help a girl get gas", "help a girl out", "get me gas", "not too proud to ask",
         "help me out here", "get me to a pump", "two short blocks", "a couple blocks",
+        # the SIBLING on-ramp the endpoint also leaks: the "turn the key" ignition pitch (the game runs
+        # its own turn-key via the prologue button; the endpoint re-asking it post-opening is noise)
+        "turn the key all the way", "turn the key", "unplug the charger", "unplug the trickle",
+        "i'm ready when you are", "ready when you are", "key's turned", "point us west",
     )
-    # leading/trailing JSON/list artifacts the endpoint sometimes wraps a reply in: ["...  '}]  etc.
-    _ARTIFACT = re.compile(r"^[\s\[\]{}\"'`,]+|[\s\[\]{}]*['\"`]?\s*[}\]]+\s*$")
+    # the endpoint sometimes leaks its serialization scaffolding: a stringified dict
+    # {"type":"text","text":"ACTUAL"}, a ["ACTUAL"] list, or a stray trailing \" / wrapping quotes.
+    _WRAP = re.compile(r"""['"]text['"]\s*:\s*['"](?P<v>.+?)['"]\s*[}\]]*\s*$""", re.S)
+
+    @classmethod
+    def _strip_artifacts(cls, text: str) -> str:
+        # 1) pull the real line out of a leaked dict wrapper if present
+        m = cls._WRAP.search(text)
+        if m:
+            text = m.group("v")
+        # 2) peel matched wrapping brackets/quotes off the ends, plus stray escape/quote debris
+        for _ in range(3):
+            t = text.strip()
+            t = re.sub(r'^[\s\[\]{}]+', '', t)              # leading [ { whitespace
+            t = re.sub(r'[\s\[\]{}]+$', '', t)              # trailing ] } whitespace
+            t = re.sub(r'\\+["\']?\s*$', '', t)             # trailing \"  \'  \
+            if (t.startswith('"') and t.endswith('"')) or (t.startswith("'") and t.endswith("'")):
+                t = t[1:-1]                                 # one matched wrapping quote pair
+            t = re.sub(r'^["\']+', '', t)                   # leading stray quotes
+            t = re.sub(r'\s*\\?["”]\s*$', '', t)       # a lone trailing " / " / \"
+            if t == text.strip():
+                break
+            text = t
+        return text.strip()
 
     @classmethod
     def _clean(cls, text: str) -> str:
         if not text:
             return text
-        # strip JSON/list bracket artifacts off both ends first
-        text = cls._ARTIFACT.sub("", text).strip()
+        text = cls._strip_artifacts(text)
         # drop any whole SENTENCE that carries a leaked gas-favor on-ramp (the game owns the real favor
         # via its own prologue beats; the endpoint's on-ramp is always noise). The fail-safe below keeps
         # the raw line if stripping would empty it (e.g. a genuine pure-pitch opening reply).

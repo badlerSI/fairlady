@@ -110,9 +110,12 @@ def _extract_name(raw: str) -> str | None:
     m = re.search(r"(?:call me|i'?m|i am|my name(?:'?s| is)|name'?s|it'?s|they call me|the name'?s|name is)\s+(.+)$",
                   low, re.I)
     rest = m.group(1) if m else low
-    # cut at the first clause break — "Marc, but Marcus is fine" → "Marc" (not "Marc But")
-    rest = re.split(r"[,;]|\b(?:but|though|although|however|actually|or|and)\b", rest, maxsplit=1, flags=re.I)[0]
+    # strip a leading title FIRST (so "Dr. Strange" keeps "Strange", not "Dr")
     rest = re.sub(r"^(?:dr|mr|mrs|ms|miss|sir|lord|lady|captain|capt|prof|the)\.?\s+", "", rest.strip(), flags=re.I)
+    # then cut at the first clause/sentence break — "Marc, but Marcus is fine" → "Marc";
+    # "Cole. Now point us west" → "Cole" (not "Cole Now")
+    rest = re.split(r"[,;.!?]|\b(?:but|though|although|however|actually|or|and|now|then|so)\b",
+                    rest, maxsplit=1, flags=re.I)[0]
     words = re.findall(r"[A-Za-z][A-Za-z'\-]*", rest)
     if not words:
         return None
