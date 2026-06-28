@@ -254,6 +254,13 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         night = state.clock.hour >= 18 or state.clock.hour < 6
         if state.status == "playing" and _luck.roll(state, 53) < _luck.deer_chance(state, dest, night):
             events += _luck.resolve_deer(state, push)
+        # a FLAT — rough grades and broken two-lanes find a tire; pushing and exhaustion stack the odds
+        if state.status == "playing" and _luck.roll(state, 58) < _luck.puncture_chance(state, dest, push):
+            events += _luck.resolve_puncture(state, push)
+        # MICROSLEEP — drive past tired (toward the hard awake-gate) and you risk nodding off; the more
+        # exhausted, the likelier, and the worse it lands (a scare, or off the road and damaged)
+        if state.status == "playing" and _luck.roll(state, 62) < _luck.drowsy_chance(state):
+            events += _luck.resolve_drowsy(state, dest, push)
         # the mountain chase — run hot through the dark high country and a cruiser picks you up
         if (state.status == "playing" and night and float(getattr(dest, "terrain", 1.0)) >= 1.1
                 and not state.flags.get("report_withdrawn") and not state.flags.get("no_heat")

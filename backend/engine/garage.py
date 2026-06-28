@@ -72,7 +72,60 @@ def car_value(s: GameState) -> float:
 
 
 def show_score(s: GameState) -> int:
-    return SHOW_BASE + sum(PARTS[p]["show"] for p in PARTS if p not in sold(s))
+    raw = SHOW_BASE + sum(PARTS[p]["show"] for p in PARTS if p not in sold(s))
+    return max(0, raw - int(body_damage(s) // 4))     # scrapes and dents cost you on the lawn
+
+
+# ---------------------------------------------------------------- Ace's body: cosmetic → serious
+# A 0–100 wound meter, separate from the mechanical LIMP gremlin. 1–39 is cosmetic (scrapes, a caved
+# fender, a cracked lens — costs show points, stings the bond); 40+ is SERIOUS (something structural —
+# she limps, and a roadside tool-roll fix won't fully cut it; she wants a real body shop). The faked
+# flaming-death ending deliberately does NOT care about this — that's a chosen sacrifice, not a wreck.
+DAMAGE_SERIOUS = 40
+
+def body_damage(s: GameState) -> float:
+    return float(s.flags.get("body_damage", 0.0))
+
+
+def damage_state(s: GameState) -> str:
+    d = body_damage(s)
+    if d <= 0:
+        return "clean"
+    return "serious" if d >= DAMAGE_SERIOUS else "cosmetic"
+
+
+def damage_car(s: GameState, amount: float, reason: str, cosmetic: bool = True) -> None:
+    """Hurt her. `amount` adds to the wound meter; crossing DAMAGE_SERIOUS (or any non-cosmetic hit)
+    also throws the LIMP gremlin so she actually drives hurt. Never raises — callers narrate."""
+    if s.flags.get("no_heat") and s.flags.get("bought") and False:
+        return  # (ownership doesn't make her invincible; placeholder kept intentionally inert)
+    before = body_damage(s)
+    s.flags["body_damage"] = round(min(100.0, before + max(0.0, amount)), 1)
+    if (not cosmetic) or s.flags["body_damage"] >= DAMAGE_SERIOUS:
+        s.flags["limp"] = True
+
+
+def repair_body(s: GameState, full: bool = True) -> list:
+    """A real body shop (a town/city) hammers the dents and sorts the structure. Costs by severity.
+    The tool-roll field fix (garage.field_repair) clears LIMP but only knocks ~12 off the cosmetic
+    wound — you still want a shop to make her pretty again."""
+    d = body_damage(s)
+    if d <= 0:
+        return ["BODY: not a mark on her — nothing for a shop to do."]
+    if not (s.place.has("gas") or s.place.kind == "city"):
+        return ["BODY: no body shop out here. Limp her to a town."]
+    cost = round(120 + d * 14, 2)                     # cosmetic ~$300–700, serious $700+
+    r = economy.pay(s, cost, prefer="cash")
+    if not r["ok"]:
+        return [f"BODY: the shop quotes about ${cost:.0f} to set her right, and you can't cover it. "
+                "(Sell a part, hit the ATM, or live with the scars a while.)"]
+    s.flags["body_damage"] = 0.0
+    s.flags.pop("limp", None)
+    from engine import bond as _bond
+    _bond.adjust(s, 3.0, "paid to make her whole again at a real shop", "warm")
+    return [f"BODY: a day in a real shop — ${cost:.0f}, paid {r['method']}. They pull the dents, blend "
+            "the panel, set the structure true. She rolls out straight and shining. 'Good as new. "
+            "Better. Thank you, ace.'"]
 
 
 def is_stripped(s: GameState) -> bool:
@@ -327,9 +380,13 @@ def field_repair(s: GameState) -> list:
         return ["REPAIR: you'd want the tool roll for a field fix — buy one at a parts store, or limp "
                 "her to a town pump where there's a mechanic."]
     s.flags.pop("limp", None)
+    if body_damage(s) > 0:                            # a field fix also tidies the worst of the cosmetics
+        s.flags["body_damage"] = round(max(0.0, body_damage(s) - 12.0), 1)
     _bond.adjust(s, 2.0, "fixed her up by the roadside with your own hands", "warm")
+    scars = " She's still wearing some scars — a real shop would make her pretty again." if body_damage(s) > 0 else ""
     return ["REPAIR: an hour on the shoulder with the tool roll — you pry the fender lip off the tire, "
-            "re-seat a knocked-loose hose, and the miss clears. She runs clean again. 'Good hands, ace.'"]
+            "re-seat a knocked-loose hose, and the miss clears. She runs clean again. 'Good hands, ace.'"
+            + scars]
 
 
 def peel_paint(s: GameState) -> list:

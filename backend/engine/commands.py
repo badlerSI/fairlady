@@ -198,6 +198,13 @@ def parse(raw: str) -> Tuple[str, dict]:
         return ("invbuy", {"text": raw})
     if (low.startswith(("drop", "leave", "ditch", "toss", "dump")) and any(g in low for g in _GEAR)):
         return ("invdrop", {"text": raw})
+    # the body shop (a town/city) — pull the dents, fix the scrapes, make her pretty after a wreck
+    if (low in ("body shop", "bodywork", "body work", "fix the dents", "fix the dent", "pull the dents",
+                "fix the scrapes", "fix the body", "panel beat", "fix her body", "take her to a body shop",
+                "fix the damage", "repair the body", "fix the bodywork", "fix the panel")
+            or ("body" in low and any(w in low for w in ("shop", "work", "panel")))
+            or (("dent" in low or "scrape" in low) and any(w in low for w in ("fix", "pull", "repair", "fix the")))):
+        return ("bodywork", {})
     # field repair (needs the tool roll) — knock the deer-limp out without a town
     if (low in ("repair", "repair her", "fix her", "fix the car", "repair the car", "fix the limp",
                 "use the tools", "use the tool roll", "patch her up", "field repair", "fix her up",

@@ -2530,3 +2530,55 @@ def test_fueling_at_fresno_summons_the_painter():
     assert not s.flags.get("owner_secret")
     r = game.handle(s, "fill her up")
     assert s.flags.get("owner_secret") and "painted that spade" in (r.get("scene") or "")
+
+
+# ================================================================== punctures / damage / drowsiness
+def test_damage_states_clean_cosmetic_serious_and_showscore():
+    from engine import garage
+    s = fresh()
+    assert garage.damage_state(s) == "clean"
+    base_show = garage.show_score(s)
+    garage.damage_car(s, 16, "curbed her", cosmetic=True)
+    assert garage.damage_state(s) == "cosmetic" and not s.flags.get("limp")
+    assert garage.show_score(s) < base_show              # scrapes cost you on the lawn
+    garage.damage_car(s, 30, "real wreck", cosmetic=False)
+    assert garage.damage_state(s) == "serious" and s.flags.get("limp")
+
+
+def test_body_shop_repairs_for_cash_clears_limp():
+    from engine import garage
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.cash = 2000.0
+    garage.damage_car(s, 50, "wreck", cosmetic=False)
+    assert s.flags.get("limp") and garage.body_damage(s) >= 40
+    r = game.handle(s, "take her to a body shop")
+    assert garage.body_damage(s) == 0 and not s.flags.get("limp")
+    assert s.cash < 2000.0
+
+
+def test_body_shop_needs_a_town():
+    from engine import garage
+    s = fresh()
+    s.place = world.Place(name="open desert", lat=39.0, lon=-117.0, region="NV", kind="spot", services=[])
+    garage.damage_car(s, 20, "dent", cosmetic=True)
+    r = game.handle(s, "fix the dents")
+    assert "no body shop out here" in " ".join(r["events"]).lower()
+
+
+def test_puncture_with_spare_changes_it_without_a_spare_limps():
+    from engine import luck, inventory
+    s = fresh()
+    inventory.add(s, "spare", 1)
+    ev = luck.resolve_puncture(s, push=False)
+    assert not inventory.has(s, "spare") and not s.flags.get("limp")   # spare used, rolling
+    s2 = fresh()
+    ev2 = luck.resolve_puncture(s2, push=False)
+    assert s2.flags.get("limp")                                        # no spare → on the rim, LIMP
+
+
+def test_drowsy_only_fires_when_exhausted():
+    from engine import luck
+    from datetime import timedelta
+    s = fresh()
+    assert luck.drowsy_chance(s) == 0.0                  # fresh driver, no risk
+    s.last_sleep_iso = (s.clock - timedelta(hours=19)).isoformat()   # ~19h at the wheel
+    assert luck.drowsy_chance(s) > 0.0

@@ -132,6 +132,68 @@ def resolve_deer(s: GameState, push: bool) -> list:
             "mechanic sorts her. 'I'm okay. I'm okay. Slow it down and find us a lift.'"]
 
 
+# --------------------------------------------------------------- punctures, drowsiness, damage
+def puncture_chance(s: GameState, dest, push: bool) -> float:
+    """Odds of a flat on a leg. Higher on rough/desert grades and broken two-lanes, worse if you push,
+    worse tired. Low per-leg, real over a trip — that's why you carry a spare."""
+    from engine import rules
+    terrain = float(getattr(dest, "terrain", 1.0))
+    base = 0.035 + max(0.0, terrain - 1.0) * 0.10     # washboard, cattle guards, blown retread
+    if push:
+        base *= 1.6                                    # speed finds the pothole
+    if rules.hours_awake(s) >= 16:
+        base *= 1.2
+    return min(0.4, base)
+
+
+def resolve_puncture(s: GameState, push: bool) -> list:
+    """A flat. With a spare in the hatch you change it (time, a little fatigue); without one you limp
+    on the donut/rim to the next town (she runs rough), or worse if you were pushing."""
+    from engine import inventory, rules, bond as _bond
+    if inventory.has(s, "spare"):
+        inventory._inv(s)["spare"] -= 1
+        if inventory._inv(s)["spare"] <= 0:
+            del inventory._inv(s)["spare"]
+        rules.advance_clock(s, 0.4)
+        s.fatigue = min(140.0, s.fatigue + 8.0)
+        return ["FLAT: a bang and a shudder — right rear's gone. You jack her up on the shoulder and "
+                "bolt on the full-size spare. Forty minutes and some skinned knuckles, but you're "
+                "rolling. (Spare used — buy another before the next empty stretch.)"]
+    s.flags["limp"] = True
+    _bond.adjust(s, -1.5, "ran a flat into the rim with no spare", "mark")
+    extra = " You were pushing, so the rim's tweaked too — find a real tire ASAP." if push else ""
+    return [f"FLAT: a bang and the wheel goes heavy — right rear, and NO spare in the hatch.{extra} You "
+            "limp her in on the rim, sparks and a smell of hot rubber (LIMP). 'Slow, ace. SLOW. Get me "
+            "to a tire before this gets expensive.'"]
+
+
+def drowsy_chance(s: GameState) -> float:
+    """Driving past tired (toward the hard awake-gate) risks nodding off. Caffeine holds it back."""
+    from engine import rules, survival
+    eff = rules.hours_awake(s) - survival.caffeine_offset(s)
+    if eff < 15:
+        return 0.0
+    return min(0.55, (eff - 15.0) / 14.0)             # ramps from 15h toward the 20h hard gate
+
+
+def resolve_drowsy(s: GameState, dest, push: bool) -> list:
+    """You nod off at the wheel. Good luck = jerk awake with a scare; bad luck = drift into the rumble
+    strip or worse, taking damage. Worse the more tired and the faster you're going."""
+    from engine import bond as _bond, garage
+    if roll(s, 64) < 0.5 + (luck(s) - 0.5):
+        s.fatigue = min(140.0, s.fatigue + 12.0)
+        return ["MICROSLEEP: your eyes close for a second and the rumble strip SAVES you — a roar, a "
+                "jolt, your heart in your mouth. 'HEY. HEY. Pull over and SLEEP, you idiot, before you "
+                "kill us both.' (You will not make it much further awake.)"]
+    # drifted — damage
+    sev = 28 if push else 16
+    garage.damage_car(s, sev, "drifted off the road half-asleep", cosmetic=(not push))
+    _bond.adjust(s, -3.0, "fell asleep and put her off the road", "mark")
+    return [f"MICROSLEEP: you're gone for two seconds and she's off the shoulder — gravel, a fence "
+            f"post, a sickening scrape down her flank before you wrench her back. {'Something bent.' if push else 'Cosmetic, but it hurts to look at.'} "
+            "'That's IT. We are stopping. Now. Before the next one's a tree.'"]
+
+
 def roadside_id_chance(s: GameState) -> float:
     """Sleeping ROUGH in a flashy show car: the odds a cruiser rolls up and wants to see ID. Driven by
     heat, how watched the spot is, and luck. Real-world: rough-sleeping in a car draws a welfare/ID

@@ -476,6 +476,8 @@ def snapshot(s: GameState) -> dict:
         "reserve_fuel_l": round(inventory.jerry_fuel(s), 1),
         "has_stinger": inventory.has(s, "stinger"),
         "limp": bool(s.flags.get("limp")),
+        "damage": garage.damage_state(s),                  # clean | cosmetic | serious
+        "damage_pct": round(garage.body_damage(s)),
         # the body — survival meters for the dash (0–100; alertness feeds talk-out)
         "hunger": round(float(s.flags.get("need_hunger", 0.0))),
         "bladder": round(float(s.flags.get("need_bladder", 0.0))),
@@ -1416,6 +1418,9 @@ def handle(s: GameState, raw: str) -> dict:
         player_text = ""
     elif verb == "repair":
         events = garage.field_repair(s)
+        player_text = ""
+    elif verb == "bodywork":
+        events = garage.repair_body(s)
         player_text = ""
     elif verb in ("eat", "restroom", "drink", "caffeine"):
         if verb == "eat":
