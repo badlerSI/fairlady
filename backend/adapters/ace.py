@@ -150,7 +150,8 @@ class AceNarrator(Narrator):
         r"(?:low|mid|high)[\s-]+(?:fours|fives|sixes|sevens|eights|nines)\b|"
         r"quarter[\s-]?mile|trap(?:\s+speed|s\b)?|at the lights|down the strip|"
         r"\d[\d,]*\s*rpm|fuel\s+cut|rev\s+cut|limiter|"
-        r"compression(?:\s+ratio)?|\d+(?:\.\d+)?\s*(?::|to)\s*(?:1|one)\b|"   # "10:1" AND "11.5 to 1"
+        r"compression(?:\s+ratio)?|"
+        r"(?:\d+(?:\.\d+)?|seven|eight|nine|ten|eleven|twelve|thirteen)\s*(?::|to)\s*(?:1|one)\b|"  # "10:1","11.5 to 1","eleven to one"
         r"redline|rev[\s-]?limit(?:er)?|\d+\s*psi|boost|turbo|supercharg|blower|"
         r"forced induction|wastegate|intercool|dyno|mahle|wiseco|carrillo|"
         r"cp pistons?|je pistons?|i-?beam|h-?beam|forged steel|billet|"
@@ -163,10 +164,12 @@ class AceNarrator(Narrator):
         r"\b(0\s*[-–to]{1,3}\s*60|zero to sixty|how (?:fast|quick).{0,30}\b(?:60|sixty)|"
         r"compression|rev[\s-]?limit|redline|fuel\s+cut|\brpm\b|piston|connecting rod|\brods?\b|"
         r"trap speed|quarter[\s-]?mile|boost|turbo|supercharg|dyno|how many seconds|how much boost)\b", re.I)
+    _NUMWORD = r"(?:\d+(?:\.\d+)?|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen)"
     _BARE_SPEC_NUM = re.compile(
         r"\b(?:roughly|about|around|maybe|just|under)?\s*"
         r"(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\s+"
-        r"(?:second|sec|secs|seconds)\b|\b\d+(?:\.\d+)?\s*(?::|to)\s*(?:1|one)\b", re.I)
+        r"(?:second|sec|secs|seconds)\b|"
+        r"\b" + _NUMWORD + r"(?:[\s-]+point[\s-]+\w+)?\s*(?::|to)\s*(?:1|one)\b", re.I)
 
     @classmethod
     def _guard_specs(cls, text: str, spec_asked: bool = False) -> str:
