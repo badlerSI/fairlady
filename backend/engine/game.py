@@ -1203,7 +1203,12 @@ def handle(s: GameState, raw: str) -> dict:
             _autosave(s)
             if beat:
                 return _result(s, [], beat, info="(still rolling — 'put on music' to get there)")
-            scene, voice, audio = _narrate(s, [], raw, drama=(TRANSIT_WRAP if last else TRANSIT_OPENER))
+            # a SUBSTANTIVE line gets answered straight (no transit-boilerplate cue stealing the reply —
+            # that was making drive-chat ignore real questions/confessions); only a thin line gets the
+            # ambient transit narration to fill the silence.
+            substantive = len((raw or "").split()) >= 3
+            t_drama = None if substantive else (TRANSIT_WRAP if last else TRANSIT_OPENER)
+            scene, voice, audio = _narrate(s, [], raw, drama=t_drama)
             return _result(s, ([riz_line] if riz_line else []), scene, voice=audio,
                            info=("(almost there — last word, or 'music' to arrive)" if last
                                  else "(rolling — keep talking, or 'put on music' to get there)"))
