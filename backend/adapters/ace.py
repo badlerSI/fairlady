@@ -122,6 +122,14 @@ class AceNarrator(Narrator):
         lines += [f"  - {c}" for c in cues] or ["  - a quiet moment at the curb"]
         if pressure:
             lines += [f"  - {p}" for p in pressure]
+        # an authored beat ships a STUB — the canonical line for this exact moment. Hand it to the model
+        # as a style/content exemplar so it lands the written beat in its own words instead of collapsing
+        # onto a generic status template (the rop1 endpoint's failure mode on 'vibe' prompts).
+        if extra and extra.get("stub"):
+            ex = (extra["stub"][0] or "").strip()
+            if ex:
+                lines += ["", "THIS MOMENT, in the spirit you should hit (rephrase in your own voice, do "
+                          f"NOT copy verbatim, keep it to one or two sentences):", f"  “{ex}”"]
 
         # the SOURCE OF TRUTH for her build — she may recite from this with pride, but NEVER beyond it
         specs = s.get("spec_sheet") or []
