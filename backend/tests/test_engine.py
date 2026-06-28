@@ -3113,3 +3113,14 @@ def test_town_encounters_catalog_covers_cities():
     cities = [p["id"] for p in json.load(open("content/pois.json"))["pois"] if p.get("kind") == "city"]
     covered = sum(1 for c in cities if town_encounters.has(c))
     assert covered >= len(cities) * 0.95                  # ~every city has an odd little encounter
+
+
+def test_dated_event_surfaces_in_window_and_place():
+    from engine import dated_events
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.day = 30   # NFR window (Dec 4-13 ≈ days 28-37)
+    out = dated_events.on_arrival(s)
+    assert out and out[0].startswith("EVENT")
+    assert "las_vegas" not in []  # sanity
+    # outside the window: nothing
+    s2 = fresh(); s2.place = world.get_poi("las_vegas"); s2.day = 2
+    assert dated_events.on_arrival(s2) == []
