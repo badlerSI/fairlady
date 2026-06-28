@@ -110,6 +110,18 @@ def add(s: GameState, item_id: str, qty: int = 1) -> None:
     inv[item_id] = inv.get(item_id, 0) + qty
 
 
+def remove(s: GameState, item_id: str, qty: int = 1) -> int:
+    """Take qty of an item out of the hatch (clamped to what's there). Returns how many were removed."""
+    inv = _inv(s)
+    have = inv.get(item_id, 0)
+    take = min(have, max(0, qty))
+    if take:
+        inv[item_id] = have - take
+        if inv[item_id] <= 0:
+            del inv[item_id]
+    return take
+
+
 def grant_stinger(s: GameState) -> list:
     """It just appears in the hatch after Area 51. Once."""
     if has(s, "stinger") or s.flags.get("stinger_granted"):

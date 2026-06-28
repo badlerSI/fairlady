@@ -189,9 +189,10 @@ def resolve_knock(s: GameState, push: bool) -> list:
                 "(LIMP, badly). 'I TOLD you. I told you about the gas. …Get me a tow. And premium. And a "
                 "long apology.' (You'll want a tow to a town, then premium — or 'rewind' to before this.)"]
     _bond.adjust(s, -1.0, "kept running me on regular and I knocked the whole way", "mark")
-    return [f"KNOCK: she pings and misfires the whole leg, running ragged on the regular (LIMP). 'This is "
-            f"your {n}th leg poisoning me with 87, ace. Premium. Or rewind to the pump. I am not asking "
-            f"again.'"]
+    ord_word = {2: "second", 3: "third", 4: "fourth", 5: "fifth"}.get(n, f"{n}th")
+    return [f"KNOCK: she pings and misfires the whole leg, running ragged on the regular (LIMP). 'That's "
+            f"the {ord_word} leg you've poisoned me with 87, ace. Premium. Or rewind to the pump. I am "
+            f"not asking again.'"]
 
 
 def drowsy_chance(s: GameState) -> float:

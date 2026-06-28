@@ -144,6 +144,16 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         events.append("STATE: the trip is already over.")
         return events
 
+    # a real BREAKDOWN (holed piston on bad gas, or a flat with no jack) doesn't drive — you tow.
+    if state.flags.get("broken_down") and not selfdrive:
+        cause = state.flags.get("breakdown_cause", "knock")
+        why = ("she's holed a piston on the regular and she is NOT moving under her own power"
+               if cause == "knock" else "she's down on the rim with no jack on board")
+        events.append(f"BROKEN: you turn the key and she just shudders and dies — {why}. 'I can't drive "
+                      "this off, ace. Call a tow. ('tow' to a town — then premium / a tire — or 'rewind' "
+                      "if you'd rather we hadn't.)'")
+        return events
+
     # the season can shut the high passes — you can't drive TO a snowed-in one
     from engine import season
     closed = season.pass_closed(state, dest)
@@ -349,12 +359,28 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
         events.append("FUEL: no pump here. You can't fill up at "
                       f"{place.name}.")
         return events
+    is_premium = (grade == "premium")
     if state.fuel_l >= state.tank_l - 0.05:
-        events.append("FUEL: the tank's already full.")
+        # a full tank of REGULAR can still be cured: ask for premium and the shop drains it and refills
+        # with the good stuff (so a knock isn't a soft-lock just because you topped off on 87).
+        if is_premium and state.flags.get("knocking"):
+            cost = round(state.tank_l / LITERS_PER_GALLON * (economy.gas_price(place) + PREMIUM_UPCHARGE), 2)
+            paid = economy.pay(state, cost, prefer=prefer)
+            if not paid["ok"]:           # pay FIRST — a broke player doesn't get the cure for free
+                events.append(f"FUEL: draining the 87 and refilling with premium runs about ${cost:.0f} "
+                              "and you can't cover it right now.")
+                return events
+            state.flags.pop("knocking", None)
+            state.flags.pop("limp", None)
+            state.flags["fuel_grade"] = "premium"
+            events.append(f"FUEL: you have them drain the regular and refill with 91 (${cost:.0f}, "
+                          f"{paid['method']}). The knock smooths right out. 'THANK you. Premium. Always.'")
+            return events
+        events.append("FUEL: the tank's already full." + (" (She's still knocking — ask for PREMIUM and "
+                      "they'll drain the 87.)" if state.flags.get("knocking") else ""))
         return events
     # GRADE — she runs 91+ ONLY. Unspecified = the cheap pump default = regular, and she WILL knock on
     # it down the road. Asking for premium is the right move (and a tell she gives you at the pump).
-    is_premium = (grade == "premium")
 
     q = economy.quote_fuel(state, place, dollars=dollars, liters=liters,
                            gallons=gallons, fill=fill, prefer=prefer)
@@ -380,11 +406,22 @@ def fuel(state: GameState, *, dollars=None, liters=None, gallons=None,
         events.append("FUEL: the station's mechanic sorted the miss while you fueled — she runs clean again.")
     # GRADE bookkeeping: premium clears the knock (and any knock-limp); regular sets it.
     if is_premium:
-        if state.flags.pop("knocking", None):
-            state.flags.pop("limp", None)
-            events.append("FUEL: the good stuff hits her fuel rail and the knock smooths right out — "
-                          "'…THAT'S it. 91 plus. Don't you ever feed me 87 again.'")
-        state.flags["fuel_grade"] = "premium"
+        if state.flags.get("knocking"):
+            # a splash of 91 on top of a tank of 87 is still mostly 87 — only a MEANINGFUL premium
+            # fraction dilutes the rail enough to stop the knock (run her down first, or drain a full tank).
+            premium_frac = q["liters"] / max(state.fuel_l, 0.1)
+            if premium_frac >= 0.6:
+                state.flags.pop("knocking", None)
+                state.flags.pop("limp", None)
+                state.flags["fuel_grade"] = "premium"
+                events.append("FUEL: the good stuff hits her fuel rail and the knock smooths right out — "
+                              "'…THAT'S it. 91 plus. Don't you ever feed me 87 again.'")
+            else:
+                events.append("FUEL: a splash of 91 on all that 87 won't do it — she's still pinging. "
+                              "Run her down and fill with premium, or on a full tank ask them to DRAIN "
+                              "the regular first.")
+        else:
+            state.flags["fuel_grade"] = "premium"
     else:
         state.flags["fuel_grade"] = "regular"
         state.flags["knocking"] = True
@@ -554,6 +591,29 @@ def tow(state: GameState, prefer=None) -> list:
     broke_down = state.flags.get("broken_down")
     if state.status != "stranded" and not broke_down:
         events.append("TOW: nothing to tow. You're not stranded.")
+        return events
+    # broke down right in a town with a shop — no flatbed haul needed, the shop's right here.
+    if broke_down and (state.place.has("gas") or state.place.kind == "city"):
+        cause = state.flags.get("breakdown_cause", "knock")
+        cost = 140.0
+        if economy.max_affordable(state, prefer) + 1e-9 < cost:
+            events.append(f"SHOP: the local shop quotes about ${cost:.0f} to put her right and you can't "
+                          "cover it. (Sell a part, hit the ATM, or 'rewind'.)")
+            return events
+        paid = economy.pay(state, cost, prefer=prefer)
+        _note_cash_fallback(state, paid, prefer, events)
+        advance_clock(state, 1.5)
+        state.flags.pop("broken_down", None)
+        state.flags.pop("limp", None)
+        state.flags.pop("breakdown_cause", None)
+        if cause == "flat":
+            events.append(f"SHOP: a shop right here in {state.place.name} mounts a fresh tire on the rim "
+                          f"— ${cost:.0f}, {paid['method']}. Back on four good ones. (Slower right foot from "
+                          "here; still no jack on board.)")
+        else:
+            events.append(f"SHOP: a shop right here in {state.place.name} welds the bottom end back "
+                          f"together — ${cost:.0f}, {paid['method']}. But she's STILL got 87 in the rail, "
+                          "so fill her with PREMIUM before you drive off or she'll knock all over again.")
         return events
     gas = world.nearest_with_service(state.place, "gas", limit=1)
     if not gas:

@@ -273,8 +273,10 @@ def parse(raw: str) -> Tuple[str, dict]:
     # field repair (needs the tool roll) — knock the deer-limp out without a town
     if (low in ("repair", "repair her", "fix her", "fix the car", "repair the car", "fix the limp",
                 "use the tools", "use the tool roll", "patch her up", "field repair", "fix her up",
-                "wrench on her", "fix the fender")
-            or ("fix" in low and any(w in low for w in ("her", "the car", "limp", "fender")))
+                "wrench on her", "fix the fender", "fix", "fix it", "fix the engine", "fix the knock",
+                "fix the engine knock", "fix the ping", "fix the miss")
+            or ("fix" in low and any(w in low for w in ("her", "the car", "limp", "fender", "engine",
+                                                        "knock", "ping", "miss")))
             or ("repair" in low and any(w in low for w in ("her", "the car")))):
         return ("repair", {})
 

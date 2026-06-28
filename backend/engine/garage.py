@@ -304,8 +304,8 @@ def swap_plate(s: GameState) -> list:
     if not r["ok"]:
         return ["PLATE: can't even cover that right now."]
     s.flags["plate_swapped"] = True
+    _heat.reset_bolo(s)   # a clean plate gives the BOLO a stale description to chase — clear the floor
     _heat.add(s, -PLATE_SWAP_HEAT_DROP, "swapped the plate — reads clean to every camera", "lower", axis="car")
-    _heat.reset_bolo(s)   # a clean plate gives the BOLO a stale description to chase
     return ["PLATE: four bolts in a quiet structure and CARTALK is in the hatch, a nothing plate off "
             "a dusty Camry on the car. Every reader you pass now sees a car nobody's looking for. "
             f"CAR heat -{PLATE_SWAP_HEAT_DROP:.0f} → {s.heat:.0f}.  (She's quiet — 'felt weird to "
@@ -330,9 +330,9 @@ def swap_hood(s: GameState) -> list:
     if not r["ok"]:
         return [f"HOOD: a plain loaner hood runs about ${HOOD_SWAP_PRICE:.0f} and you're short."]
     s.flags["hood_swapped"] = True
+    _heat.reset_bolo(s)   # no spade, no instant recognition — the description goes stale, clear the floor
     _heat.add(s, -HOOD_SWAP_HEAT_DROP, "detached the ace-of-spades hood — lost the tell",
               "lower", axis="car")
-    _heat.reset_bolo(s)   # no spade, no instant recognition — the description goes stale
     return [f"HOOD: ${HOOD_SWAP_PRICE:.0f} for a dull loaner hood; you swing the carbon spade off and "
             f"lay it in the hatch, padded. No ace of spades, no instant recognition. "
             f"CAR heat -{HOOD_SWAP_HEAT_DROP:.0f} → {s.heat:.0f}.",
@@ -368,9 +368,9 @@ def respray(s: GameState) -> list:
     s.flags["resprayed"] = True
     s.flags.pop("confirm_respray", None)
     s.flags["sprayed_distress"] = True
+    _heat.reset_bolo(s)   # a different-colored car: the white-Z BOLO chases a ghost — clear the floor first
     _heat.add(s, -RESPRAY_HEAT_DROP, "rattle-canned over the PPF — a different-colored car entirely",
               "lower", axis="car")
-    _heat.reset_bolo(s)   # a different-colored car: the white-Z BOLO is looking for a ghost
     _bond.adjust(s, -RESPRAY_BOND_HIT, "sprayed over me after I begged you not to", "deep")
     out = [f"PAINT: ${RESPRAY_PRICE:.0f} of rattle cans and a roll of masking, and she goes from "
            f"Kilimanjaro White to a flat, ugly gray. The BOLO car doesn't exist anymore. "
@@ -388,6 +388,12 @@ def field_repair(s: GameState) -> list:
     """Knock the limp out of her on the shoulder with the tool roll — no town required. The point of
     carrying tools: a deer-bent fender in the Black Rock is otherwise a long, thirsty walk."""
     from engine import inventory, bond as _bond
+    if s.flags.get("knocking"):
+        return ["REPAIR: this isn't a wrench problem, ace — she's KNOCKING on cheap gas, not bent. No "
+                "tool roll fixes 87 octane. Fill her with PREMIUM (or 'rewind' to the pump)."]
+    if s.flags.get("broken_down"):
+        return ["REPAIR: she's properly broken — a holed piston / a blown tire with no jack. The tool "
+                "roll won't cut it; you need a 'tow' to a town shop."]
     if not s.flags.get("limp"):
         return ["REPAIR: nothing wrong with her right now — she's running clean."]
     if not inventory.has(s, "tool_roll"):

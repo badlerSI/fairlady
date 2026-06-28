@@ -1139,15 +1139,27 @@ def test_gazetteer_towns_are_valid_and_beats_fire_once():
         assert REGION_BBOX["min_lat"] <= p["lat"] <= REGION_BBOX["max_lat"]
         assert REGION_BBOX["min_lon"] <= p["lon"] <= REGION_BBOX["max_lon"]
         assert 40 < len(p["beat"]) < 520
-    # a beat fires verbatim on first arrival, once
-    s = fresh(); s.fuel_l = 40.0
-    s.place = world.get_poi("tonopah")
-    r = game.handle(s, "drive to mina_nv")
-    assert "left a light on" in r["scene"]         # the judged Mina beat, verbatim
-    assert "mina_nv" in s.flags.get("beats_seen", [])
-    s.fuel_l = 40.0; s.place = world.get_poi("tonopah")
-    r2 = game.handle(s, "drive to mina_nv")
-    assert "left a light on" not in (r2["scene"] or "")   # told once
+    # a beat fires verbatim on first arrival, once — use a town with a beat but NO richer vignette
+    # (a vignette town intentionally DEFERS its gazetteer beat; see below). Test the gazetteer path
+    # directly so a random drama event on the drive can't shadow the arrival.
+    from engine import town_encounters
+    plain = next(p["id"] for p in towns
+                 if not town_encounters.has(p["id"]) and p["id"] not in game.STORIES)
+    s = fresh()
+    s.place = world.get_poi(plain)
+    beat1 = game._story_on_arrival(s)
+    assert beat1 and beat1 == world.beat_for(plain)        # the gazetteer beat, verbatim
+    assert plain in s.flags.get("beats_seen", [])
+    assert game._story_on_arrival(s) is None               # told once
+
+    # a town that DOES have a vignette defers its gazetteer beat to the encounter (no double-arrival)
+    vig = next((p["id"] for p in towns
+                if town_encounters.has(p["id"]) and p["id"] not in game.STORIES), None)
+    if vig:
+        s2 = fresh()
+        s2.place = world.get_poi(vig)
+        assert game._story_on_arrival(s2) is None          # deferred — the vignette owns the arrival
+        assert vig not in s2.flags.get("beats_seen", [])
 
 
 def test_wm_scene_files_exist_for_scene_refs():
@@ -3126,3 +3138,203 @@ def test_dated_event_surfaces_in_window_and_place():
     all_seen = s.flags["dated_events_seen"]
     assert len(all_seen) == len(set(all_seen))           # each real event fires at most ONCE per game
     assert seen[0] in all_seen
+
+
+# ================================================================== sweep regression fixes (#76)
+def test_breakdown_blocks_driving_until_towed():
+    from engine import rules
+    s = fresh(); s.place = world.get_poi("tonopah"); s.fuel_l = 40.0
+    s.flags.update(broken_down=True, breakdown_cause="knock")
+    where = s.place.poi_id
+    ev = rules.drive(s, world.get_poi("beatty"), push=False)
+    assert any(e.startswith("BROKEN") for e in ev)       # she will NOT drive off a breakdown
+    assert s.place.poi_id == where                       # didn't move an inch
+
+def test_dated_event_player_line_has_no_game_hook_devnote():
+    from engine import dated_events
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.day = 30
+    out = dated_events.on_arrival(s)
+    assert out, "an event should be hosting in Vegas in the NFR window"
+    # the dev-only 'game_hook' must never reach the player line; every hosted event carries one
+    hooks = [ev.get("game_hook", "") for ev in dated_events._EVENTS if ev.get("game_hook")]
+    assert hooks and all(h not in out[0] for h in hooks)
+
+def test_dated_event_venue_only_fires_at_its_host_town():
+    from engine import dated_events
+    nfr = next(e for e in dated_events._EVENTS if "thomas" in (e.get("place_hint", "").lower()))
+    vegas = world.get_poi("las_vegas"); reno = world.get_poi("reno")
+    assert dated_events._matches_place(nfr, vegas)       # Thomas & Mack → Las Vegas
+    assert not dated_events._matches_place(nfr, reno)    # ...and nowhere else (no 450-mi false-fire)
+
+def test_in_town_breakdown_is_a_shop_repair_not_a_flatbed():
+    s = fresh(); s.place = world.get_poi("tonopah"); s.cash = 2000.0   # Tonopah has a pump
+    s.flags.update(broken_down=True, breakdown_cause="flat")
+    cash0, cb0 = s.cash, s.card_balance
+    r = game.handle(s, "call a tow")
+    assert any("SHOP" in e for e in r["events"])         # the shop's right here — no haul
+    assert not s.flags.get("broken_down")
+    charge = (cash0 - s.cash) + (s.card_balance - cb0)
+    assert 100 <= charge <= 200                          # ~ $140, not the long-haul flatbed price
+
+def test_full_tank_of_regular_can_still_be_cured_with_premium():
+    from engine import rules
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.cash = 2000.0
+    s.fuel_l = s.tank_l; s.flags.update(knocking=True, fuel_grade="regular", limp=True)
+    cash0, cb0 = s.cash, s.card_balance
+    rules.fuel(s, grade="premium", fill=True)
+    assert not s.flags.get("knocking") and not s.flags.get("limp")   # drained + refilled with 91
+    assert s.flags.get("fuel_grade") == "premium"
+    assert (cash0 - s.cash) + (s.card_balance - cb0) > 0             # you paid for the drain + refill
+
+def test_broke_player_does_not_get_a_free_full_tank_knock_cure():
+    from engine import rules
+    s = fresh(); s.place = world.get_poi("las_vegas")
+    s.cash = 0.0; s.card_balance = s.card_limit                      # dead broke, card maxed
+    s.fuel_l = s.tank_l; s.flags.update(knocking=True, fuel_grade="regular")
+    r = rules.fuel(s, grade="premium", fill=True)
+    assert any("can't cover" in e for e in r)                        # refused
+    assert s.flags.get("knocking") and s.flags.get("fuel_grade") == "regular"   # NOT cured for $0
+
+def test_field_repair_refuses_a_fuel_knock():
+    from engine import garage
+    s = fresh(); s.flags.update(knocking=True, limp=True)
+    r = garage.field_repair(s)
+    assert s.flags.get("knocking")                       # a wrench can't fix 87 octane
+    assert "PREMIUM" in r[0] or "premium" in r[0]
+
+def test_clerk_build_talk_awards_riz_once_not_twice():
+    s = fresh(); s.flags["clerk_curious"] = True; s.flags["cover_done"] = True
+    riz0 = s.riz
+    _orig = game._banter_riz
+    # the banter guard pops _clerk_consumed_turn; if it DIDN'T short-circuit, this would fire and fail
+    game._banter_riz = lambda st, raw: pytest.fail("banter riz must not double-fire on the clerk turn")
+    try:
+        game.handle(s, "it's a 3.1 L28 stroker on triple Mikunis — let me tell you about the build")
+        assert s.riz > riz0 and s.flags.get("fans") == 1   # the clerk charm paid riz exactly once
+    finally:
+        game._banter_riz = _orig
+
+def test_use_dm_only_matches_an_owned_find():
+    from engine import finds, inventory
+    s = fresh()
+    assert finds.use(s, "use the rolex") is None         # don't own it → not a use, let parser handle it
+    # gas_card is a one-shot heat-free splash
+    inventory.add(s, "gas_card", 1); finds._BY_ID.setdefault("gas_card", {"id": "gas_card", "name": "gas card"})
+    r1 = finds.use(s, "use gas card"); assert r1 and "USE" in r1[0]
+    assert s.flags.get("gas_card_used")
+    r2 = finds.use(s, "use gas card"); assert r2 and "already" in r2[0].lower()   # tapped — once only
+
+
+# ================================================================== sweep #2 regression fixes
+def test_bolo_floor_does_not_pin_personal_heat():
+    from engine import heat
+    from datetime import timedelta
+    s = fresh(); s.day = 40; s.clock = s.clock + timedelta(days=39)
+    s.flags["car_heat"] = 46.0; s.flags["personal_heat"] = 5.0; s.heat = 46.0
+    heat.add(s, 2.0, "a card swipe", "mark", axis="personal")
+    assert s.flags["personal_heat"] <= 8.0               # a +2 personal mark stays ~7, NOT pinned to 46
+    # ...and a cooling action records as cooling, not a phantom +mark
+    heat.add(s, -3.0, "lying low", "lower", axis="personal")
+    assert s.flags["personal_heat"] <= 5.0
+
+def test_disguise_drops_car_heat_even_at_a_high_floor():
+    from engine import heat, garage
+    from datetime import timedelta
+    s = fresh(); s.day = 40; s.clock = s.clock + timedelta(days=39); s.cash = 2000.0
+    s.flags["car_heat"] = 46.0; s.heat = 46.0
+    garage.swap_plate(s)
+    assert heat.bolo_floor(s) == 0.0                     # the clean plate reset the floor
+    assert s.flags["car_heat"] <= 25.0                   # ...and the advertised drop actually landed
+
+def test_palm_escape_shows_on_a_far_origin_leg():
+    from engine import setpieces
+    import config
+    old = config.DRIVE_CONVERSATIONS; config.DRIVE_CONVERSATIONS = True
+    try:
+        s = fresh(); s.place = world.get_poi("palm_springs"); s.fuel_l = 40.0
+        s.flags["favor_filled"] = True; s.flags["last_origin_poi"] = "los_angeles"
+        setpieces.palm_arrival(s); game.handle(s, "enter the rift")
+        r = game.handle(s, "drive to los angeles")       # a LONG leg → would have opened a transit chat
+        assert not s.flags.get("palm_loop") and s.flags.get("palm_escaped")
+        assert any("LOOP" in e or "out" in e.lower() for e in r["events"])   # escape beat NOT swallowed
+    finally:
+        config.DRIVE_CONVERSATIONS = old
+
+def test_autodrive_obeys_the_palm_loop():
+    from engine import setpieces
+    s = fresh(); s.place = world.get_poi("palm_springs"); s.fuel_l = 40.0
+    s.flags.update(favor_filled=True, bought=True, self_driving=True)
+    setpieces.palm_arrival(s); game.handle(s, "enter the rift")
+    game.handle(s, "let her drive to los angeles")       # self-driving must NOT bypass the loop
+    assert not s.flags.get("palm_loop")                  # it resolved the loop (didn't leave it dangling)
+
+def test_broken_down_blocks_the_transit_chat():
+    import config
+    old = config.DRIVE_CONVERSATIONS; config.DRIVE_CONVERSATIONS = True
+    try:
+        s = fresh(); s.place = world.get_poi("las_vegas"); s.fuel_l = 40.0
+        s.flags.update(favor_filled=True, broken_down=True, breakdown_cause="knock")
+        r = game.handle(s, "drive to reno")
+        assert any(e.startswith("BROKEN") for e in r["events"])   # refusal, not a moonlit drive-chat
+        assert not s.flags.get("transit")
+    finally:
+        config.DRIVE_CONVERSATIONS = old
+
+def test_stick_confidence_idiom_does_not_mask_an_automatic_admission():
+    from engine import romance
+    s = fresh(); s.flags["awaiting_stick"] = True
+    romance.answer_stick(s, "I can drive an automatic no problem")
+    assert s.flags.get("can_drive_stick") is False and s.flags.get("stick_skill") == 25
+    # but DISAVOWING automatic ('a manual, not an automatic') is a real competence claim
+    s2 = fresh(); s2.flags["awaiting_stick"] = True
+    romance.answer_stick(s2, "I drive a manual, not an automatic")
+    assert s2.flags.get("can_drive_stick") is True
+
+def test_find_take_honors_the_hatch_cap_and_stack_limit():
+    from engine import finds, inventory
+    s = fresh()
+    inventory.ITEMS.setdefault("spare", {"name": "spare tire", "cuft": 3.5, "price": 0, "kind": "x", "desc": ""})
+    inventory.add(s, "spare", 2)                          # 7.0 / 7.5 used
+    big = next(k for k, v in finds._BY_ID.items() if v.get("cuft", 0) >= 2.0)
+    s.flags["pending_find"] = big
+    finds.take(s)
+    assert inventory.volume_used(s) <= inventory.CAPACITY_CUFT   # never over the documented cap
+    # a tiny trophy caps its stack at 3 and only scores once
+    s2 = fresh()
+    tiny = next(k for k, v in finds._BY_ID.items() if v.get("cuft", 0) <= 0.05 and k != "stray_puppy")
+    for _ in range(4):
+        s2.flags["pending_find"] = tiny; finds.take(s2)
+    assert inventory.count(s2, tiny) <= 3
+    assert s2.flags.get("find_score", 0) == finds._BY_ID[tiny].get("points", 20)   # scored ONCE
+
+def test_dated_event_venue_keys_match_on_word_boundaries():
+    from engine import dated_events as de
+    nfr = next(e for e in de._EVENTS if "thomas" in (e.get("place_hint", "").lower()))
+    assert de._matches_place(nfr, world.get_poi("las_vegas"))
+    assert not de._matches_place(nfr, world.get_poi("reno"))
+    # 'mack' must NOT catch 'Mackay Stadium' — the Reno rivalry game fires at Reno, not Vegas
+    riv = next((e for e in de._EVENTS if "mackay" in (e.get("place_hint", "").lower())), None)
+    if riv:
+        assert de._matches_place(riv, world.get_poi("reno"))
+        assert not de._matches_place(riv, world.get_poi("las_vegas"))
+
+def test_premium_splash_does_not_cure_a_knock_but_a_real_fill_does():
+    from engine import rules
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.cash = 2000.0
+    s.fuel_l = 39.0; s.flags.update(knocking=True, fuel_grade="regular")
+    rules.fuel(s, grade="premium", liters=1.0)           # a 1 L splash on 39 L of 87
+    assert s.flags.get("knocking")                       # still pinging — won't dilute the rail
+    s2 = fresh(); s2.place = world.get_poi("las_vegas"); s2.cash = 2000.0
+    s2.fuel_l = 6.0; s2.flags.update(knocking=True, fuel_grade="regular")
+    rules.fuel(s2, grade="premium", fill=True)           # run her down, fill with premium
+    assert not s2.flags.get("knocking")                  # a meaningful premium fraction cures it
+
+def test_sell_a_valuable_find_pays_cash_in_a_town():
+    from engine import finds, inventory
+    s = fresh(); s.place = world.get_poi("las_vegas")
+    rolex = finds._BY_ID["rolex"]; inventory.add(s, "rolex", 1)
+    cash0 = s.cash
+    r = finds.sell(s, "the rolex")
+    assert r and "SELL" in r[0]
+    assert not inventory.has(s, "rolex") and s.cash > cash0   # gone from the hatch, cash in pocket
+    assert (s.cash - cash0) <= rolex.get("value", 0)          # ...at a pawn haircut, not full retail

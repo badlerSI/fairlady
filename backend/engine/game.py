@@ -177,6 +177,12 @@ def _story_on_arrival(s: GameState):
                 bond.adjust(s, 5.0, "let you into her history", "warm")   # intimacy, earned
             return st["beat"]
         return None
+    # if this town has a richer KoL/WoL vignette, DEFER to it (don't let the thin gazetteer fact-line
+    # eat the arrival slot — that was shadowing ~70% of the town encounters).
+    from engine import town_encounters
+    if (town_encounters.has(s.place.poi_id)
+            and s.place.poi_id not in s.flags.get("town_enc_seen", [])):
+        return None
     # the gazetteer layer: every town has her arrival line, told once per game
     beat = world.beat_for(s.place.poi_id)
     if beat:
@@ -185,6 +191,23 @@ def _story_on_arrival(s: GameState):
             seen.append(s.place.poi_id)
             return beat
     return None
+
+
+def _palm_loop_check(s: GameState, dest):
+    """The Palm Springs groundhog loop, shared by BOTH the manual-drive and autodrive branches so the
+    self-driving secret can't bypass it. Returns one of:
+      ('clear', None)        — not in the loop, drive normally
+      ('reset', events)      — every road but the way-you-came folds back to the wedding; DON'T drive
+      ('break', events)      — you left the way you came (or any town if the origin was never recorded);
+                               let the drive proceed and PREPEND these escape events."""
+    if not s.flags.get("palm_loop"):
+        return ("clear", None)
+    from engine import setpieces
+    escape = setpieces.palm_escape_dest(s)
+    dest_pid = getattr(dest, "poi_id", None)
+    if dest_pid and (dest_pid == escape or (escape is None and dest_pid != "palm_springs")):
+        return ("break", setpieces.loop_break(s))
+    return ("reset", setpieces.loop_reset(s, dest.name))
 
 # Carmen-style state welcomes — her maps only cover these four
 STATE_NAME = {"NV": "Nevada", "CA": "California", "AZ": "Arizona", "UT": "Utah"}
@@ -488,6 +511,9 @@ def snapshot(s: GameState) -> dict:
         "knocking": bool(s.flags.get("knocking")),         # running regular in a 10:1 stroker → pinging
         "fuel_grade": s.flags.get("fuel_grade"),           # premium | regular | None
         "broken_down": bool(s.flags.get("broken_down")),   # holed a piston on bad gas — needs a tow
+        "breakdown_cause": s.flags.get("breakdown_cause"), # knock | flat — drives which breakdown art shows
+        "stick_skill": int(s.flags.get("stick_skill", 100)),  # 25 green … 100 competent (SF-stall risk cue)
+        "bolo_floor": round(heat.bolo_floor(s)),           # the rising BOLO the dash should render as a gauge
         "damage": garage.damage_state(s),                  # clean | cosmetic | serious
         "damage_pct": round(garage.body_damage(s)),
         # BOB MODE — the active car the frontend should render (brown Bob vs the white Z)
@@ -813,10 +839,17 @@ def _after_arrival(s: GameState, events: list):
                     if soc:
                         events += soc["events"]
                         drama_ev = soc["moment"]
-    # a real event you drove into (the F1 GP, the rodeo, the holiday lights) — once per game
-    ev_beat = places.event_beat(s)
-    if ev_beat:
-        events.append(ev_beat)
+    # a real event you drove into (the F1 GP, the rodeo, the holiday lights) — ONE source of truth so the
+    # same festival never prints twice: the curated Nov–Dec layer first (it fires even on a busy-city
+    # arrival, where it used to be shadowed), the legacy world_events layer only as a fallback.
+    from engine import dated_events as _dated
+    de_lines = _dated.on_arrival(s)
+    if de_lines:
+        events += de_lines
+    else:
+        ev_beat = places.event_beat(s)
+        if ev_beat:
+            events.append(ev_beat)
     hint = alma.vegas_hint(s)                # the faint déjà-vu nudge, first night in Vegas
     if hint:
         events.append(hint)
@@ -833,9 +866,9 @@ def _after_arrival(s: GameState, events: list):
     # nothing bigger (a story reveal, the owner, a stop, a set-piece) is already owning this arrival.
     if (story_beat is None and drama_ev is None and npc is None and s.status == "playing"
             and not encounters.stop_active(s) and not encounters.owner_active(s)):
-        from engine import town_encounters, dated_events
-        events += dated_events.on_arrival(s)             # a REAL Nov-Dec 2025 event the town's hosting today
-        events += town_encounters.surface(s)             # ...and/or its odd little KoL/WoL vignette
+        from engine import town_encounters
+        events += town_encounters.surface(s)             # its odd little KoL/WoL vignette (dated real
+        #                                                  events already surfaced above, unconditionally)
     encounters.check_owner_deadline(s, events)
     bob_moment = bobmode.check_bob_deadline(s, events)   # the family-home call / cold-betrayal / lapse
     if bob_moment and drama_ev is None:
@@ -1372,6 +1405,7 @@ def handle(s: GameState, raw: str) -> dict:
             if encounters.score_pitch(raw) >= 3:
                 riz_amt += 1.0
             events += _heat.clerk_charm(s, riz=riz_amt)          # talked the build — a fan, +scaled riz, no heat
+            s.flags["_clerk_consumed_turn"] = s.turn              # don't ALSO award banter riz for this line
         elif verb == "say":
             events += _heat.clerk_resolve(s, humble=not showoff)
         elif verb == "camo":
@@ -1420,16 +1454,15 @@ def handle(s: GameState, raw: str) -> dict:
             return _result(s, events, scene, voice=audio)
         # PALM SPRINGS TIME LOOP: every road out folds back to the wedding — UNLESS you drive back the
         # way you came (the escape), which breaks it. (Nyles remembers each loop; she never does.)
-        if s.flags.get("palm_loop"):
-            from engine import setpieces
-            if getattr(dest, "poi_id", None) and getattr(dest, "poi_id", None) == setpieces.palm_escape_dest(s):
-                events = setpieces.loop_break(s)
-                # fall through — the drive out actually happens this time
-            else:
-                events = setpieces.loop_reset(s, dest.name)
-                _autosave(s)
-                scene, voice, audio = _narrate(s, events, raw)
-                return _result(s, events, scene, voice=audio)
+        _loop_break_events = None
+        _pl_action, _pl_events = _palm_loop_check(s, dest)
+        if _pl_action == "reset":
+            events = _pl_events
+            _autosave(s)
+            scene, voice, audio = _narrate(s, events, raw)
+            return _result(s, events, scene, voice=audio)
+        elif _pl_action == "break":
+            _loop_break_events = _pl_events    # preserved + prepended after the drive resolves
         target = s.flags.get("gas_target")
         if target and not s.flags.get("favor_filled") and getattr(dest, "poi_id", None) != target:
             # SOFT FAIL — the tank isn't full yet. Don't move, don't end the game: checkpoint + rewind.
@@ -1457,6 +1490,8 @@ def handle(s: GameState, raw: str) -> dict:
         if (DRIVE_CONVERSATIONS and s.flags.get("favor_filled") and not args.get("push")
                 and rt["duration_h"] >= TRANSIT_MIN_HOURS and not s.flags.get("transit")
                 and rt["distance_mi"] <= s.range_mi + 1.0      # don't open a chat for a leg you can't finish
+                and not s.flags.get("broken_down")             # a holed-piston car gets the BROKEN refusal, not a chat
+                and not _loop_break_events                     # the Palm Springs escape must resolve + show its beat
                 and not _too_tired and not _snowed):           # ...or one she'll refuse (sleep / snowed pass)
             conv = min(4, max(2, round(rt["duration_h"] * 1.5)))
             s.flags["transit"] = {"dest": args["dest"], "conv": conv, "talked": 0}
@@ -1466,6 +1501,8 @@ def handle(s: GameState, raw: str) -> dict:
             return _result(s, [], scene, voice=audio,
                            info=f"(rolling to {dest.name} — talk to her, or 'put on music' to get there)")
         events, npc, drama_ev, story_beat = _do_drive(s, dest, args.get("push", False))
+        if _loop_break_events:           # the Palm Springs escape line, preserved across _do_drive
+            events = _loop_break_events + events
         player_text = ""
     elif verb == "autodrive":            # the self-driving secret — she takes the wheel
         if not gadgets.can_autodrive(s):
@@ -1478,10 +1515,17 @@ def handle(s: GameState, raw: str) -> dict:
             if dest is None:
                 events = [f"NAV: '{args['dest']}' isn't on my maps — NV/CA/AZ/UT only."]
             else:
-                before_odo = s.odometer_mi
-                events = rules.drive(s, dest, selfdrive=True)
-                if s.status == "playing" and s.odometer_mi > before_odo:
-                    npc, drama_ev, story_beat = _after_arrival(s, events)
+                # the self-driving secret must STILL obey the Palm Springs loop (no teleport-trap bypass)
+                _pl_action, _pl_events = _palm_loop_check(s, dest)
+                if _pl_action == "reset":
+                    events = _pl_events
+                else:
+                    before_odo = s.odometer_mi
+                    events = rules.drive(s, dest, selfdrive=True)
+                    if _pl_action == "break" and _pl_events:
+                        events = _pl_events + events
+                    if s.status == "playing" and s.odometer_mi > before_odo:
+                        npc, drama_ev, story_beat = _after_arrival(s, events)
         player_text = ""
     elif verb == "fuel":
         gas_run = (s.flags.get("prologue_done") and not s.flags.get("favor_filled")
@@ -1638,9 +1682,16 @@ def handle(s: GameState, raw: str) -> dict:
         info = garage.parts_text(s)
         player_text = "(eyes the build)"
     elif verb == "sell":
-        pid = garage.part_id(args.get("what", ""))
-        events = garage.sell_part(s, pid) if pid else [
-            "SELL: which part? 'parts' lists what's on her — the carbon hood, the Mikunis, the wheels."]
+        from engine import finds
+        what = args.get("what", "")
+        sold_find = finds.sell(s, what)          # a roadside find pawned for cash takes priority
+        if sold_find is not None:
+            events = sold_find
+        else:
+            pid = garage.part_id(what)
+            events = garage.sell_part(s, pid) if pid else [
+                "SELL: which part? 'parts' lists what's on her — the carbon hood, the Mikunis, the wheels. "
+                "(Or 'sell' a roadside find you've picked up.)"]
         player_text = ""
     elif verb == "lielow":
         from engine import heat as _heat
@@ -1838,7 +1889,8 @@ def handle(s: GameState, raw: str) -> dict:
                                                    "tell me about", "what are you", "what's it like",
                                                    "your past", "your name")))
             bond.converse(s, about_her=about_her)
-            if not romance_beat and not payoff:
+            # don't double-award: if the curious clerk already paid out Riz for this exact line, skip banter
+            if not romance_beat and not payoff and s.flags.pop("_clerk_consumed_turn", None) != s.turn:
                 line = _banter_riz(s, raw)
                 if line:
                     events.append(line)

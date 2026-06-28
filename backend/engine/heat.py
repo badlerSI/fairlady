@@ -116,6 +116,18 @@ def _floor(s: GameState) -> float:
     return max(base, bolo_floor(s))
 
 
+def _axis_floor(s: GameState, axis: str) -> float:
+    """The floor for ONE axis. The spreading BOLO is the CAR's description — it pins only the car axis;
+    YOUR face/card (personal) must stay independently coolable. A desperado warrant (you robbed a bank)
+    wants both you AND the car, so it floors both."""
+    if meter_frozen(s):
+        return 0.0
+    base = DESPERADO_HEAT_FLOOR if s.flags.get("desperado") else 0.0
+    if axis == "car":
+        return max(base, bolo_floor(s))
+    return base   # personal: a car BOLO never pins your identity
+
+
 # Two-axis heat: CAR heat (the white Z is a recognizable stolen show car — a BOLO on the plate/spade)
 # vs PERSONAL/DRIVER heat (YOU are identified — your face on a camera, your name on a card/ATM).
 # s.heat stays the authoritative COMBINED meter = max(car, personal) so every existing reader + the
@@ -145,21 +157,23 @@ def add(s: GameState, delta: float, reason: str, kind: str = "mark", axis: str =
         s.flags["car_heat"] = 0.0
         s.flags["personal_heat"] = 0.0
         return 0.0
-    lo = _floor(s)
     before = s.heat
     if axis in AXES:
         key = f"{axis}_heat"
         ax_before = s.flags.get(key, 0.0)
-        s.flags[key] = round(max(lo, min(100.0, ax_before + delta)), 1)
-        s.heat = round(max(lo, min(100.0, _combined(s))), 1)
+        s.flags[key] = round(max(_axis_floor(s, axis), min(100.0, ax_before + delta)), 1)
+        s.heat = round(_combined(s), 1)
         real = round(s.flags[key] - ax_before, 1)   # log the AXIS change — a card mark records even
         #                                             when the car already dominates the combined meter
     else:
-        # legacy / untyped: move the combined meter, and apply the same delta to both axes
-        s.heat = round(max(lo, min(100.0, s.heat + delta)), 1)
+        # legacy / untyped: apply the delta to BOTH axes, each clamped to its OWN floor (so a car BOLO
+        # can't pin your personal heat up, and a cooling action records as cooling, not a phantom mark).
         for a in AXES:
             k = f"{a}_heat"
-            s.flags[k] = round(max(lo, min(100.0, s.flags.get(k, before) + delta)), 1)
+            s.flags[k] = round(max(_axis_floor(s, a), min(100.0, s.flags.get(k, before) + delta)), 1)
+        # the combined moves from its CURRENT value by delta (honors a directly-set s.heat) and never
+        # falls below either the car floor or the live axis max.
+        s.heat = round(max(_axis_floor(s, "car"), min(100.0, before + delta), _combined(s)), 1)
         real = round(s.heat - before, 1)
     s.flags["peak_heat"] = max(s.flags.get("peak_heat", 0), round(s.heat))  # for the scorecard
     if abs(real) >= 0.1 and reason:

@@ -74,7 +74,9 @@ def take_tab(s) -> dict:
     from engine import rules
     rules.advance_clock(s, 8.0)                        # you lose a night and a piece of yourself out there
     s.fatigue = min(140.0, s.fatigue + 20.0)
-    _bond.adjust(s, 40.0, "took the trip with me on the empty playa and came back closer", "deep")
+    # this is THE max-affection beat — drive bond all the way to the ceiling, not just +40 off wherever
+    # it happened to be, so the 'absolute maximum' prose is actually true.
+    _bond.adjust(s, max(40.0, 100.0 - s.bond), "took the trip with me on the empty playa and came back closer", "deep")
     s.flags["affection_max"] = True
     return {"events": [
         "TAB: you peel it off the glass and let it go to work, and the playa breathes. Hours fold up. "
@@ -219,6 +221,9 @@ def enter_rift(s) -> dict:
                            "Nyles, a wedding, a cave you shouldn't go in.)"], "moment": None}
     if s.flags.get("palm_loop"):
         return {"events": ["RIFT: you're already IN it, friend. That's rather the point."], "moment": None}
+    if s.flags.get("palm_escaped"):
+        return {"events": ["RIFT: the cave's just a cave now — whatever was here let you go once and it "
+                           "won't catch you twice. Nyles is gone. Drive on, ace."], "moment": None}
     s.flags["palm_loop"] = True
     s.flags["palm_loop_count"] = 0
     s.flags.setdefault("palm_pre_loop", s.flags.get("last_origin_poi"))

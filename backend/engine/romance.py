@@ -68,11 +68,19 @@ def answer_stick(s: GameState, raw: str) -> dict:
     s.flags.pop("awaiting_stick", None)
     s.flags["asked_stick"] = True
     yes = any(p in low for p in _STICK_YES) and not any(p in low for p in ("can't", "cant", "can not"))
-    # confident idioms ('no problem', 'no worries') are a YES, not the 'no' in _STICK_NO
+    # confident idioms ('no problem', 'no worries') are a YES — they only mask a BARE negation, never a
+    # substantive admission. 'I can drive an automatic no problem' is still a NO: 'automatic' is hard.
     _yes_idiom = any(i in low for i in ("no problem", "no worries", "no sweat", "no biggie", "no doubt"))
-    no = any(p in low for p in _STICK_NO) and not _yes_idiom
-    strong_yes = any(p in low for p in _STICK_STRONG_YES)      # a brag breaks a yes/no tie toward YES
-    if yes and (not no or strong_yes):
+    _SOFT_NO = ("no", "nope", "uh", "um")                     # bare negations an idiom/brag can override
+    # 'a manual, NOT an automatic' DISAVOWS automatic — that's a competence claim, not an admission.
+    _neg_auto = any(p in low for p in ("not an automatic", "not a automatic", "not automatic",
+                                       "never an automatic", "not driving automatic", "isn't automatic"))
+    hard_no = any(p in low for p in _STICK_NO                 # 'automatic'/'barely'/'never drove'…
+                  if p not in _SOFT_NO and not (p == "automatic" and _neg_auto))
+    soft_no = any(p in low for p in _SOFT_NO) and not _yes_idiom
+    no = hard_no or soft_no
+    strong_yes = any(p in low for p in _STICK_STRONG_YES)     # a brag breaks a tie toward YES — but NOT
+    if yes and (not no or (strong_yes and not hard_no)):      # over an explicit 'automatic'/'only' NO
         s.flags["can_drive_stick"] = True
         s.flags["stick_skill"] = 100                  # heel-and-toe from the jump — no stalls
         _bond.adjust(s, 4.0, "can actually drive her — heel-and-toe, the real thing", "warm")

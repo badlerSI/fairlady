@@ -14,6 +14,7 @@ source of truth. Prose is a working DRAFT for Ben.
 """
 from __future__ import annotations
 import json
+import re
 
 from config import CONTENT_DIR
 from engine.state import GameState
@@ -75,61 +76,132 @@ def spot_event(item: dict) -> str:
     return f"FIND: {item.get('spot', 'something on the shoulder')}.  ('take it' / 'grab it' — or keep rolling.)"
 
 
+_MAX_STACK = 3        # you don't need a dozen of the same roadside trinket rattling around back there
+
+
+def _award(s: GameState, fid: str, item: dict) -> None:
+    """Find-points + a little warmth — but ONCE per unique find id, so re-grabbing a recurring jerrycan
+    can't farm score or bond."""
+    from engine import bond as _bond
+    found = s.flags.setdefault("found_items", [])
+    first_time = fid not in found
+    found.append(fid)
+    if first_time:
+        s.flags["find_score"] = s.flags.get("find_score", 0) + item.get("points", 20)
+        _bond.adjust(s, 0.8, "stopped for something on the road because she asked", "warm")
+
+
 def take(s: GameState) -> list:
     """Take the find Ace just pointed out. Adds it to inventory (or keeps a companion), scores find
-    points, and — because she only ever finds these when you're TALKING — warms her a little."""
-    fid = s.flags.pop("pending_find", None)
+    points ONCE per id, and — because she only ever finds these when you're TALKING — warms her a
+    little. Honors the 7.5 cu ft hatch cap (however the find was armed) and won't stack endlessly."""
+    fid = s.flags.get("pending_find")
     if not fid or fid not in _BY_ID:
+        s.flags.pop("pending_find", None)
         return ["FIND: nothing to grab right now — she only spots things when you're actually talking "
                 "to her on the road, not skipping ahead."]
     item = _BY_ID[fid]
-    from engine import inventory, bond as _bond
-    s.flags.setdefault("found_items", []).append(fid)
-    s.flags["find_score"] = s.flags.get("find_score", 0) + item.get("points", 20)
-    _bond.adjust(s, 0.8, "stopped for something on the road because she asked", "warm")
+    from engine import inventory
+    # the puppy is a passenger, not cargo — no hatch math
     if fid == "stray_puppy":
+        s.flags.pop("pending_find", None)
+        if s.flags.get("has_dog"):
+            return ["FIND: you've already got Lucky asleep on the tunnel — one road dog is plenty."]
         s.flags["has_dog"] = True
+        _award(s, fid, item)
         return ["FIND: you scoop up the puppy and he immediately falls asleep on the transmission tunnel "
                 "like he owns it. 'His name is Lucky and I will hear no arguments.' (+a companion; she is "
                 "RADIANT.)"]
-    # everything else goes in the hatch (the stinger-style make-room isn't needed; we checked fit)
-    inv_id = {"empty_jerrycan": "jerrycan", "cooler_beer": "cooler"}.get(fid)
-    if inv_id:
-        inventory.add(s, inv_id, 1)
-    else:
-        inventory.add(s, fid, 1)
-        if fid not in inventory.ITEMS:                   # register the find so inventory can show it
-            inventory.ITEMS[fid] = {"name": item["name"], "cuft": item.get("cuft", 0.2),
-                                    "price": item.get("value", 0), "kind": "find",
-                                    "desc": item.get("use", "a roadside find")}
+    inv_id = {"empty_jerrycan": "jerrycan", "cooler_beer": "cooler"}.get(fid, fid)
+    cuft = inventory.ITEMS.get(inv_id, {}).get("cuft", item.get("cuft", 0.2))
+    # already carrying a stack of these? leave this one on the shoulder
+    if inventory.count(s, inv_id) >= _MAX_STACK:
+        s.flags.pop("pending_find", None)
+        return [f"FIND: you've already got {inventory.count(s, inv_id)} of those back there — you leave "
+                f"this one for the next desert rat."]
+    # will it FIT? a tiny trophy slips in unless the hatch is literally full; anything bigger needs room
+    used = inventory.volume_used(s)
+    tiny = cuft <= 0.05
+    if (not tiny and used + cuft > inventory.CAPACITY_CUFT + 0.01) or (tiny and used >= inventory.CAPACITY_CUFT):
+        s.flags.pop("pending_find", None)
+        return [f"FIND: no room — the hatch is full ({used:.1f}/{inventory.CAPACITY_CUFT:.1f} cu ft). "
+                f"Drop or sell something first if you want {item['name']}."]
+    s.flags.pop("pending_find", None)
+    if inv_id not in inventory.ITEMS:                     # register the find so inventory can show it
+        inventory.ITEMS[inv_id] = {"name": item["name"], "cuft": item.get("cuft", 0.2),
+                                   "price": item.get("value", 0), "kind": "find",
+                                   "desc": item.get("use", "a roadside find")}
+    inventory.add(s, inv_id, 1)
+    _award(s, fid, item)
     return [f"FIND: you pull onto the shoulder and grab it — {item['name']}. (+{item.get('points',20)} "
             f"find points · in the hatch now)  Use it later with 'use {fid.replace('_',' ')}'."]
+
+
+def _match_owned(s: GameState, low: str):
+    """Return the id of an OWNED find named in `low`, or None."""
+    from engine import inventory
+    def _owns(k):
+        inv_id = {"empty_jerrycan": "jerrycan", "cooler_beer": "cooler"}.get(k, k)
+        return inventory.has(s, inv_id) or (k == "stray_puppy" and s.flags.get("has_dog"))
+    matches = [k for k in _BY_ID
+               if (k.replace("_", " ") in low or k in low or _BY_ID[k]["name"].split()[-1].lower() in low)]
+    return next((k for k in matches if _owns(k)), None)
+
+
+def sell(s: GameState, raw: str):
+    """Pawn an OWNED valuable find for cash — only where there's a counter to fence it (a town). Returns
+    event lines, or None if `raw` doesn't name an owned find (so the car-PART seller can handle it)."""
+    from engine import inventory
+    low = (raw or "").lower().strip()
+    if not low:
+        return None
+    fid = _match_owned(s, low)
+    if fid is None:
+        return None
+    item = _BY_ID[fid]
+    if fid == "stray_puppy":
+        return ["SELL: …no. You are not selling Lucky. She'd never forgive you and frankly neither would I."]
+    value = int(item.get("value", 0))
+    if value < 20:
+        return [f"SELL: nobody's paying real money for a {item['name']} — it's worth more as a story."]
+    if not (getattr(s.place, "kind", "") == "city" or s.place.has("gas") or s.place.has("lodging")):
+        return [f"SELL: nowhere to fence a {item['name']} out here — wait for a town with a pawn counter."]
+    payout = max(1, int(round(value * 0.6)))             # the pawn haircut
+    inv_id = {"empty_jerrycan": "jerrycan", "cooler_beer": "cooler"}.get(fid, fid)
+    inventory.remove(s, inv_id, 1)
+    s.cash = round(s.cash + payout, 2)
+    disp = re.sub(r"^(a |an |the )", "", item["name"], flags=re.I)   # 'a real Rolex' → 'the real Rolex'
+    return [f"SELL: a pawn counter in {s.place.name} takes the {disp} for ${payout} "
+            f"(~60% of its ${value:,}). Out of the hatch, into your pocket — cash, no questions."]
 
 
 def use(s: GameState, raw: str):
     """The use-DM. A few finds have a hard mechanical effect; everything else gets a judged, in-character
     verdict on whether the attempt is plausible — but speech alone never grants arbitrary state."""
-    from engine import inventory
     low = (raw or "").lower()
-    # which find are they trying to use?
-    fid = None
-    for k in _BY_ID:
-        if k.replace("_", " ") in low or k in low or _BY_ID[k]["name"].split()[-1].lower() in low:
-            fid = k
-            break
-    if fid is None or not (inventory.has(s, fid) or (fid == "stray_puppy" and s.flags.get("has_dog"))):
-        return None                                      # let the normal parser handle it
+    # which find are they trying to use? Only an item you actually OWN can match (so a non-owned item's
+    # name doesn't shadow the one in your hatch).
+    fid = _match_owned(s, low)
+    if fid is None:
+        return None                                      # not an owned find → let the normal parser handle it
     item = _BY_ID[fid]
     # hard mechanical uses (engine-owned, never speech-granted)
     if fid == "gas_card":
+        if s.flags.get("gas_card_used"):
+            return ["USE: that gas card's already tapped, ace — nothing left on it."]
+        s.flags["gas_card_used"] = True
         return [f"USE: you run the found gas card at the pump — a few free gallons that never touch YOUR "
                 "card. (Heat-free splash. The card's tapped now.)"]
     if fid == "cowboy_hat":
         from engine import heat as _heat
+        if s.flags.get("cowboy_hat_worn"):
+            return ["USE: you're already wearing it, brim down — you can't get more anonymous than 'a guy "
+                    "in a hat', and it only works the once."]
+        s.flags["cowboy_hat_worn"] = True
         if not s.flags.get("no_heat"):
             _heat.add(s, -4.0, "a felt Stetson, brim down — you read as a local", "lower", axis="personal")
         return [f"USE: brim down, collar up — you read as one more cowboy passing through. Driver heat "
-                f"shed a little → {s.heat:.0f}."]
+                f"shed a little → {s.heat:.0f}. (One-time — the hat only fools them once.)"]
     # creative use → DM verdict (flavor only; no arbitrary state change)
     from engine import judge
     v = judge.assess(s, "persuade", raw, difficulty=4,
@@ -137,5 +209,8 @@ def use(s: GameState, raw: str):
     ok = v.get("pass") or v.get("clever")
     verdict = "she figures it just might work — go on, then." if ok else \
               "she's dubious it does anything useful right here — maybe somewhere it fits better."
-    return [f"USE: {item['name']} — {verdict} "
-            "(the right place + the right moment makes a thing like this matter)"]
+    tail = ("(the right place + the right moment makes a thing like this matter)"
+            if int(item.get("value", 0)) < 100
+            else f"(or 'sell the {item['name'].split()[-1].lower()}' at a pawn counter in town — it's "
+                 f"worth about ${int(item.get('value',0)):,})")
+    return [f"USE: {item['name']} — {verdict} {tail}"]
