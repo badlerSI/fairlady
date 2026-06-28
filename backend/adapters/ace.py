@@ -20,7 +20,7 @@ class AceNarrator(Narrator):
         self._fallback = StubNarrator()
         self._client = httpx.Client(timeout=ACE_TIMEOUT,
                                     headers={"User-Agent": GEO_USER_AGENT})
-        self._last = {}                       # session_id -> last reply, to catch the endpoint's echoes
+        self._last = {}                       # session_id -> deque of recent normalized replies (echo guard)
 
     # ---------------------------------------------------------------- FAIRLADY
     def _ask(self, prompt, persona, session_id):
@@ -30,22 +30,32 @@ class AceNarrator(Narrator):
         d = r.json()
         return (d.get("reply") or "").strip(), (d.get("audio_url") if VOICE_ENABLED else None)
 
+    @staticmethod
+    def _norm(t):
+        """Normalize for fuzzy echo-comparison: lowercase, drop punctuation/whitespace, first ~80 chars —
+        so a near-identical line with trailing micro-variation still reads as a repeat."""
+        return re.sub(r"[^a-z0-9]", "", (t or "").lower())[:80]
+
     def narrate(self, persona, snapshot, events, player_text, session_id, extra=None):
-        allow_favor = bool(snapshot.get("opening"))      # during the opening, the favor IS the topic
         prompt = self._frame(persona, snapshot, events, player_text, extra)
+        recent = self._last.setdefault(session_id, [])
         try:
             reply, audio = self._ask(prompt, persona, session_id)
-            text = self._clean(reply, allow_favor=allow_favor)
-            # the ace8 endpoint sometimes echoes the EXACT prior line; one retry with a nudge unsticks it
-            if text and text == self._last.get(session_id):
-                reply2, audio2 = self._ask(prompt + "\n\n(Say something NEW — do not repeat your last "
-                                           "line; answer fresh.)", persona, session_id)
-                t2 = self._clean(reply2, allow_favor=allow_favor)
-                if t2 and t2 != text:
+            text = self._clean(reply)
+            # the ace8 endpoint sometimes collapses onto a near-fixed line; a fuzzy match (not just exact)
+            # against the last few replies triggers ONE retry with a hard "say something new" nudge.
+            if text and self._norm(text) in recent:
+                reply2, audio2 = self._ask(
+                    prompt + "\n\nIMPORTANT: do NOT repeat or paraphrase anything you've said before in "
+                    "this conversation. Say something genuinely NEW that answers what they just said.",
+                    persona, session_id)
+                t2 = self._clean(reply2)
+                if t2 and self._norm(t2) not in recent:
                     text, audio = t2, audio2
             if not text:
                 raise ValueError("empty reply")
-            self._last[session_id] = text
+            recent.append(self._norm(text))
+            del recent[:-4]                      # remember the last 4 lines per session
             return {"text": text, "audio_url": audio, "voice": "af_heart"}
         except Exception:
             return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
@@ -66,21 +76,30 @@ class AceNarrator(Narrator):
         "quarter-inch of fuel", "five minutes", "the turntable", "turntable's a car short",
         "nobody'd notice", "nobody would notice", "gas run", "that gas run", "the favor",
         "one simple favor", "just say the word", "take the wheel and",
+        # paraphrased on-ramps a live model improvises around the literal pitch
+        "do me a favor", "doing me a favor", "doing me a kindness", "a real kindness", "be a kindness",
+        "help me get gas", "help a girl get gas", "help a girl out", "get me gas", "not too proud to ask",
+        "help me out here", "get me to a pump", "two short blocks", "a couple blocks",
     )
+    # leading/trailing JSON/list artifacts the endpoint sometimes wraps a reply in: ["...  '}]  etc.
+    _ARTIFACT = re.compile(r"^[\s\[\]{}\"'`,]+|[\s\[\]{}]*['\"`]?\s*[}\]]+\s*$")
 
     @classmethod
-    def _clean(cls, text: str, allow_favor: bool = False) -> str:
+    def _clean(cls, text: str) -> str:
         if not text:
             return text
-        import re as _re2
-        if not allow_favor:
-            sentences = _re2.split(r"(?<=[.!?…])\s+", text)
-            kept = [snt for snt in sentences if not any(p in snt.lower() for p in cls._LEAK_PHRASES)]
-            if kept:                                   # never strip everything — keep raw if it'd empty
-                text = " ".join(kept).strip()
+        # strip JSON/list bracket artifacts off both ends first
+        text = cls._ARTIFACT.sub("", text).strip()
+        # drop any whole SENTENCE that carries a leaked gas-favor on-ramp (the game owns the real favor
+        # via its own prologue beats; the endpoint's on-ramp is always noise). The fail-safe below keeps
+        # the raw line if stripping would empty it (e.g. a genuine pure-pitch opening reply).
+        sentences = re.split(r"(?<=[.!?…])\s+", text)
+        kept = [snt for snt in sentences if not any(p in snt.lower() for p in cls._LEAK_PHRASES)]
+        if kept:
+            text = " ".join(kept).strip()
         # trim a runaway dangling half-sentence the model sometimes tacks on
         if text and text[-1] not in ".!?\"'…)":
-            parts = _re2.split(r"(?<=[.!?…])\s+", text)
+            parts = re.split(r"(?<=[.!?…])\s+", text)
             if len(parts) > 1:
                 text = " ".join(parts[:-1]).strip()
         return text or "…"  # never return empty

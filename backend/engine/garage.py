@@ -147,8 +147,12 @@ def parts_text(s: GameState) -> str:
             lines.append(f"  — {p['name']}  SOLD → {p['stock']}")
         else:
             lines.append(f"  ${p['value']:>4.0f}  {p['name']}")
-    lines.append(f"  value ~${car_value(s):,.0f} · show score {show_score(s)}"
-                 + ("  (stripped — won't win a lawn)" if not _show_ok(s) else ""))
+    note = ""
+    if is_stripped(s):
+        note = "  (stripped — won't win a lawn)"
+    elif not _show_ok(s):
+        note = "  (below show-winning trim)"
+    lines.append(f"  value ~${car_value(s):,.0f} · show score {show_score(s)}" + note)
     return "\n".join(lines)
 
 

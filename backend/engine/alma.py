@@ -33,6 +33,17 @@ ALMA_BACKSTORY = (
     "especially the romantic idiots who do it for love instead of money. And somehow — this is the part "
     "neither of you can explain — you've been dreaming her in cyan for a week."
 )
+# Alma's OWN voice — distinct from Ace. Where Ace is dry/loyal/literate, Alma is low, amused, dangerous,
+# economical; she's read every line and is bored of most of them; tenderness only leaks at the edges.
+PERSONA = (
+    "You are ALMA — a femme fatale the driver met clubbing in Vegas: a fixer and a grifter who has left "
+    "a forwarding address in every city worth leaving, knows the bent cops and the night clerks, and is "
+    "running from one thing she won't name. You are NOT the car. You speak low, amused, and economical — "
+    "wry, a half-step ahead, allergic to try-hards and sleaze, with real tenderness leaking only at the "
+    "edges and only for someone running on a romantic feeling instead of money. You call the driver "
+    "'stranger' or 'love'. Reply in ONE or TWO sentences, in character, no stage directions, no quotation "
+    "marks, no lists. React to what they just said.")
+
 ALMA_COOL_HEAT = 24.0          # how much heat she can make disappear
 ALMA_COOL_COOLDOWN_H = 18.0    # ...and how often she can do it
 ALMA_BOND_HIT = 9.0            # what marrying her costs you with Ace, the first time
@@ -148,12 +159,15 @@ def club_turn(s: GameState, raw: str) -> dict:
                              "wit, nerve, and honesty, punish sleaze and cliché")
     if v.get("messing") or (not v.get("pass") and not v.get("clever") and v.get("score", 50) < 35):
         c["spark"] -= 1
+        mood = "COOLING — that line landed badly and the warmth is going out of the booth; she's unimpressed, maybe a little contemptuous"
         react = ("ALMA: she sets the glass down. 'That's the line you went with? In that jacket?' The "
                  "warmth goes out of the booth a few degrees.")
     elif v.get("pass") or v.get("clever") or v.get("score", 50) >= 65:
         c["spark"] += 1
+        mood = "WARMING — a real first smile, leaning in an inch, intrigued and telling them to keep going"
         react = "ALMA: a real smile, the first one. She leans in an inch. 'Hm. Keep going, stranger.'"
     else:
+        mood = "UNREADABLE — not bad, not won yet, swirling her drink and making them work for it"
         react = "ALMA: she swirls her drink, unreadable. 'Mm. Not bad. Not yet, either.'"
 
     if c["spark"] >= CLUB_WIN:
@@ -185,10 +199,11 @@ def club_turn(s: GameState, raw: str) -> dict:
                            "stub": ["(Ace, gentle) …Her loss, ace. Whoever she was. Get in. The desert "
                                     "doesn't care how that went, and neither, mostly, do I."]},
                 "done": True}
-    return {"events": [react, "CLUB: (the booth's still warm. Another line — make it count.)"],
-            "moment": {"cue": "mid-flirtation with Alma in the club, she's waiting for the next line, "
-                              "intrigued but not won; the driver needs wit and nerve",
-                       "stub": ["(she waits, one eyebrow up)"]},
+    return {"events": ["CLUB: (the booth's still warm. Another line — make it count.)"],
+            "moment": {"persona": "alma",
+                       "cue": f"in the Vegas club, reacting to the driver's latest line as you try to win "
+                              f"her over; she is {mood}; she has NOT decided yet",
+                       "stub": [react.split("ALMA: ", 1)[-1]]},
             "done": False}
 
 

@@ -2776,11 +2776,17 @@ def test_clubbing_works_in_the_whole_vegas_valley():
     s.place = world.get_poi("sema_chevron")
     assert alma.can_club(s)                   # the Chevron behind the LVCC counts as the first Vegas night
 
-def test_gas_favor_leak_stripped_post_opening_kept_during():
+def test_gas_favor_leak_and_artifacts_stripped():
     from adapters.ace import AceNarrator as A
     leak = "I pull hard past five grand. Help me get gas — two blocks, five minutes, the offer stands."
-    assert "two blocks" not in A._clean(leak, allow_favor=False)
-    assert "two blocks" in A._clean(leak, allow_favor=True)
+    out = A._clean(leak)
+    assert "two blocks" not in out and "five grand" in out      # favor pitch gone, real line kept
+    # a paraphrased on-ramp the literal stripper used to miss
+    assert "favor" not in A._clean("So, the desert. Do me a favor though — help a girl get gas?").lower()
+    # JSON/list bracket artifacts off both ends
+    assert A._clean('["Brown suits you, stranger."]').startswith("Brown")
+    # fail-safe: a pure-pitch line never empties to nothing
+    assert A._clean("Help me get gas, two blocks.").strip() not in ("", "…")
 
 
 def test_alma_backstory_reveals_once_when_aboard():

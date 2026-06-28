@@ -121,7 +121,7 @@ def arrival_heat(s: GameState) -> list:
     CAR heat; the dark country does nothing. Deterministic, legible, and the whole point of the
     rural-vs-city tension. Returns events (possibly empty)."""
     from engine import heat as _heat
-    if s.flags.get("no_heat"):
+    if _heat.meter_frozen(s):        # bought OR driving forgettable Bob — no plate worth pinging
         return []
     raw = camera_density(s.place)
     eff = effective_density(s)

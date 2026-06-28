@@ -458,7 +458,8 @@ def snapshot(s: GameState) -> dict:
         "snow_line": round(season.snow_line(s), 3),
         "car_value": garage.car_value(s), "show_score": garage.show_score(s),
         "encounter_open": (encounters.stop_active(s) or encounters.owner_active(s)
-                           or encounters.standoff_active(s)),
+                           or encounters.standoff_active(s) or encounters.chase_active(s)
+                           or alma.club_active(s)),
         "odometer_mi": round(s.odometer_mi), "adventures": list(s.adventures),
         "status": s.status, "turn": s.turn,
         "gas_price": round(economy.gas_price(p), 2) if p.has("gas") else None,
@@ -699,9 +700,11 @@ def _narrate(s, events, player_text, drama=None, persona_override=None):
         extra = {"cue": drama["cue"], "stub": drama.get("stub", [])}
     persona = persona_override or _active_persona(s)
     # a drama beat can declare WHO speaks it — so Ace's phone call reaches you in her voice even while
-    # you're driving Bob (drama={"persona":"ace"}); default follows the active car.
+    # you're driving Bob (drama={"persona":"ace"}), and Alma speaks the club woo in HERS, not Ace's.
     if drama and drama.get("persona") == "ace":
         persona = _PERSONA
+    elif drama and drama.get("persona") == "alma":
+        persona = alma.PERSONA
     out = nar.narrate(persona, snapshot(s), events, player_text, s.flags.get("sid", "x"), extra=extra)
     return out.get("text", ""), out.get("voice"), out.get("audio_url")
 
@@ -1194,11 +1197,15 @@ def handle(s: GameState, raw: str) -> dict:
             return _result(s, ([riz_line] if riz_line else []), scene, voice=audio,
                            info=("(almost there — last word, or 'music' to arrive)" if last
                                  else "(rolling — keep talking, or 'put on music' to get there)"))
-        # fast-forward: she puts on music and brings you in (the leg + everything on arrival resolves)
+        # fast-forward: she puts on music and brings you in (the leg + everything on arrival resolves).
+        # A NEW 'drive to Y' mid-roll REDIRECTS to Y (don't silently land at the old destination); any
+        # other non-chat verb just brings you in to where you were already headed.
         s.flags.pop("transit", None)
-        dest = world.geocode(tr["dest"])
+        dest_q = args["dest"] if (verb == "drive" and args.get("dest")) else tr["dest"]
+        dest = world.geocode(dest_q)
         if dest is None:
-            return _result(s, [], "", info="(lost where we were headed — try the drive again)")
+            return _result(s, [], "", info=f"(I don't have '{dest_q}' on my maps — NV/CA/AZ/UT only. "
+                           "Try the drive again.)")
         events, npc, drama_ev, story_beat = _do_drive(s, dest, False)
         _autosave(s)
         if s.flags.pop("_titledrop", None):
