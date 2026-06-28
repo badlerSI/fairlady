@@ -1,0 +1,2032 @@
+{
+ "_note": "Dithered location plates for RIDE OR DIE. One full-bleed plate per visitable POI + the start node. Generated to match the established scenes_wm cyan-duotone dither style. Fill 'status' as plates are produced.",
+ "style": "roi_loc_dither_v1",
+ "palette": [
+  "#0e0c0a",
+  "#13262a",
+  "#1f6f7d",
+  "#38d6ec",
+  "#b8f4ff"
+ ],
+ "size": "1024x640 source -> downscale to 320x200",
+ "dir": "media/transmission/loc/",
+ "count": 252,
+ "plates": {
+  "sema_north_hall": {
+   "file": "roi_loc_sema_north_hall.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "SEMA \u2014 LVCC North Hall",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "sema_chevron": {
+   "file": "roi_loc_sema_chevron.png",
+   "region": "NV",
+   "kind": "gas",
+   "name": "Paradise Road Chevron, behind the LVCC North Hall",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "las_vegas": {
+   "file": "roi_loc_las_vegas.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Las Vegas",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "lv_motor_speedway": {
+   "file": "roi_loc_lv_motor_speedway.png",
+   "region": "NV",
+   "kind": "track",
+   "name": "Las Vegas Motor Speedway",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "spring_mountain": {
+   "file": "roi_loc_spring_mountain.png",
+   "region": "NV",
+   "kind": "track",
+   "name": "Spring Mountain Motorsports Ranch, Pahrump",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "pahrump": {
+   "file": "roi_loc_pahrump.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Pahrump",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "valley_of_fire": {
+   "file": "roi_loc_valley_of_fire.png",
+   "region": "NV",
+   "kind": "park",
+   "name": "Valley of Fire State Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "mesquite": {
+   "file": "roi_loc_mesquite.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Mesquite",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "moapa": {
+   "file": "roi_loc_moapa.png",
+   "region": "NV",
+   "kind": "gas",
+   "name": "Glendale / Moapa",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "beatty": {
+   "file": "roi_loc_beatty.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Beatty",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "primm": {
+   "file": "roi_loc_primm.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Primm",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "laughlin": {
+   "file": "roi_loc_laughlin.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Laughlin",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "hoover_dam": {
+   "file": "roi_loc_hoover_dam.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "Hoover Dam / Boulder City",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "tonopah": {
+   "file": "roi_loc_tonopah.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Tonopah",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "rachel": {
+   "file": "roi_loc_rachel.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "Rachel / Extraterrestrial Highway",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "ely": {
+   "file": "roi_loc_ely.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Ely",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "great_basin": {
+   "file": "roi_loc_great_basin.png",
+   "region": "NV",
+   "kind": "park",
+   "name": "Great Basin National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "reno": {
+   "file": "roi_loc_reno.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Reno",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "carson_city": {
+   "file": "roi_loc_carson_city.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Carson City",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "baker_ca": {
+   "file": "roi_loc_baker_ca.png",
+   "region": "CA",
+   "kind": "gas",
+   "name": "Baker",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "barstow": {
+   "file": "roi_loc_barstow.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Barstow",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "calico": {
+   "file": "roi_loc_calico.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Calico Ghost Town",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "needles": {
+   "file": "roi_loc_needles.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Needles",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "death_valley": {
+   "file": "roi_loc_death_valley.png",
+   "region": "CA",
+   "kind": "park",
+   "name": "Death Valley NP (Furnace Creek)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "stovepipe": {
+   "file": "roi_loc_stovepipe.png",
+   "region": "CA",
+   "kind": "gas",
+   "name": "Stovepipe Wells",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "mojave": {
+   "file": "roi_loc_mojave.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Mojave",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "willow_springs": {
+   "file": "roi_loc_willow_springs.png",
+   "region": "CA",
+   "kind": "track",
+   "name": "Willow Springs International Raceway",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "buttonwillow": {
+   "file": "roi_loc_buttonwillow.png",
+   "region": "CA",
+   "kind": "track",
+   "name": "Buttonwillow Raceway Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "auto_club": {
+   "file": "roi_loc_auto_club.png",
+   "region": "CA",
+   "kind": "track",
+   "name": "Auto Club Speedway (Fontana)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "chuckwalla": {
+   "file": "roi_loc_chuckwalla.png",
+   "region": "CA",
+   "kind": "track",
+   "name": "Chuckwalla Valley Raceway",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "laguna_seca": {
+   "file": "roi_loc_laguna_seca.png",
+   "region": "CA",
+   "kind": "track",
+   "name": "WeatherTech Raceway Laguna Seca",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "thunderhill": {
+   "file": "roi_loc_thunderhill.png",
+   "region": "CA",
+   "kind": "track",
+   "name": "Thunderhill Raceway Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sonoma": {
+   "file": "roi_loc_sonoma.png",
+   "region": "CA",
+   "kind": "track",
+   "name": "Sonoma Raceway",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "joshua_tree": {
+   "file": "roi_loc_joshua_tree.png",
+   "region": "CA",
+   "kind": "park",
+   "name": "Joshua Tree National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "yosemite": {
+   "file": "roi_loc_yosemite.png",
+   "region": "CA",
+   "kind": "park",
+   "name": "Yosemite National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sequoia": {
+   "file": "roi_loc_sequoia.png",
+   "region": "CA",
+   "kind": "park",
+   "name": "Sequoia National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "kings_canyon": {
+   "file": "roi_loc_kings_canyon.png",
+   "region": "CA",
+   "kind": "park",
+   "name": "Kings Canyon National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "disneyland": {
+   "file": "roi_loc_disneyland.png",
+   "region": "CA",
+   "kind": "amusement",
+   "name": "Disneyland (Anaheim)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "knotts": {
+   "file": "roi_loc_knotts.png",
+   "region": "CA",
+   "kind": "amusement",
+   "name": "Knott's Berry Farm (Buena Park)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "magic_mountain": {
+   "file": "roi_loc_magic_mountain.png",
+   "region": "CA",
+   "kind": "amusement",
+   "name": "Six Flags Magic Mountain (Valencia)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "universal": {
+   "file": "roi_loc_universal.png",
+   "region": "CA",
+   "kind": "amusement",
+   "name": "Universal Studios Hollywood",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "santa_cruz_boardwalk": {
+   "file": "roi_loc_santa_cruz_boardwalk.png",
+   "region": "CA",
+   "kind": "amusement",
+   "name": "Santa Cruz Beach Boardwalk",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "seaworld_sd": {
+   "file": "roi_loc_seaworld_sd.png",
+   "region": "CA",
+   "kind": "amusement",
+   "name": "SeaWorld San Diego",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "santa_monica": {
+   "file": "roi_loc_santa_monica.png",
+   "region": "CA",
+   "kind": "amusement",
+   "name": "Santa Monica Pier",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "los_angeles": {
+   "file": "roi_loc_los_angeles.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Los Angeles",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "little_tokyo": {
+   "file": "roi_loc_little_tokyo.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Little Tokyo, Los Angeles",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "east_la": {
+   "file": "roi_loc_east_la.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "East Los Angeles",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "artesia": {
+   "file": "roi_loc_artesia.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Artesia / Little India",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "san_diego": {
+   "file": "roi_loc_san_diego.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "San Diego",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "san_francisco": {
+   "file": "roi_loc_san_francisco.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "San Francisco",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sf_japantown": {
+   "file": "roi_loc_sf_japantown.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Japantown, San Francisco",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sf_chinatown": {
+   "file": "roi_loc_sf_chinatown.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Chinatown, San Francisco",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sf_north_beach": {
+   "file": "roi_loc_sf_north_beach.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "North Beach, San Francisco",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sf_mission": {
+   "file": "roi_loc_sf_mission.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "The Mission, San Francisco",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bakersfield": {
+   "file": "roi_loc_bakersfield.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Bakersfield",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "fresno": {
+   "file": "roi_loc_fresno.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Fresno",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bishop": {
+   "file": "roi_loc_bishop.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Bishop",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "lone_pine": {
+   "file": "roi_loc_lone_pine.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Lone Pine",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "lee_vining": {
+   "file": "roi_loc_lee_vining.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Lee Vining / Tioga Pass",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "palm_springs": {
+   "file": "roi_loc_palm_springs.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Palm Springs",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "grand_canyon_south": {
+   "file": "roi_loc_grand_canyon_south.png",
+   "region": "AZ",
+   "kind": "park",
+   "name": "Grand Canyon NP (South Rim)",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "grand_canyon_north": {
+   "file": "roi_loc_grand_canyon_north.png",
+   "region": "AZ",
+   "kind": "park",
+   "name": "Grand Canyon NP (North Rim)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "flagstaff": {
+   "file": "roi_loc_flagstaff.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Flagstaff",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "williams": {
+   "file": "roi_loc_williams.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Williams",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "kingman": {
+   "file": "roi_loc_kingman.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Kingman",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "lake_havasu": {
+   "file": "roi_loc_lake_havasu.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Lake Havasu City",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "sedona": {
+   "file": "roi_loc_sedona.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Sedona",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "page": {
+   "file": "roi_loc_page.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Page / Horseshoe Bend",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "phoenix": {
+   "file": "roi_loc_phoenix.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Phoenix",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "castles_coasters": {
+   "file": "roi_loc_castles_coasters.png",
+   "region": "AZ",
+   "kind": "amusement",
+   "name": "Castles N' Coasters (Phoenix)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "tucson": {
+   "file": "roi_loc_tucson.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Tucson",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "nogales": {
+   "file": "roi_loc_nogales.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Nogales",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "saguaro": {
+   "file": "roi_loc_saguaro.png",
+   "region": "AZ",
+   "kind": "park",
+   "name": "Saguaro National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "petrified_forest": {
+   "file": "roi_loc_petrified_forest.png",
+   "region": "AZ",
+   "kind": "park",
+   "name": "Petrified Forest National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "monument_valley": {
+   "file": "roi_loc_monument_valley.png",
+   "region": "AZ",
+   "kind": "park",
+   "name": "Monument Valley",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "meteor_crater": {
+   "file": "roi_loc_meteor_crater.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Meteor Crater",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "st_george": {
+   "file": "roi_loc_st_george.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "St. George",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "springdale": {
+   "file": "roi_loc_springdale.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Springdale (Zion gate)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "zion": {
+   "file": "roi_loc_zion.png",
+   "region": "UT",
+   "kind": "park",
+   "name": "Zion National Park",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "cedar_city": {
+   "file": "roi_loc_cedar_city.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Cedar City",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "kanab": {
+   "file": "roi_loc_kanab.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Kanab",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bryce": {
+   "file": "roi_loc_bryce.png",
+   "region": "UT",
+   "kind": "park",
+   "name": "Bryce Canyon National Park",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "capitol_reef": {
+   "file": "roi_loc_capitol_reef.png",
+   "region": "UT",
+   "kind": "park",
+   "name": "Capitol Reef National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "goblin_valley": {
+   "file": "roi_loc_goblin_valley.png",
+   "region": "UT",
+   "kind": "park",
+   "name": "Goblin Valley State Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "moab": {
+   "file": "roi_loc_moab.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Moab",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "arches": {
+   "file": "roi_loc_arches.png",
+   "region": "UT",
+   "kind": "park",
+   "name": "Arches National Park",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "canyonlands": {
+   "file": "roi_loc_canyonlands.png",
+   "region": "UT",
+   "kind": "park",
+   "name": "Canyonlands National Park",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "salt_lake_city": {
+   "file": "roi_loc_salt_lake_city.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Salt Lake City",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "lagoon": {
+   "file": "roi_loc_lagoon.png",
+   "region": "UT",
+   "kind": "amusement",
+   "name": "Lagoon Amusement Park (Farmington)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "park_city": {
+   "file": "roi_loc_park_city.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Park City",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bonneville": {
+   "file": "roi_loc_bonneville.png",
+   "region": "UT",
+   "kind": "track",
+   "name": "Bonneville Salt Flats",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "fallon": {
+   "file": "roi_loc_fallon.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "Fallon / NAS Fallon",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sphere": {
+   "file": "roi_loc_sphere.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "The Sphere, Las Vegas",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "fremont": {
+   "file": "roi_loc_fremont.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "Fremont Street, Las Vegas",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "seven_magic": {
+   "file": "roi_loc_seven_magic.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "Seven Magic Mountains",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "golden_gate": {
+   "file": "roi_loc_golden_gate.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Golden Gate Bridge",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "racetrack_playa": {
+   "file": "roi_loc_racetrack_playa.png",
+   "region": "CA",
+   "kind": "park",
+   "name": "Racetrack Playa (Death Valley)",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "salvation_mountain": {
+   "file": "roi_loc_salvation_mountain.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Salvation Mountain",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "amargosa": {
+   "file": "roi_loc_amargosa.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Amargosa Opera House (Death Valley Junction)",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "goldfield": {
+   "file": "roi_loc_goldfield.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "Goldfield ghost town",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "integratron": {
+   "file": "roi_loc_integratron.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "The Integratron",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "madonna_inn": {
+   "file": "roi_loc_madonna_inn.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Madonna Inn, San Luis Obispo",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "willow_creek": {
+   "file": "roi_loc_willow_creek.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Bigfoot country (Willow Creek)",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "area51_gate": {
+   "file": "roi_loc_area51_gate.png",
+   "region": "NV",
+   "kind": "encounter",
+   "name": "Area 51 back gate",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "richmond_koinoya": {
+   "file": "roi_loc_richmond_koinoya.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "koiNOya \u2014 Richmond",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "oakland_aisha": {
+   "file": "roi_loc_oakland_aisha.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "AiSha Garage \u2014 Downtown Oakland",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "petersen": {
+   "file": "roi_loc_petersen.png",
+   "region": "CA",
+   "kind": "museum",
+   "name": "Petersen Automotive Museum, LA",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "neon_museum": {
+   "file": "roi_loc_neon_museum.png",
+   "region": "NV",
+   "kind": "museum",
+   "name": "The Neon Museum, Las Vegas",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "getty": {
+   "file": "roi_loc_getty.png",
+   "region": "CA",
+   "kind": "museum",
+   "name": "The Getty Center, LA",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "heard": {
+   "file": "roi_loc_heard.png",
+   "region": "AZ",
+   "kind": "museum",
+   "name": "Heard Museum, Phoenix",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "nhmu": {
+   "file": "roi_loc_nhmu.png",
+   "region": "UT",
+   "kind": "museum",
+   "name": "Natural History Museum of Utah, SLC",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "pinball": {
+   "file": "roi_loc_pinball.png",
+   "region": "NV",
+   "kind": "museum",
+   "name": "Pinball Hall of Fame, Las Vegas",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "monterey": {
+   "file": "roi_loc_monterey.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Monterey",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "long_beach": {
+   "file": "roi_loc_long_beach.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Long Beach",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "livermore": {
+   "file": "roi_loc_livermore.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Livermore",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "san_jose": {
+   "file": "roi_loc_san_jose.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "San Jose",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "berkeley": {
+   "file": "roi_loc_berkeley.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Berkeley",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sacramento": {
+   "file": "roi_loc_sacramento.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Sacramento",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "stockton": {
+   "file": "roi_loc_stockton.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Stockton",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "santa_barbara": {
+   "file": "roi_loc_santa_barbara.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Santa Barbara",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "ventura": {
+   "file": "roi_loc_ventura.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Ventura",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "oceanside": {
+   "file": "roi_loc_oceanside.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Oceanside",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "riverside": {
+   "file": "roi_loc_riverside.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Riverside",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "pasadena": {
+   "file": "roi_loc_pasadena.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Pasadena",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "palm_desert": {
+   "file": "roi_loc_palm_desert.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Palm Desert",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "gilroy": {
+   "file": "roi_loc_gilroy.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Gilroy",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "napa": {
+   "file": "roi_loc_napa.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Napa",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "half_moon_bay": {
+   "file": "roi_loc_half_moon_bay.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Half Moon Bay",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "redding": {
+   "file": "roi_loc_redding.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Redding",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "berlin_nv": {
+   "file": "roi_loc_berlin_nv.png",
+   "region": "NV",
+   "kind": "park",
+   "name": "Berlin\u2013Ichthyosaur State Park",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "winnemucca": {
+   "file": "roi_loc_winnemucca.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Winnemucca",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "elko": {
+   "file": "roi_loc_elko.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Elko",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "wells_nv": {
+   "file": "roi_loc_wells_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Wells",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "west_wendover": {
+   "file": "roi_loc_west_wendover.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "West Wendover",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "battle_mountain": {
+   "file": "roi_loc_battle_mountain.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Battle Mountain",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "lovelock": {
+   "file": "roi_loc_lovelock.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Lovelock",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "eureka_nv": {
+   "file": "roi_loc_eureka_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Eureka",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "austin_nv": {
+   "file": "roi_loc_austin_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Austin",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "hawthorne_nv": {
+   "file": "roi_loc_hawthorne_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Hawthorne",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "mina_nv": {
+   "file": "roi_loc_mina_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Mina",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "virginia_city": {
+   "file": "roi_loc_virginia_city.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Virginia City",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "genoa_nv": {
+   "file": "roi_loc_genoa_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Genoa",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "gardnerville": {
+   "file": "roi_loc_gardnerville.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Gardnerville",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "yerington": {
+   "file": "roi_loc_yerington.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Yerington",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "fernley": {
+   "file": "roi_loc_fernley.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Fernley",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "boulder_city": {
+   "file": "roi_loc_boulder_city.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Boulder City",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "searchlight": {
+   "file": "roi_loc_searchlight.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Searchlight",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "alamo_nv": {
+   "file": "roi_loc_alamo_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Alamo",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "caliente_nv": {
+   "file": "roi_loc_caliente_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Caliente",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "pioche": {
+   "file": "roi_loc_pioche.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Pioche",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "overton_nv": {
+   "file": "roi_loc_overton_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Overton",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "gerlach": {
+   "file": "roi_loc_gerlach.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Gerlach",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "jackpot_nv": {
+   "file": "roi_loc_jackpot_nv.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Jackpot",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "amargosa_valley": {
+   "file": "roi_loc_amargosa_valley.png",
+   "region": "NV",
+   "kind": "city",
+   "name": "Amargosa Valley",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "truckee": {
+   "file": "roi_loc_truckee.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Truckee",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "south_lake_tahoe": {
+   "file": "roi_loc_south_lake_tahoe.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "South Lake Tahoe",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "mammoth_lakes": {
+   "file": "roi_loc_mammoth_lakes.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Mammoth Lakes",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bridgeport_ca": {
+   "file": "roi_loc_bridgeport_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Bridgeport",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bodie": {
+   "file": "roi_loc_bodie.png",
+   "region": "CA",
+   "kind": "park",
+   "name": "Bodie",
+   "tier": "marquee",
+   "status": "pending"
+  },
+  "independence_ca": {
+   "file": "roi_loc_independence_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Independence",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "ridgecrest": {
+   "file": "roi_loc_ridgecrest.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Ridgecrest",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "trona": {
+   "file": "roi_loc_trona.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Trona",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "tehachapi": {
+   "file": "roi_loc_tehachapi.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Tehachapi",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "lancaster_ca": {
+   "file": "roi_loc_lancaster_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Lancaster",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "victorville": {
+   "file": "roi_loc_victorville.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Victorville",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "twentynine_palms": {
+   "file": "roi_loc_twentynine_palms.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Twentynine Palms",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "indio": {
+   "file": "roi_loc_indio.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Indio",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "el_centro": {
+   "file": "roi_loc_el_centro.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "El Centro",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "blythe": {
+   "file": "roi_loc_blythe.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Blythe",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "julian_ca": {
+   "file": "roi_loc_julian_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Julian",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "borrego_springs": {
+   "file": "roi_loc_borrego_springs.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Borrego Springs",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "temecula": {
+   "file": "roi_loc_temecula.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Temecula",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "ojai": {
+   "file": "roi_loc_ojai.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Ojai",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "paso_robles": {
+   "file": "roi_loc_paso_robles.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Paso Robles",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "san_luis_obispo": {
+   "file": "roi_loc_san_luis_obispo.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "San Luis Obispo",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "san_simeon": {
+   "file": "roi_loc_san_simeon.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "San Simeon",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "big_sur": {
+   "file": "roi_loc_big_sur.png",
+   "region": "CA",
+   "kind": "park",
+   "name": "Big Sur",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "salinas": {
+   "file": "roi_loc_salinas.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Salinas",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "santa_maria": {
+   "file": "roi_loc_santa_maria.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Santa Maria",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "solvang": {
+   "file": "roi_loc_solvang.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Solvang",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "santa_rosa": {
+   "file": "roi_loc_santa_rosa.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Santa Rosa",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "petaluma": {
+   "file": "roi_loc_petaluma.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Petaluma",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "mendocino": {
+   "file": "roi_loc_mendocino.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Mendocino",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "fort_bragg_ca": {
+   "file": "roi_loc_fort_bragg_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Fort Bragg",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "eureka_ca": {
+   "file": "roi_loc_eureka_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Eureka, CA",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "weed_ca": {
+   "file": "roi_loc_weed_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Weed",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "mount_shasta_city": {
+   "file": "roi_loc_mount_shasta_city.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Mount Shasta",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "yreka": {
+   "file": "roi_loc_yreka.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Yreka",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "susanville": {
+   "file": "roi_loc_susanville.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Susanville",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "alturas": {
+   "file": "roi_loc_alturas.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Alturas",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "chico": {
+   "file": "roi_loc_chico.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Chico",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "placerville": {
+   "file": "roi_loc_placerville.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Placerville",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "nevada_city_ca": {
+   "file": "roi_loc_nevada_city_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Nevada City",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "sonora_ca": {
+   "file": "roi_loc_sonora_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Sonora",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "mariposa_ca": {
+   "file": "roi_loc_mariposa_ca.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Mariposa",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "oakhurst": {
+   "file": "roi_loc_oakhurst.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Oakhurst",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "modesto": {
+   "file": "roi_loc_modesto.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Modesto",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "visalia": {
+   "file": "roi_loc_visalia.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Visalia",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "zzyzx": {
+   "file": "roi_loc_zzyzx.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Zzyzx",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "amboy_ca": {
+   "file": "roi_loc_amboy_ca.png",
+   "region": "CA",
+   "kind": "gas",
+   "name": "Amboy",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "tecopa": {
+   "file": "roi_loc_tecopa.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Tecopa",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "koreatown_la": {
+   "file": "roi_loc_koreatown_la.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Koreatown",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "venice_beach": {
+   "file": "roi_loc_venice_beach.png",
+   "region": "CA",
+   "kind": "encounter",
+   "name": "Venice Beach",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "malibu": {
+   "file": "roi_loc_malibu.png",
+   "region": "CA",
+   "kind": "city",
+   "name": "Malibu",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "yuma": {
+   "file": "roi_loc_yuma.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Yuma",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "quartzsite": {
+   "file": "roi_loc_quartzsite.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Quartzsite",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "parker_az": {
+   "file": "roi_loc_parker_az.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Parker",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bullhead_city": {
+   "file": "roi_loc_bullhead_city.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Bullhead City",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "oatman": {
+   "file": "roi_loc_oatman.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Oatman",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "seligman": {
+   "file": "roi_loc_seligman.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Seligman",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "prescott": {
+   "file": "roi_loc_prescott.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Prescott",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "jerome_az": {
+   "file": "roi_loc_jerome_az.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Jerome",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "payson_az": {
+   "file": "roi_loc_payson_az.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Payson",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "show_low": {
+   "file": "roi_loc_show_low.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Show Low",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "holbrook": {
+   "file": "roi_loc_holbrook.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Holbrook",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "winslow_az": {
+   "file": "roi_loc_winslow_az.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Winslow",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "window_rock": {
+   "file": "roi_loc_window_rock.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Window Rock",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "chinle": {
+   "file": "roi_loc_chinle.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Chinle",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "kayenta": {
+   "file": "roi_loc_kayenta.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Kayenta",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "tuba_city": {
+   "file": "roi_loc_tuba_city.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Tuba City",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "globe_az": {
+   "file": "roi_loc_globe_az.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Globe",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "superior_az": {
+   "file": "roi_loc_superior_az.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Superior",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bisbee": {
+   "file": "roi_loc_bisbee.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Bisbee",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "tombstone": {
+   "file": "roi_loc_tombstone.png",
+   "region": "AZ",
+   "kind": "encounter",
+   "name": "Tombstone",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "willcox": {
+   "file": "roi_loc_willcox.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Willcox",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "ajo": {
+   "file": "roi_loc_ajo.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Ajo",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "why_az": {
+   "file": "roi_loc_why_az.png",
+   "region": "AZ",
+   "kind": "gas",
+   "name": "Why",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "gila_bend": {
+   "file": "roi_loc_gila_bend.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Gila Bend",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "casa_grande": {
+   "file": "roi_loc_casa_grande.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Casa Grande",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "wickenburg": {
+   "file": "roi_loc_wickenburg.png",
+   "region": "AZ",
+   "kind": "city",
+   "name": "Wickenburg",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "provo": {
+   "file": "roi_loc_provo.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Provo",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "ogden": {
+   "file": "roi_loc_ogden.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Ogden",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "logan_ut": {
+   "file": "roi_loc_logan_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Logan",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "tooele": {
+   "file": "roi_loc_tooele.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Tooele",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "wendover_ut": {
+   "file": "roi_loc_wendover_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Wendover",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "price_ut": {
+   "file": "roi_loc_price_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Price",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "helper_ut": {
+   "file": "roi_loc_helper_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Helper",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "green_river_ut": {
+   "file": "roi_loc_green_river_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Green River",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "hanksville": {
+   "file": "roi_loc_hanksville.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Hanksville",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "torrey_ut": {
+   "file": "roi_loc_torrey_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Torrey",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "escalante_ut": {
+   "file": "roi_loc_escalante_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Escalante",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "panguitch": {
+   "file": "roi_loc_panguitch.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Panguitch",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "beaver_ut": {
+   "file": "roi_loc_beaver_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Beaver",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "fillmore_ut": {
+   "file": "roi_loc_fillmore_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Fillmore",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "delta_ut": {
+   "file": "roi_loc_delta_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Delta",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "monticello_ut": {
+   "file": "roi_loc_monticello_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Monticello",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "blanding": {
+   "file": "roi_loc_blanding.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Blanding",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "bluff_ut": {
+   "file": "roi_loc_bluff_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Bluff",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "mexican_hat": {
+   "file": "roi_loc_mexican_hat.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Mexican Hat",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "hurricane_ut": {
+   "file": "roi_loc_hurricane_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Hurricane",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "vernal_ut": {
+   "file": "roi_loc_vernal_ut.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Vernal",
+   "tier": "tail",
+   "status": "pending"
+  },
+  "heber_city": {
+   "file": "roi_loc_heber_city.png",
+   "region": "UT",
+   "kind": "city",
+   "name": "Heber City",
+   "tier": "tail",
+   "status": "pending"
+  }
+ }
+}
