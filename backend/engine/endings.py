@@ -219,9 +219,18 @@ def fake_death(s: GameState) -> dict:
     s.flags["no_heat"] = True                       # you're dead; nobody hunts a closed file
     s.heat = 0.0; s.flags["car_heat"] = 0.0; s.flags["personal_heat"] = 0.0
     s.flags["faked_death"] = True
+    # the COST is her hood: the ace-of-spades carbon hood goes onto the decoy and burns — that's what
+    # sells the wreck to the adjuster. She runs a plain hood forever after (Ben: "at the cost of her hood").
+    from engine import garage
+    if "hood" not in garage.sold(s):
+        garage.sold(s).append("hood")
+    s.flags["hood_sacrificed"] = True
+    s.flags.pop("hood_swapped", None)               # the spade's gone for good, not just stowed
     _win(s, "fake_death")
-    return {"events": ["FIRE: you bolt the spade hood to the junk shell, point it off the dark "
-                       "shoulder, and light the country up behind you.", _scorecard(s)],
+    return {"events": ["FIRE: you bolt the ace-of-spades hood to the junk shell — her hood, the real "
+                       "one, the part everyone hunted — point it off the dark shoulder, and light the "
+                       "country up behind you. She'll wear a plain face from here on. That was the cost.",
+                       _scorecard(s)],
             "win": True,
             "moment": {"cue": "the driver staged their own fiery death with a decoy car wearing the "
                               "ace-of-spades hood — the owner gets his insurance and his freedom to "

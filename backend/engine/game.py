@@ -660,6 +660,29 @@ def opening_result(s: GameState) -> dict:
     }
 
 
+def _banter_riz(s, raw):
+    """A genuinely CLEVER conversational line earns Riz — judged by the DM (online) or a conservative
+    rubric (offline). Cooldowned + diminishing so you can't farm it; trolling earns nothing (the DM
+    flags `messing`) but also can't break anything. Returns a feedback line, or None. Used both in
+    free-roam talk AND on the move — the drive is the prime place to charm her, so it pays there too."""
+    low = (raw or "").lower()
+    if len(low.split()) < 4 or (s.turn - s.flags.get("banter_riz_turn", -99) < 3):
+        return None
+    from engine import judge
+    v = judge.assess(s, "banter", raw, context="the driver is chatting with the car")
+    if not (v.get("clever") and not v.get("messing")):
+        return None
+    n = s.flags.get("banter_count", 0)
+    gain = round(3.0 * (0.7 ** n), 1)
+    if gain < 0.2:
+        return None
+    s.riz = round(s.riz + gain, 1)
+    s.flags["banter_count"] = n + 1
+    s.flags["banter_riz_turn"] = s.turn
+    s.flags["peak_riz"] = round(max(s.flags.get("peak_riz", 0.0), s.riz), 1)
+    return f"RIZ: that landed — sharp, in-character, hers. Riz +{gain:.0f} → {s.riz:.0f}."
+
+
 def _active_persona(s):
     """Whose voice the narrator speaks in. Driving Bob → Bob's plain, good-natured voice; otherwise
     Ace. (call_ace passes persona_override to reach Ace even while you're in Bob — she's on the phone.)"""
@@ -1163,11 +1186,12 @@ def handle(s: GameState, raw: str) -> dict:
             bond.converse(s, about_her=(_spec_hits(raw) > 0 or any(
                 t in _low for t in ("about you", "about yourself", "who are you", "your story",
                                     "how do you feel", "tell me about", "what are you", "your past"))))
+            riz_line = None if beat else _banter_riz(s, raw)   # charm her on the move → Riz, too
             _autosave(s)
             if beat:
                 return _result(s, [], beat, info="(still rolling — 'put on music' to get there)")
             scene, voice, audio = _narrate(s, [], raw, drama=(TRANSIT_WRAP if last else TRANSIT_OPENER))
-            return _result(s, [], scene, voice=audio,
+            return _result(s, ([riz_line] if riz_line else []), scene, voice=audio,
                            info=("(almost there — last word, or 'music' to arrive)" if last
                                  else "(rolling — keep talking, or 'put on music' to get there)"))
         # fast-forward: she puts on music and brings you in (the leg + everything on arrival resolves)
@@ -1248,9 +1272,15 @@ def handle(s: GameState, raw: str) -> dict:
         from engine.commands import spec_hits
         # CLAIMING FAME / inviting posts = he posts you (heat). Gracious BUILD-TALK = you charm him
         # into a fan (riz, no heat). A flat deflection = you slide by (neutral).
-        showoff = any(t in low for t in ("sema", "famous", "take a", "selfie", "follow", " pic",
-                                         "show car", "go ahead", "post it", "tag me", "tag it",
-                                         "yeah that's", "yeah thats", "it's the", "its the"))
+        # a polite DECLINE of a photo is a deflection, not a brag — must not read as showoff
+        declining = any(t in low for t in ("no pic", "no photo", "no picture", "don't", "dont",
+                                           "do not", "please don't", "rather not", "not now",
+                                           "no thanks", "no selfie", "put that away", "rather you didn't"))
+        showoff = (not declining) and any(t in low for t in
+                                          ("sema", "famous", "take a pic", "take a photo", "take a selfie",
+                                           "selfie", "follow", "a picture", "a photo", "snap a",
+                                           "show car", "go ahead", "post it", "tag me", "tag it",
+                                           "yeah that's", "yeah thats", "it's the", "its the"))
         car_talk = (spec_hits(raw) > 0 or any(t in low for t in ("project car", "l28", "stroker",
                     "mikuni", "let me tell you", "tell you about", "built it", "carbs", "datsun",
                     "the build", "she's a", "shes a", "i'll tell you", "ill tell you")))
@@ -1682,21 +1712,10 @@ def handle(s: GameState, raw: str) -> dict:
                                                    "tell me about", "what are you", "what's it like",
                                                    "your past", "your name")))
             bond.converse(s, about_her=about_her)
-            # a genuinely CLEVER line earns Riz — judged by the DM (online) or a conservative rubric
-            # (offline). Cooldowned + diminishing so you can't farm it, and trolling earns nothing
-            # (the DM flags `messing`) but also can't break anything — you can mess with her freely.
-            if (len(low.split()) >= 4 and not romance_beat and not payoff
-                    and s.turn - s.flags.get("banter_riz_turn", -99) >= 3):
-                from engine import judge
-                v = judge.assess(s, "banter", raw, context="the driver is chatting with the car")
-                if v.get("clever") and not v.get("messing"):
-                    n = s.flags.get("banter_count", 0)
-                    gain = round(3.0 * (0.7 ** n), 1)
-                    if gain >= 0.2:
-                        s.riz = round(s.riz + gain, 1)
-                        s.flags["banter_count"] = n + 1
-                        s.flags["banter_riz_turn"] = s.turn
-                        events.append(f"RIZ: that landed — sharp, in-character, hers. Riz +{gain:.0f} → {s.riz:.0f}.")
+            if not romance_beat and not payoff:
+                line = _banter_riz(s, raw)
+                if line:
+                    events.append(line)
 
     if pre:                          # the glovebox default landed this turn — show it first
         events = pre + events

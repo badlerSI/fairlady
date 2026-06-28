@@ -36,9 +36,19 @@ _STICK_YES = ("yes", "yeah", "yep", "i can", "of course", "all my life", "learne
               "heel", "heel-toe", "heel and toe", "stick is my", "drive stick", "drove stick",
               "i drive stick", "sure can", "born", "absolutely", "no problem", "easy", "definitely",
               "since i was", "obviously", "course i can", "i can drive", "i'm good", "im good")
-_STICK_NO = ("no", "nope", "not really", "barely", "kind of", "sort of", "automatic", "never",
-             "not great", "i'll learn", "ill learn", "teach me", "uh", "um", "maybe", "a little",
-             "not sure", "rusty", "stall")
+# NB: bare "never" is NOT here — "I'll never grind you / never stall it" is a confident YES brag, not a
+# refusal. Only the explicit "never learned/drove" phrases below count as a NO.
+_STICK_NO = ("no", "nope", "not really", "barely", "kind of", "sort of", "automatic", "never learned",
+             "never drove", "never driven", "never could", "not great", "i'll learn", "ill learn",
+             "teach me", "uh", "um", "maybe", "a little", "not sure", "rusty")
+# unmistakable brags — these resolve a yes/no tie in the driver's favor (they're showing off, not hedging).
+# Keep these to AFFIRMATIVE forms only ("drive a manual", not "driven a manual"): a brag must never
+# accidentally match a refusal like "never driven a manual" / "I can't drive a manual" and rescue it.
+_STICK_STRONG_YES = ("heel and toe", "heel-toe", "all my life", "since i was", "born", "drive stick",
+                     "drove stick", "i drive stick", "rev match", "rev-match", "double clutch",
+                     "double-clutch", "never grind", "never stall", "won't grind", "won't stall",
+                     "drive a manual", "drive manual", "row my own", "shift my own", "three pedals",
+                     "three-pedal")
 
 
 def ask_stick_pending(s: GameState) -> bool:
@@ -61,7 +71,8 @@ def answer_stick(s: GameState, raw: str) -> dict:
     # confident idioms ('no problem', 'no worries') are a YES, not the 'no' in _STICK_NO
     _yes_idiom = any(i in low for i in ("no problem", "no worries", "no sweat", "no biggie", "no doubt"))
     no = any(p in low for p in _STICK_NO) and not _yes_idiom
-    if yes and not no:
+    strong_yes = any(p in low for p in _STICK_STRONG_YES)      # a brag breaks a yes/no tie toward YES
+    if yes and (not no or strong_yes):
         s.flags["can_drive_stick"] = True
         _bond.adjust(s, 4.0, "can actually drive her — heel-and-toe, the real thing", "warm")
         return {"moment": {"cue": "the stranger CAN drive stick and says so plainly; she's relieved "
@@ -71,7 +82,7 @@ def answer_stick(s: GameState, raw: str) -> dict:
                                     "the way you found the bite point cold. We're going to be very good "
                                     "together. Here. Let me show you the whole West."]}}
     s.flags["can_drive_stick"] = False
-    _bond.adjust(s, -1.0, "can't really drive a manual — and lied about it / hedged", "mark")
+    _bond.adjust(s, -1.0, "doesn't really drive a manual yet — we learn slow", "mark")
     return {"moment": {"cue": "the stranger can't really drive stick, or hedges; she's anxious about "
                               "her clutch but committed to this person anyway — they'll learn slow, and "
                               "she warns them the ORC clutch will stall and she'll feel every grind",

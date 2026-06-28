@@ -110,6 +110,8 @@ def _extract_name(raw: str) -> str | None:
     m = re.search(r"(?:call me|i'?m|i am|my name(?:'?s| is)|name'?s|it'?s|they call me|the name'?s|name is)\s+(.+)$",
                   low, re.I)
     rest = m.group(1) if m else low
+    # cut at the first clause break — "Marc, but Marcus is fine" → "Marc" (not "Marc But")
+    rest = re.split(r"[,;]|\b(?:but|though|although|however|actually|or|and)\b", rest, maxsplit=1, flags=re.I)[0]
     rest = re.sub(r"^(?:dr|mr|mrs|ms|miss|sir|lord|lady|captain|capt|prof|the)\.?\s+", "", rest.strip(), flags=re.I)
     words = re.findall(r"[A-Za-z][A-Za-z'\-]*", rest)
     if not words:
@@ -134,6 +136,11 @@ def _parse_pronouns(raw: str):
     ('he/they'), preserving the order the player said them. stance in affirming|neutral|dismissive,
     and is NEVER 'dismissive' when the player actually stated pronouns — we take people at their word."""
     low = (raw or "").lower()
+    # an EXPLICIT slashed self-pair wins outright — 'he/him' shouldn't merge with a stray 'she' that
+    # refers to the car ("he/him for me, you're a she though" → he/him, not he/she).
+    sm = re.findall(r"\b(he/him|she/her|they/them|it/its)\b", low)
+    if len(set(sm)) == 1:
+        return (sm[0], "affirming" if sm[0] in ("they/them",) else "neutral")
     found = []                                                # (position, canonical label)
     for pat, label in ((r"\b(they|them|their|theirs)\b", "they/them"),
                        (r"\b(she|her|hers)\b", "she/her"),
@@ -186,8 +193,11 @@ _WORDED_AGE = {
     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
     "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
     "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20, "thirty": 30,
-    "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80,
+    "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
 }
+_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
+         "eighty": 80, "ninety": 90}
+_ONES = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9}
 # explicit signals that settle the 18+ gate without a number
 _MINOR_SIGNALS = ("underage", "minor", "i'm a minor", "im a minor", "middle school", "grade school",
                   "elementary", "8th grade", "9th grade", "7th grade", "6th grade", "junior high",
@@ -219,7 +229,14 @@ def _parse_age(raw: str):
         a = int(m.group(1))
         if 1 <= a <= 119:
             return (a, 2025 - a)
-    for word, a in _WORDED_AGE.items():                        # 'twelve', 'i am eight'
+    # COMPOUND worded ages first — 'twenty-two', 'thirty five' — BEFORE the bare-word loop, because
+    # the 'two' inside 'twenty-two' has its own word boundary and would otherwise read as age 2.
+    cm = re.search(r"\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)[\s-]+"
+                   r"(one|two|three|four|five|six|seven|eight|nine)\b", low)
+    if cm:
+        a = _TENS[cm.group(1)] + _ONES[cm.group(2)]
+        return (a, 2025 - a)
+    for word, a in _WORDED_AGE.items():                        # 'twelve', 'i am eight', 'twenty', 'ninety'
         if re.search(r"\b" + word + r"\b", low):
             return (a, 2025 - a)
     decade = {"90s": 1992, "80s": 1984, "70s": 1974, "2000s": 2002, "aughts": 2002, "gen x": 1972,
@@ -330,6 +347,12 @@ def handle(s: GameState, raw: str) -> dict:
     if step == "age":
         age, year = _parse_age(raw)
         signal = _age_signal(low)
+        # An explicit "I'm grown / old enough / of age" OVERRIDES an implausibly-low parsed age
+        # (< 13): that's almost always a misparse, and we will NOT brick an adult over it. We do
+        # NOT override a plausible-minor 13–17 parse — a real teenager saying "basically grown"
+        # still meets the gate. This pairs with the compound-worded-age fix in _parse_age.
+        if signal == "adult" and age is not None and age < 13:
+            age, year = None, None
         # the 18+ gate — this trip can get you shot; she won't take a minor along. Block on a parsed
         # under-18 OR an explicit minor signal ('underage', '8th grade', 'I'm a kid', 'twelve').
         if signal == "minor" or (age is not None and age < 18):

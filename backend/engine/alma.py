@@ -15,7 +15,8 @@ from __future__ import annotations
 from engine.state import GameState
 
 ALMA_NAME = "Alma"
-VEGAS_POIS = {"las_vegas", "vegas_strip", "fremont", "sphere", "neon_museum", "lv_motor_speedway"}
+VEGAS_POIS = {"las_vegas", "vegas_strip", "fremont", "sphere", "neon_museum", "lv_motor_speedway",
+              "sema_chevron", "pinball", "seven_magic"}   # the whole valley counts on the first night
 
 # Alma's backstory — a DRAFT for Ben to rewrite. She's the femme fatale from the dreams: a grifter and
 # a fixer who's been everywhere and is wanted in three of them, equal parts danger and tenderness. She

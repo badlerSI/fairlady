@@ -384,7 +384,11 @@ def parse(raw: str) -> Tuple[str, dict]:
                 "burn her", "burn the decoy", "torch the decoy", "the fireball", "fake my own death",
                 "stage my own death", "set the fire", "light it up", "die", "play dead", "disappear for good")
             or ("fake" in low and any(w in low for w in ("death", "die", "crash", "accident", "wreck")))
-            or ("burn" in low and any(w in low for w in ("decoy", "shell", "her down", "the z", "it down")))):
+            or (any(w in low for w in ("stage", "fiery", "flaming", "fireball")) and
+                any(w in low for w in ("crash", "wreck", "death", "fire", "accident", "disappear")))
+            or (any(w in low for w in ("crash", "wreck")) and "disappear" in low)
+            or ("burn" in low and any(w in low for w in ("decoy", "shell", "her down", "the z", "it down",
+                                                          "the hood", "spade")))):
         return ("fakedeath", {})
     # bribe a pardon (the farce) — must be DELIBERATE: 'buy/get a pardon' or bribing the state, never
     # a stray 'pardon?' / 'pardon me' / 'beg your pardon' in conversation.

@@ -2664,3 +2664,120 @@ def test_bob_mode_disables_parts_race_show():
     s = _at_carson(fresh()); s.flags["knows_registration"] = True
     game.handle(s, "park ace and take bob")
     assert "stock as a fridge" in game.handle(s, "parts")["info"]
+
+
+# ================================================================== onboarding/romance parser fixes (playtest)
+def test_worded_compound_age_does_not_brick_the_gate():
+    from engine import onboarding as ob
+    assert ob._parse_age("twenty-two")[0] == 22      # was 2 — the 18+ brick
+    assert ob._parse_age("thirty-five")[0] == 35
+    assert ob._parse_age("forty one")[0] == 41
+    assert ob._parse_age("I'm twenty two")[0] == 22
+    assert ob._parse_age("ninety")[0] == 90
+    assert ob._parse_age("two")[0] == 2              # a real toddler still reads young (minor gate)
+
+def test_spelled_out_adult_age_clears_the_gate_end_to_end():
+    # The point of the compound-age fix: a player who SPELLS OUT an adult age (very natural in prose)
+    # must reach the road, not get bricked behind the sticky 18+ gate. Run the whole onboarding.
+    for answer in ("twenty-two", "thirty-five", "forty-one", "I am twenty two years old"):
+        s = _run_to_title_drop(seed=333)
+        game.handle(s, "call me Sam")                          # name
+        game.handle(s, "she/her")                              # pronouns
+        game.handle(s, answer)                                 # age
+        assert not s.flags.get("age_blocked"), answer          # the bug bricked all of these
+        assert s.flags.get("onboarded") and s.flags.get("player_age", 0) >= 18, answer
+
+def test_adult_signal_overrides_a_bogus_low_age_but_not_a_real_teen():
+    # Defect #2: the block check used to run BEFORE honoring an explicit adult signal, so a stray
+    # low parse + "old enough" still bricked the session. An explicit adult tag now wins under 13…
+    s = _run_to_title_drop(seed=334)
+    game.handle(s, "call me Sam"); game.handle(s, "she/her")
+    game.handle(s, "two, but old enough to know better")       # parses age 2 + adult signal
+    assert not s.flags.get("age_blocked") and s.flags.get("onboarded")
+    # …but bravado does NOT spring a genuine 13–17 minor — the gate holds for a real teenager.
+    s2 = _run_to_title_drop(seed=335)
+    game.handle(s2, "call me Sam"); game.handle(s2, "she/her")
+    game.handle(s2, "fifteen, basically grown")                # real teen, not overridden
+    assert s2.flags.get("age_blocked")
+
+def test_name_parser_stops_at_conjunctions():
+    from engine import onboarding as ob
+    assert ob._extract_name("Marcus. My friends call me Marc, but Marcus is fine.") == "Marc"
+    assert ob._extract_name("call me Riz") == "Riz"
+
+def test_pronoun_explicit_pair_beats_stray_car_she():
+    from engine import onboarding as ob
+    assert ob._parse_pronouns("he/him for me, you're a she though")[0] == "he/him"
+
+def test_stick_brag_is_a_yes_not_a_lie():
+    s = fresh(); s.flags["awaiting_stick"] = True
+    from engine import romance
+    b = s.bond
+    romance.answer_stick(s, "heel and toe, I'll never grind you")
+    assert s.flags.get("can_drive_stick") and s.bond > b   # was failing as 'lied about it'
+
+def test_stick_confident_correct_answer_is_a_full_yes():
+    # The reported regression in full: a confident, CORRECT answer that happens to contain a stray
+    # negative ('never grind you', 'never stalled it') must resolve to a clean YES worth the full +4 —
+    # one negative word can't veto a real competence claim. Both bug-report lines, the verbatim repro,
+    # and 'a manual, not an automatic' (the brag a bare 'automatic' substring used to sink) are pinned.
+    from engine import romance
+    for line in ("heel and toe, I'd never grind you",
+                 "yeah, learned on my dad's truck, never stalled it",
+                 "Heel and toe, since I was seventeen on my dad's truck. I'll find your bite point "
+                 "cold and never grind you.",
+                 "I drive a manual, not an automatic"):
+        s = fresh(); s.flags["awaiting_stick"] = True
+        before = s.bond
+        romance.answer_stick(s, line)
+        assert s.flags.get("can_drive_stick") is True, line
+        assert round(s.bond - before, 1) == 4.0, line          # the full warm beat, not a -1 mark
+
+def test_stick_genuine_inability_or_hedge_is_still_a_no():
+    # The other half of the fix: hardening the brag case must NOT make the check a pushover. An explicit
+    # 'never driven' / "can't" / 'teach me', or a flat "no", still reads as can't-drive and costs the mark.
+    from engine import romance
+    for line in ("Honestly, I've never driven a stick in my life, but I learn fast.",
+                 "I can't drive stick, sorry",
+                 "kind of — you'll have to teach me",
+                 "no"):
+        s = fresh(); s.flags["awaiting_stick"] = True
+        before = s.bond
+        romance.answer_stick(s, line)
+        assert s.flags.get("can_drive_stick") is False, line
+        assert round(s.bond - before, 1) == -1.0, line
+
+
+# ================================================================== more playtest fixes
+def test_clerk_polite_photo_decline_is_not_showoff():
+    s = fresh(); s.place = world.get_poi("primm") or world.get_poi("reno")
+    s.flags["clerk_curious"] = True
+    before = s.heat
+    r = game.handle(s, "no pictures, please")
+    assert s.heat <= before + 0.1            # a polite decline must NOT post you (+10 heat) as a showoff
+
+def test_fake_death_costs_the_spade_hood():
+    from engine import garage, endings
+    s = fresh(); s.flags["owner_secret"] = True; s.cash = 5000.0
+    s.place = world.Place(name="a dark ghost road", lat=38.0, lon=-117.5, region="NV", kind="spot", services=[])
+    assert "hood" not in garage.sold(s)
+    out = endings.fake_death(s)
+    assert out["win"] and s.flags.get("ending_key") == "fake_death"
+    assert "hood" in garage.sold(s) and s.flags.get("hood_sacrificed")   # the cost is her hood
+
+def test_fake_death_parses_natural_phrasings():
+    from engine import commands
+    for t in ("stage a fiery crash and disappear", "crash and disappear", "burn the spade"):
+        assert commands.parse(t)[0] == "fakedeath"
+
+def test_clubbing_works_in_the_whole_vegas_valley():
+    from engine import alma
+    s = fresh(); s.day = 1
+    s.place = world.get_poi("sema_chevron")
+    assert alma.can_club(s)                   # the Chevron behind the LVCC counts as the first Vegas night
+
+def test_gas_favor_leak_stripped_post_opening_kept_during():
+    from adapters.ace import AceNarrator as A
+    leak = "I pull hard past five grand. Help me get gas — two blocks, five minutes, the offer stands."
+    assert "two blocks" not in A._clean(leak, allow_favor=False)
+    assert "two blocks" in A._clean(leak, allow_favor=True)
