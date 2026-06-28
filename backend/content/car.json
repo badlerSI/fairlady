@@ -13,12 +13,13 @@
   "torque_lbft": 270,
   "horsepower": 300,
   "spec_sheet": [
-    "engine: a 3.1-liter L28 stroker (89 mm bore × 83 mm stroke)",
-    "induction: triple Mikuni 50 PHH sidedraft carbs",
-    "output: 300-plus horsepower, 270 lb-ft of torque",
+    "engine: a 3.1-liter L28 stroker (89 mm bore × 83 mm stroke), 10.0:1 compression",
+    "induction: triple Mikuni 50 PHH sidedraft carbs, naturally aspirated (no turbo)",
+    "output: 300-plus horsepower, 270 lb-ft of torque; 7200 RPM fuel cut",
+    "performance: 0-60 in 5.2 seconds — if you actually know how to use a twin-plate clutch",
     "gearbox: an S15 six-speed with a Nismo cross-mission, a dual-plate carbon ORC clutch",
     "wheel: a Nardi Novantesimo; rolling on 16-inch SSR Longchamps",
     "paint: Nissan 904 Kilimanjaro White, ace-of-spades on the hood (a wrap over PPF)",
-    "plate: Nevada CARTALK; fuel: 40 L tank, ~15 mpg (she drinks)"
+    "plate: Nevada CARTALK; fuel: 40 L tank, premium ONLY (~91+ octane), ~15 mpg (she drinks)"
   ]
 }

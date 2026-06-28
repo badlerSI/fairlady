@@ -149,14 +149,19 @@ class AceNarrator(Narrator):
         r"(?:60|sixty)\b[^.!?]{0,18}\b(?:second|sec|secs)\b|"          # "60 ... seconds"
         r"(?:low|mid|high)[\s-]+(?:fours|fives|sixes|sevens|eights|nines)\b|"
         r"quarter[\s-]?mile|trap(?:\s+speed|s\b)?|at the lights|down the strip|"
-        r"\d[\d,]*\s*rpm|fuel\s+cut|rev\s+cut|limiter|"
-        r"compression(?:\s+ratio)?|"
-        r"(?:\d+(?:\.\d+)?|seven|eight|nine|ten|eleven|twelve|thirteen)\s*(?::|to)\s*(?:1|one)\b|"  # "10:1","11.5 to 1","eleven to one"
-        r"redline|rev[\s-]?limit(?:er)?|\d+\s*psi|boost|turbo|supercharg|blower|"
+        r"\d[\d,]*\s*rpm|"                                              # a fabricated rpm VALUE (7200 is canon, allowed below)
+        r"(?:\d+(?:\.\d+)?|seven|eight|nine|ten|eleven|twelve|thirteen)\s*(?::|to)\s*(?:1|one)\b|"  # ratio "10:1","11.5 to 1","eleven to one"
+        r"\d+\s*psi|boost|turbo|supercharg|blower|"
         r"forced induction|wastegate|intercool|dyno|mahle|wiseco|carrillo|"
         r"cp pistons?|je pistons?|i-?beam|h-?beam|forged steel|billet|"
         r"chromoly|chrome[\s-]?moly|4340)\b", re.I)
     _FORCED_INDUCTION = re.compile(r"\b(boost|turbo|supercharg|blower|forced induction|\d+\s*psi|wastegate|intercool)\b", re.I)
+    # the values that are NOW ON the spec sheet (canonical) — legal to state, never a fabrication:
+    # 7200 RPM fuel cut · 10.0:1 compression · 0-60 in 5.2s. Stripped before re-testing for a fabrication.
+    _CANON_SPEC = re.compile(
+        r"\b(7[\s,]?200(?:\s*(?:rpm|fuel\s*cut))?|"
+        r"(?:10(?:\.0)?|ten)\s*(?::|to)\s*(?:1|one)|"
+        r"(?:0\s*[-–to]+\s*60\s*(?:in\s+)?)?(?:5\.2|five[\s-]point[\s-]two)(?:\s*(?:second|sec)s?)?)\b", re.I)
 
     # the player ASKING an off-sheet spec — when this fires, even a bare time/ratio in the reply
     # ("roughly six seconds", "about 11 to 1") is a fabricated answer, so guard the reply harder.
@@ -177,6 +182,11 @@ class AceNarrator(Narrator):
         sheet is the source of truth; she may NOT make up a number that isn't on it). When the player
         explicitly ASKED an off-sheet spec, a bare time/ratio in the reply is also a fabrication."""
         if not cls._FABRICATED_SPEC.search(text) and not (spec_asked and cls._BARE_SPEC_NUM.search(text)):
+            return text
+        # the now-canonical values (7200 / 10:1 / 5.2s) are legal — strip them and re-test; if nothing
+        # fabricated remains, the reply was just stating a real spec, so let it through.
+        residual = cls._CANON_SPEC.sub(" ", text)
+        if not cls._FABRICATED_SPEC.search(residual) and not (spec_asked and cls._BARE_SPEC_NUM.search(residual)):
             return text
         if cls._FORCED_INDUCTION.search(text):
             return ("Boost? There's no turbo on me, ace — triple Mikuni 50 PHH sidedrafts, naturally "
