@@ -709,6 +709,16 @@ def _narrate(s, events, player_text, drama=None, persona_override=None):
         persona = alma.PERSONA
     out = nar.narrate(persona, snapshot(s), events, player_text, s.flags.get("sid", "x"), extra=extra)
     text = out.get("text", "")
+    # Alma is a WOMAN, not the car — if the model bled car-self vocab into her mouth ("my engine", "my
+    # L28", "my hood", "300-horse"), fall back to her authored in-voice stub for this beat.
+    if drama and drama.get("persona") == "alma" and text:
+        _t = text.lower()
+        if any(w in _t for w in ("my engine", "my l28", "my hood", "my carbs", "my clutch", "my dash",
+                                 "my ignition", "my vin", "300-horse", "300 horse", "my pistons",
+                                 "purring", "my chassis", "my tank", "under my hood")):
+            stub = (extra or {}).get("stub") or []
+            if stub:
+                text = stub[0]
     # record the line into the persisted echo-history so the next turn's narrator can catch a collapse
     if text:
         norm = re.sub(r"[^a-z0-9]", "", text.lower())[:80]

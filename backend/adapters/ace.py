@@ -140,15 +140,20 @@ class AceNarrator(Narrator):
 
     # the weak rop1 model fabricates specs NOT on the sheet (a 0-60, a compression ratio, a turbo on a
     # naturally-aspirated triple-carb engine) — instructions alone don't stop it, so we GUARD THE OUTPUT.
+    _WNUM = r"(?:\d[\d.,]*|one|two|three|four|five|six|seven|eight|nine|ten|under|about|roughly|low|mid|high)"
     _FABRICATED_SPEC = re.compile(
-        r"\b(0\s*[-–to]{1,3}\s*60|zero to sixty|(?:hit|do|reach|to)\s+(?:60|sixty)\b|"
-        r"(?:60|sixty)\s+in\s+\d|\d[\d.]*\s*(?:s|sec|secs|seconds?)\s+to\s+(?:60|sixty)|"
+        r"\b(0\s*[-–to]{1,3}\s*60|zero to sixty|"
+        r"(?:hits?|does?|reach(?:es)?|to|did)\s+(?:60|sixty)\b|"        # "hit/hits/does 60"
+        r"(?:60|sixty)\s+(?:mph\s+)?in\s+" + _WNUM + r"|"               # "60 in five", "60 in 5"
+        r"(?:60|sixty)\b[^.!?]{0,18}\b(?:second|sec|secs)\b|"          # "60 ... seconds"
         r"(?:low|mid|high)[\s-]+(?:fours|fives|sixes|sevens|eights|nines)\b|"
-        r"quarter[\s-]?mile|trap(?:\s+speed|s\b)|\d[\d,]*\s*rpm|fuel\s+cut|rev\s+cut|limiter|"
-        r"compression(?:\s+ratio)?|\d+(?:\.\d+)?\s*:\s*1|redline|rev[\s-]?limit(?:er)?|"
-        r"\d+\s*psi|boost|turbo|supercharg|blower|forced induction|wastegate|intercool|"
-        r"dyno|mahle|wiseco|carrillo|cp pistons?|je pistons?|i-?beam|h-?beam|"
-        r"forged steel|billet|chromoly|chrome[\s-]?moly|4340)\b", re.I)
+        r"quarter[\s-]?mile|trap(?:\s+speed|s\b)?|at the lights|down the strip|"
+        r"\d[\d,]*\s*rpm|fuel\s+cut|rev\s+cut|limiter|"
+        r"compression(?:\s+ratio)?|\d+(?:\.\d+)?\s*(?::|to)\s*(?:1|one)\b|"   # "10:1" AND "11.5 to 1"
+        r"redline|rev[\s-]?limit(?:er)?|\d+\s*psi|boost|turbo|supercharg|blower|"
+        r"forced induction|wastegate|intercool|dyno|mahle|wiseco|carrillo|"
+        r"cp pistons?|je pistons?|i-?beam|h-?beam|forged steel|billet|"
+        r"chromoly|chrome[\s-]?moly|4340)\b", re.I)
     _FORCED_INDUCTION = re.compile(r"\b(boost|turbo|supercharg|blower|forced induction|\d+\s*psi|wastegate|intercool)\b", re.I)
 
     @classmethod
