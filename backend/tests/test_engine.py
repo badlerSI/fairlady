@@ -3018,3 +3018,29 @@ def test_chain_controls_block_without_chains_pass_with():
     assert season.chain_block(s, dest) is None               # chains → pass
     # desert/coastal high-terrain is never chain-controlled
     assert not season.chain_controlled(s, world.get_poi("death_valley"))
+
+
+# ================================================================== roadside finds (conversation-gated)
+def test_roadside_find_surfaces_only_while_talking_and_can_be_taken():
+    from engine import finds, luck
+    import config
+    old = config.DRIVE_CONVERSATIONS; config.DRIVE_CONVERSATIONS = True
+    _roll = luck.roll
+    try:
+        s = fresh(); s.fuel_l = 40.0
+        game.handle(s, "drive to beatty")               # open a drive-chat leg
+        luck.roll = lambda st, salt=0: 0.001            # force a find to surface
+        for i in range(4):
+            game.handle(s, f"tell me about this stretch, {i}")
+            if s.flags.get("pending_find"):
+                break
+        assert s.flags.get("pending_find")              # she spotted something while you talked
+        r = game.handle(s, "take it")
+        assert s.flags.get("find_score", 0) > 0 and not s.flags.get("pending_find")
+        assert s.flags.get("transit")                   # taking it does NOT end the drive
+    finally:
+        luck.roll = _roll; config.DRIVE_CONVERSATIONS = old
+
+def test_finds_catalog_loads():
+    from engine import finds
+    assert len(finds._FINDS) >= 10 and "rolex" in finds._BY_ID and "stray_puppy" in finds._BY_ID

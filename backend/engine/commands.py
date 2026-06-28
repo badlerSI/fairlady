@@ -128,6 +128,15 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("buy bob", "purchase bob", "buy bob from him", "buy the loaner", "pay for bob",
                "buy bob for 7000", "buy bob for $7000", "buy bob for seven thousand"):
         return ("buybob", {})
+    # take a roadside find Ace just pointed out (explicit grab phrasings only — no bare 'yes')
+    if (low in ("take it", "grab it", "take that", "grab that", "pick it up", "stop for it", "snag it",
+                "pull over for it", "grab the find", "take the find", "stop and grab it", "grab it!")
+            or (low.startswith(("take the ", "grab the ", "snag the ", "pick up the ")) and len(low.split()) <= 5)):
+        return ("takefind", {})
+    # use a roadside find (the use-DM)
+    if low.startswith(("use ", "use the ")):
+        return ("usefind", {"text": raw})
+
     # ask Alma who she really is (reveals her backstory once she's aboard)
     if ("alma" in low and any(p in low for p in ("your story", "who are you", "who you are",
             "about yourself", "your past", "your deal", "real name", "who you really", "where you from",

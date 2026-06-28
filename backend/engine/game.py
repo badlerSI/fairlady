@@ -499,6 +499,8 @@ def snapshot(s: GameState) -> dict:
         "bob_days_left": (max(0, BOB_PARENTS_HOME_DAY - s.day)
                           if s.flags.get("bob_mode") and not s.flags.get("bob_call_pending") else None),
         "recent_replies": list(s.flags.get("recent_replies", [])),   # echo-guard history (persisted)
+        "find_score": s.flags.get("find_score", 0),                   # roadside-finds collection points
+        "has_dog": bool(s.flags.get("has_dog")),                      # Lucky the roadside puppy
         # the body — survival meters for the dash (0–100; alertness feeds talk-out)
         "hunger": round(float(s.flags.get("need_hunger", 0.0))),
         "bladder": round(float(s.flags.get("need_bladder", 0.0))),
@@ -1197,7 +1199,7 @@ def handle(s: GameState, raw: str) -> dict:
     # the drive conversation: a long leg is underway. Talk (it keeps rolling), or do anything else /
     # 'put on music' to fast-forward to the destination. Console verbs (look/inventory) pass through.
     if (s.flags.get("transit") and s.status == "playing"
-            and verb not in ("look", "inventory", "parts")):
+            and verb not in ("look", "inventory", "parts", "takefind", "usefind")):
         tr = s.flags["transit"]
         low = raw.lower()
         s.turn += 1
@@ -1226,9 +1228,16 @@ def handle(s: GameState, raw: str) -> dict:
                 t in _low for t in ("about you", "about yourself", "who are you", "your story",
                                     "how do you feel", "tell me about", "what are you", "your past"))))
             riz_line = None if beat else _banter_riz(s, raw)   # charm her on the move → Riz, too
+            # ROADSIDE FINDS — she only spots things on the shoulder while you're actually TALKING. A
+            # find surfaces as HER voice (the item's line) + a take prompt; skip the chat and you get none.
+            from engine import finds
+            find = finds.maybe_spot(s, world.geocode(tr["dest"]), tr["talked"])
             _autosave(s)
             if beat:
                 return _result(s, [], beat, info="(still rolling — 'put on music' to get there)")
+            if find:
+                return _result(s, [finds.spot_event(find)], find["ace"],
+                               info="(she spotted something — 'take it' to grab it, or keep talking)")
             # a SUBSTANTIVE line gets answered straight (no transit-boilerplate cue stealing the reply —
             # that was making drive-chat ignore real questions/confessions); only a thin line gets the
             # ambient transit narration to fill the silence.
@@ -1550,6 +1559,18 @@ def handle(s: GameState, raw: str) -> dict:
         player_text = ""
     elif verb == "bodywork":
         events = garage.repair_body(s)
+        player_text = ""
+    elif verb == "takefind":
+        from engine import finds
+        events = finds.take(s)
+        player_text = ""
+    elif verb == "usefind":
+        from engine import finds
+        out = finds.use(s, args.get("text", ""))
+        if out is None:                                  # not a find → let it fall through as chatter
+            events = ["USE: not sure what you mean — 'inventory' shows what's in the hatch."]
+        else:
+            events = out
         player_text = ""
     elif verb in ("eat", "restroom", "drink", "caffeine"):
         if verb == "eat":
