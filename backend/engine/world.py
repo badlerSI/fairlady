@@ -15,6 +15,16 @@ from config import (
 )
 from engine.state import Place
 
+# POIs that exist and are drivable BY NAME, but never appear on the map or in the auto-destination
+# lists. Area 51's back gate is the canonical one — "you can't find Area 51 on the map." You have to
+# know it's out there and ask for it.
+HIDDEN_POIS = {"area51_gate"}
+
+
+def is_hidden(poi_id: Optional[str]) -> bool:
+    return bool(poi_id) and poi_id in HIDDEN_POIS
+
+
 _POIS: Optional[list] = None
 _BY_ID: dict = {}
 _BEATS: dict = {}              # poi_id → her arrival beat (the gazetteer layer)
@@ -30,6 +40,7 @@ def _place_from_poi(d: dict) -> Place:
         services=list(d.get("services", [])), blurb=d.get("blurb", ""),
         gas_price=d.get("gas_price"), terrain=float(d.get("terrain", 1.0)),
         heat_zone=bool(d.get("heat_zone", False)),
+        camera_density=d.get("camera_density"),
         language=d.get("language"), voice=d.get("voice"), npc=d.get("npc"),
         scene=d.get("scene"),
     )

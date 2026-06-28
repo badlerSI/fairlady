@@ -23,6 +23,7 @@ class Place:
     gas_price: Optional[float] = None     # $/gal override
     terrain: float = 1.0                  # fuel multiplier for the leg INTO here
     heat_zone: bool = False               # cameras everywhere; swipes here cost more
+    camera_density: Optional[int] = None  # 0–3 ALPR/Flock density override (else heuristic in cameras.py)
     language: Optional[str] = None        # encounter NPC language
     voice: Optional[str] = None
     npc: Optional[str] = None
@@ -45,7 +46,7 @@ class GameState:
     # --- car physics ---
     fuel_l: float = 5.0
     tank_l: float = 40.0
-    mpg: float = 20.0
+    mpg: float = 15.0          # hot cam + triple 50 PHH + a 3.9 on a tall-6th auto-X box — she drinks
 
     # --- money ---
     cash: float = START_CASH

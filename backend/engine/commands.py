@@ -49,8 +49,9 @@ def parse(raw: str) -> Tuple[str, dict]:
         return ("bondreport", {})
 
     # lie low (active cool-down) and untag (post-tag damage control)
-    if low in ("lie low", "lay low", "lie low here", "hide", "hide out", "lay up", "go quiet",
-               "keep a low profile", "duck out of sight", "wait it out", "cool off"):
+    if low in ("lie low", "lay low", "lie low here", "lay low here", "lie low a while", "hide",
+               "hide out", "lay up", "go quiet", "keep a low profile", "duck out of sight",
+               "wait it out", "cool off", "lay low for a bit", "lie low for a bit"):
         return ("lielow", {})
     if low in ("untag", "untag the post", "take it down", "damage control", "delete the post",
                "dm the poster", "get it taken down", "clean up the post"):
@@ -91,6 +92,15 @@ def parse(raw: str) -> Tuple[str, dict]:
     if any(p in low for p in ("previous owner", "last owner", "old owner", "who owned you",
                               "who had you", "your owner", "your past", "before you", "owned you before")):
         return ("origin", {"which": "owner"})
+    # where were you PAINTED — the thread that pulls the owner's whole secret loose (→ Fresno)
+    if (any(p in low for p in ("where were you painted", "where you painted", "who painted you",
+                               "where'd you get painted", "where did you get painted", "your paint job",
+                               "the paint job", "where was the paint", "where was your paint",
+                               "where'd the paint", "who laid the paint", "where'd you get sprayed",
+                               "where were you wrapped", "who wrapped you", "your ppf", "the wrap",
+                               "where was the spade", "who painted the spade"))
+            or ("paint" in low and any(q in low for q in ("where", "who", "your", "the spade")))):
+        return ("origin", {"which": "painted"})
 
     # take her home (her home is the Oakland garage; or name a place in NV/CA/AZ/UT)
     if low.startswith(("home is ", "set home ", "my home is ", "home in ", "home's ")):
@@ -125,6 +135,69 @@ def parse(raw: str) -> Tuple[str, dict]:
                "draw on him", "draw the gun", "pull iron", "pull the trigger", "show the gun"):
         return ("draw", {})
 
+    # ---- Alma (the dream woman / companion) — book a room, cool the heat, or marry her in Vegas ----
+    if (low in ("alma", "where's alma", "wheres alma", "find alma", "who is alma", "who's alma",
+                "about alma", "alma status", "is alma here")
+            or low.startswith(("where is alma", "tell me about alma"))):
+        # marriage intent on Alma routes to the marry handler; otherwise it's a status/lookup
+        if any(w in low for w in ("marry", "elope", "wed", "propose", "chapel", "wife")):
+            return ("almamarry", {})
+        return ("almastatus", {})
+    if ("alma" in low and any(w in low for w in ("marry", "married", "elope", "wed", "chapel",
+                                                 "propose", "vegas wedding", "make her my wife"))):
+        return ("almamarry", {})
+    if (("alma" in low and any(w in low for w in ("book", "room", "hotel", "motel", "get us a",
+                                                  "find us a", "a place to stay")))
+            or low in ("alma book a room", "have alma book a room", "ask alma for a room",
+                       "alma get us a room", "alma a room")):
+        return ("almaroom", {})
+    if (("alma" in low and any(w in low for w in ("cool", "heat", "handle it", "make a call", "favor",
+                                                  "fix it", "clean it", "lower the heat", "calm")))
+            or low in ("ask alma to cool it", "have alma cool the heat", "alma cool the heat",
+                       "ask alma to handle it", "alma handle the heat")):
+        return ("almacool", {})
+
+    # the RIZZBREAKER — the charisma Limit Break (context-aware; must precede gambling/drive parses)
+    if (low in ("rizzbreaker", "rizz breaker", "rizz break", "rizzbreak", "limit break", "limitbreak",
+                "break the rizz", "unleash the rizz", "unleash", "all the rizz", "full rizz",
+                "rizzler", "use the rizzbreaker", "pull a rizzbreaker", "do a rizzbreaker", "go all rizz",
+                "maximum rizz", "max rizz", "the rizzbreaker", "spend the rizz", "limit-break")
+            or ("rizz" in low and any(w in low for w in ("break", "unleash", "limit", "max", "full",
+                                                         "spend", "all the")))
+            or ("limit break" in low)):
+        return ("rizzbreaker", {})
+
+    # ---- the hatch: inventory, buying gear, jerry cans (reserve fuel) ----
+    if low in ("inventory", "hatch", "the hatch", "the back", "what's in the back", "whats in the back",
+               "what am i carrying", "my stuff", "my gear", "open the hatch", "check the hatch",
+               "look in the back", "the trunk", "what's in the hatch", "show inventory"):
+        return ("inventory", {})
+    if (low in ("fill the jerry cans", "fill the cans", "fill jerrycans", "fill the jerrycans",
+                "fill up the cans", "top off the cans", "fill the gas cans", "fill cans")
+            or ("fill" in low and any(w in low for w in ("jerry", "the cans", "gas can")))):
+        return ("filljerry", {})
+    if (low in ("pour the jerry can", "pour the cans", "pour the jerry cans", "use the reserve",
+                "use the spare fuel", "use the reserve fuel", "empty the cans into the tank",
+                "top off from the cans", "add the reserve", "pour the gas can", "pour in the reserve",
+                "use the jerry can", "use the gas can", "dump the cans in")
+            or ("pour" in low and any(w in low for w in ("jerry", "can", "reserve")))
+            or ("reserve" in low and any(w in low for w in ("use", "pour", "add", "tank")))):
+        return ("pourjerry", {})
+    _GEAR = ("jerry", "gas can", "fuel can", "water", "cooler", "ice chest", "tent", "sleeping bag",
+             "tool", "first aid", "first-aid", "medkit", "spare tire", "spare", "snack")
+    if (low.startswith(("buy", "get", "grab", "pick up", "purchase", "i need", "i want", "stock up"))
+            and any(g in low for g in _GEAR)):
+        return ("invbuy", {"text": raw})
+    if (low.startswith(("drop", "leave", "ditch", "toss", "dump")) and any(g in low for g in _GEAR)):
+        return ("invdrop", {"text": raw})
+    # field repair (needs the tool roll) — knock the deer-limp out without a town
+    if (low in ("repair", "repair her", "fix her", "fix the car", "repair the car", "fix the limp",
+                "use the tools", "use the tool roll", "patch her up", "field repair", "fix her up",
+                "wrench on her", "fix the fender")
+            or ("fix" in low and any(w in low for w in ("her", "the car", "limp", "fender")))
+            or ("repair" in low and any(w in low for w in ("her", "the car")))):
+        return ("repair", {})
+
     # ---- the garage economy: claims, ATM, glovebox, parts, racing, shows, buying her ----
     # buy the car (the good ending) — must precede the generic 'gas'/drive checks
     if (low in ("buy", "buy her", "buy it", "buy the car", "i'll buy her", "ill buy her",
@@ -134,9 +207,9 @@ def parse(raw: str) -> Tuple[str, dict]:
                                       "make you an offer", "name your price", "i'll take her",
                                       "ill take her", "pay you for her", "buy you off him",
                                       "buy her off"))):
-        return ("buy", {"amount": _money(low)})
+        return ("buy", {"amount": _money(low) or _bare_number(low)})   # '$80k' OR a bare '80000'
     if low == "offer" or low.startswith("offer ") or "i'll offer" in low or "ill offer" in low:
-        return ("buy", {"amount": _money(low)})
+        return ("buy", {"amount": _money(low) or _bare_number(low)})
     # the seven-sevens hack — spelled out, or the bare magic number
     if any(p in low for p in ("seven sevens", "77777.77", "77,777.77", "seven 7s", "all the sevens",
                               "lucky sevens")):
@@ -150,6 +223,17 @@ def parse(raw: str) -> Tuple[str, dict]:
     if "valet" in low and "no valet" not in low:
         return ("valet", {})
 
+    # sweep for the AirTag he planted (before 'search the car' → explore eats it)
+    if (low in ("sweep", "sweep the car", "sweep her", "sweep for trackers", "check for a tracker",
+                "check for trackers", "find the tracker", "find the airtag", "find the tag",
+                "look for a tracker", "look for the airtag", "search for a tracker", "scan for trackers",
+                "check for bugs", "check for an airtag", "am i being tracked", "is there a tracker",
+                "look for a bug", "debug the car", "check for a tag")
+            or "airtag" in low or "air tag" in low
+            or ("tracker" in low and any(w in low for w in ("find", "check", "sweep", "search",
+                                                            "look", "scan", "for")))):
+        return ("sweep", {})
+
     # explore the car / the glovebox
     if (low in ("explore", "search", "search the car", "search her", "look around the car",
                 "glovebox", "glove box", "check the glovebox", "check the glove box", "rummage")
@@ -161,12 +245,13 @@ def parse(raw: str) -> Tuple[str, dict]:
             or low.startswith("take out") or low in ("find a bank", "hit the bank")):
         return ("atm", {"amount": _money(low) or _bare_number(low)})   # accept 'withdraw 200'
 
-    # claim what you're carrying
+    # claim what you're carrying — accept '$300' AND a bare '300'; only ZERO it on an explicit broke
     if _is_claim(low):
-        if any(w in low for w in ("no cash", "no money", "broke", "nothing", "empty", "zero",
-                                  "don't have", "dont have", "haven't got", "havent got")):
+        amt = _money(low) or _bare_number(low)
+        if amt is None and any(w in low for w in ("no cash", "no money", "broke", "nothing", "empty",
+                               "zero", "don't have", "dont have", "haven't got", "havent got")):
             return ("claim", {"amount": 0.0})
-        return ("claim", {"amount": _money(low)})
+        return ("claim", {"amount": amt})
 
     # parts list + selling the build off her
     if low in ("parts", "the build", "build sheet", "what can i sell", "what can i sell?",
@@ -202,15 +287,21 @@ def parse(raw: str) -> Tuple[str, dict]:
                "rob the vault", "heist", "do a bank job", "rob this bank"):
         return ("rob", {})
 
-    # gambling — raise the money (and the rewind cheat)
-    if (low.startswith(("bet", "gamble", "wager", "put ", "lay ", "place a bet"))
+    # gambling — raise the money (and the rewind cheat). 'put'/'lay' ONLY count as bets when there's
+    # an amount, so "put on music" / "lay low" don't get eaten by the tables.
+    _has_stake = bool(_money(low) or _bare_number(low)
+                      or any(p in low for p in ("all in", "all-in", "let it ride", "everything",
+                                                "double or nothing")))
+    if (low.startswith(("bet", "gamble", "wager", "place a bet"))
+            or (low.startswith(("put ", "lay ")) and _has_stake)
             or low in ("hit the tables", "hit the casino", "play the tables", "sports bet",
                        "double or nothing", "all in", "all-in", "let it ride", "everything")):
         m = re.search(r"on\s+(.+)$", low)            # "bet $1000 on the raiders"
         if any(p in low for p in ("all in", "all-in", "let it ride", "everything", "double or nothing")):
             amt = "all"                              # bet the whole wad
         else:
-            amt = _money(low) or _bare_number(low)   # accept '$1000', '1000', '1k'
+            _two = re.search(r"\b(\d{2,})\b", low)   # a bet of '50' is valid (unlike a menu '3')
+            amt = _money(low) or _bare_number(low) or (float(_two.group(1)) if _two else None)
         return ("bet", {"amount": amt, "pick": (m.group(1).strip() if m else None)})
 
     # legal racing / showing (only after you own her)
@@ -244,12 +335,22 @@ def parse(raw: str) -> Tuple[str, dict]:
             or ("container" in low and any(w in low for w in ("ship", "load", "into", "the")))
             or ("ship" in low and "overseas" in low)):
         return ("ship", {})
-    # bribe a pardon (the farce)
+    # fake your own death — the fireball (only once you know his secret); must precede pardon/drive
+    if (low in ("fake my death", "fake your death", "fake her death", "fake our death", "fake a death",
+                "stage my death", "stage a death", "stage an accident", "fake the crash", "fake a crash",
+                "burn her", "burn the decoy", "torch the decoy", "the fireball", "fake my own death",
+                "stage my own death", "set the fire", "light it up", "die", "play dead", "disappear for good")
+            or ("fake" in low and any(w in low for w in ("death", "die", "crash", "accident", "wreck")))
+            or ("burn" in low and any(w in low for w in ("decoy", "shell", "her down", "the z", "it down")))):
+        return ("fakedeath", {})
+    # bribe a pardon (the farce) — must be DELIBERATE: 'buy/get a pardon' or bribing the state, never
+    # a stray 'pardon?' / 'pardon me' / 'beg your pardon' in conversation.
     if (low in ("pardon", "buy a pardon", "get a pardon", "bribe", "bribe an official",
-                "buy a pardon", "pay for a pardon", "grease the wheels", "buy my way clean",
+                "pay for a pardon", "grease the wheels", "buy my way clean", "buy a pardon",
                 "buy our way clean", "bribe the state", "bribe the governor", "buy off the state",
-                "pay them off", "make it go away")
-            or "pardon" in low or ("bribe" in low and "clerk" not in low)):
+                "pay them off", "make it go away", "buy the pardon", "bribe my way out")
+            or re.search(r"\b(buy|get|pay for|purchase|want) (a |the )?pardon\b", low)
+            or ("bribe" in low and "clerk" not in low and "pardon" not in low)):
         return ("pardon", {"amount": _money(low)})
     # roll the credits — end the trip on your terms
     if low in ("retire", "end the trip", "end the road trip", "end the game", "roll credits",
@@ -262,6 +363,60 @@ def parse(raw: str) -> Tuple[str, dict]:
                "how did we do", "tally", "final tally", "stats", "my stats", "achievements",
                "awards", "the tally"):
         return ("scorecard", {})
+
+    # ---- disguising the CAR (the CAR-heat axis): cover, plate swap, hood swap, respray ----
+    # uncover FIRST (so 'uncover her' isn't eaten by the broad 'cover' catch-all just below)
+    if (low in ("uncover", "uncover her", "uncover the car", "take the cover off", "pull the cover off",
+                "off with the cover", "remove the cover", "take her cover off", "lose the cover")
+            or "uncover" in low
+            or ("cover" in low and any(w in low for w in ("off", "remove")))):
+        return ("uncover", {})
+    # the opaque cover (the Vegas-night easy-mode) — must precede camo (which owns 'cover the plate').
+    # Word-boundary \bcover\b so it never fires inside 'discover'/'recover'/'undercover'.
+    if (low in ("cover", "cover her", "cover the car", "cover the z", "car cover", "the cover",
+                "grab the cover", "grab her cover", "put the cover on", "throw the cover on",
+                "throw the cover over her", "cover her up", "drape her", "use the cover",
+                "put her cover on", "get the cover", "opaque cover", "grab the car cover")
+            or (re.search(r"\bcover\b", low) and "plate" not in low and "discover" not in low
+                and any(w in low for w in ("her", "the car", "the z", "car cover", "up over")))):
+        return ("cover", {})
+    # swap the plate (the single best CAR-heat move — reads clean to ALPR, kills the Cedric tell)
+    if (low in ("swap the plate", "swap plate", "swap plates", "swap the plates", "change the plate",
+                "change plates", "change the plates", "switch the plate", "switch plates", "new plate",
+                "different plate", "steal a plate", "grab a plate", "swap her plate", "switch the plates",
+                "get a new plate", "put a different plate on")
+            or ("plate" in low and any(w in low for w in ("swap", "change", "switch", "different",
+                                                          "steal", "new ", "another")))):
+        return ("swapplate", {})
+    # detach the ace-of-spades hood (the disguise she CONSENTS to — it's a wrap)
+    if (low in ("swap the hood", "swap hood", "change the hood", "change hood", "swap her hood",
+                "plain hood", "steel hood", "new hood", "different hood", "ditch the hood",
+                "lose the hood", "swap the carbon hood", "put a plain hood on", "detach the hood",
+                "detach the spade", "detach the spade hood", "take the hood off", "take off the hood",
+                "pull the hood", "pull the spade", "remove the hood", "remove the spade hood",
+                "take the spade off", "lose the spade")
+            or ("hood" in low and any(w in low for w in ("swap", "change", "plain", "steel", "ditch",
+                                                         "lose", "different", "detach", "remove",
+                                                         "take off", "take the", "pull")))
+            or ("spade" in low and any(w in low for w in ("detach", "remove", "take", "lose", "pull off")))):
+        return ("swaphood", {})
+    # peel the rattle-can back off (undo a respray) — guard 'peel OUT of here' (a drive)
+    if (low in ("peel", "peel it", "peel the paint", "peel off the paint", "peel her", "peel it off",
+                "peel the paint off", "take the paint off", "remove the paint", "remove the rattle can",
+                "undo the paint", "strip the paint", "peel the rattle can off")
+            or (re.search(r"\bpeel\b", low) and "out" not in low
+                and any(w in low for w in ("paint", "rattle", "the gray", "the grey")))):
+        return ("peelpaint", {})
+    # respray — rattle-can over the PPF (the betrayal she fears most). The DESTRUCTIVE verb: it must
+    # require UNAMBIGUOUS paint intent, never a stray 'different color' / 'spray her with the hose'.
+    if (low in ("respray", "repaint", "repaint her", "paint her", "paint the car", "paint job",
+                "new paint", "respray her", "spraypaint her", "rattle can her", "rattlecan her",
+                "change the color", "change her color", "different color", "spray paint her",
+                "paint her a different color", "get her painted", "paint over her", "paint her gray",
+                "paint her grey", "rattlecan her", "give her a respray", "spray her down")
+            or re.search(r"\b(respray|repaint|rattle ?can|spray ?paint|paint ?job|maaco)\b", low)
+            or re.search(r"\bpaint (her|it|the car|the z|over)\b", low)):
+        return ("respray", {})
 
     # ---- her gadgets: camo, connectivity, and the self-driving secret ----
     # Z camouflage — dress her down / flaunt her
@@ -318,6 +473,52 @@ def parse(raw: str) -> Tuple[str, dict]:
                 "is tioga open", "are the passes open", "season", "what's the season")
             or ("pass" in low and any(w in low for w in ("open", "closed", "snow", "condition")))):
         return ("closures", {})
+
+    # ---- the body: eat, bathroom (#1 / #2), a drink ----
+    if (low in ("eat", "eat something", "get food", "grab food", "grab a bite", "food", "lunch",
+                "dinner", "breakfast", "get something to eat", "feed me", "i'm hungry", "im hungry",
+                "grab lunch", "grab dinner", "have a meal", "get a meal", "get lunch", "get dinner")
+            or low.startswith(("eat ", "grab some food", "get some food"))):
+        return ("eat", {})
+    # #2 first (more specific) so it never falls through to #1
+    if (any(p in low for p in ("number two", "#2", "take a dump", "take a shit", "poop", "go number 2"))
+            or low in ("number 2", "do a number two", "drop the kids off at the pool")):
+        return ("restroom", {"number": 2})
+    # NB: dropped the ambiguous 'i need to go' / 'i have to go' — they ate 'i need to go to vegas'.
+    # 'i gotta go' bathroom intent must be unambiguous (pee/bathroom/restroom), not a travel verb.
+    if (any(p in low for p in ("restroom", "bathroom", "need to pee", "have to pee", "gotta pee",
+                               "take a leak", "#1", "use the toilet", "rest stop", "pit stop",
+                               "find a john", "go to the bathroom", "need the bathroom"))
+            or low in ("pee", "toilet", "piss", "number one", "number 1", "leak", "wc",
+                       "i need to pee", "i gotta go", "i need to go", "nature calls")):
+        return ("restroom", {"number": 1})
+    # caffeine — counter fatigue. Require drinking INTENT ('coffee' alone could be 'coffee break from
+    # this conversation'); guard 'wake HER up' (the upgrade) and 'coffee break' (a rest, not a coffee).
+    if ((low in ("coffee", "get coffee", "grab coffee", "drink coffee", "a coffee", "get a coffee",
+                 "grab a coffee", "caffeine", "caffeinate", "espresso", "energy drink", "red bull",
+                 "monster", "rockstar", "stay awake", "stay up", "wake up", "wake myself up",
+                 "get some coffee", "need coffee", "i need coffee", "another coffee", "more coffee",
+                 "cup of coffee", "buy a coffee", "buy coffee")
+             or (("coffee" in low or "caffeine" in low or "energy drink" in low or "espresso" in low)
+                 and any(w in low for w in ("get", "grab", "buy", "need", "want", "have", "drink",
+                                            "a coffee", "some coffee", "cup", "more", "another"))
+                 and "coffee break" not in low))
+            and "wake her" not in low and "wake me her" not in low):
+        return ("caffeine", {})
+    if ((low in ("drink", "have a drink", "get a drink", "grab a drink", "have a beer", "get a beer",
+                 "buy a drink", "go to the bar", "hit the bar", "have a few", "get drunk", "buy a round",
+                 "have a couple", "do shots", "shots", "let's drink", "lets drink", "a beer")
+             or low.startswith(("drink", "have a drink", "have a beer", "have a few", "have a couple",
+                                "do a shot", "do shots")))
+            # 'drink the water' / 'have a glass of water' / soda / coffee aren't alcohol
+            and not any(w in low for w in ("water", "soda", "juice", "coffee", "milk", "soft drink",
+                                           "lemonade", "tea", "coke"))):
+        if "few" in low or "couple" in low or "round" in low:
+            n = 3
+        else:
+            m = re.search(r"\b([1-9])\b", low)
+            n = int(m.group(1)) if m else 1
+        return ("drink", {"n": n})
 
     # fuel
     if _is_fuel(low):
@@ -441,8 +642,11 @@ def _is_fuel(low: str) -> bool:
 def _is_sleep(low: str) -> bool:
     return (low.startswith(("sleep", "rest", "motel", "camp", "lodge", "stay", "check in",
                             "check-in", "bed", "crash", "pull over", "turn in", "good night",
-                            "airbnb", "air bnb", "book", "find a place", "get a room"))
-            or "airbnb" in low or "private stay" in low or "private place" in low)
+                            "airbnb", "air bnb", "book", "find a place", "get a room", "get some sleep",
+                            "find a motel", "find a room", "find a hotel", "get some rest", "call it a night"))
+            or "airbnb" in low or "private stay" in low or "private place" in low
+            or any(p in low for p in ("find a motel", "find a room", "find a hotel", "get some sleep",
+                                      "call it a night", "go to sleep", "bed down")))
 
 
 def _is_talk(low: str) -> bool:

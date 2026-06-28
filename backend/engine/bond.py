@@ -65,7 +65,27 @@ def adjust(s: GameState, delta: float, reason: str, kind: str = "warm") -> float
                     "odo": round(s.odometer_mi, 1)})
         del log[:-LOG_KEEP]
     s.flags["bond_worst"] = min(s.flags.get("bond_worst", round(START)), round(s.bond))
+    s.flags["peak_bond"] = max(s.flags.get("peak_bond", round(START)), round(s.bond))  # high-water for the floor
     return s.bond
+
+
+# --------------------------------------------------------------- farming affection by talking
+def converse(s: GameState, about_her: bool = False) -> float | None:
+    """You can grow her affection just by TALKING — slowly for chit-chat, faster when you ask about
+    HER. Diminishing per place so you can't farm it standing still; real miles (a drive) reset it."""
+    if s.flags.get("no_heat"):
+        return None
+    place_key = s.place.poi_id or s.place.name or "x"
+    talks = s.flags.setdefault("talks_here", {})
+    n = int(talks.get(place_key, 0))
+    base = 1.4 if about_her else 0.5
+    gain = round(base * (0.6 ** n), 2)
+    if gain < 0.05:
+        return None
+    talks[place_key] = n + 1
+    adjust(s, gain, "you asked about her — and listened" if about_her else "easy talk, the two of you",
+           "warm")
+    return gain
 
 
 # --------------------------------------------------------------- the "she remembers" buffer

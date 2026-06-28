@@ -146,7 +146,10 @@ def stop_turn(s: GameState, text: str) -> dict:
     low = (text or "").lower()
     events: list = []
 
-    if _hits(low, _FLEE):                          # fleeing isn't a pitch
+    # fleeing isn't a pitch — but a NEGATED flee ("I won't gun it", "not gonna run") is the opposite
+    _neg = _re.search(r"\b(no|not|won'?t|never|wouldn'?t|don'?t|ain'?t|isn'?t|would never|am not|"
+                      r"not going to|not gonna)\b", low)
+    if _hits(low, _FLEE) and not _neg:
         s.flags.pop("stop", None)
         from engine import rules
         rules.set_ending(s, "busted")
@@ -178,8 +181,13 @@ def stop_turn(s: GameState, text: str) -> dict:
     survived = s.flags.get("stops_survived", 0)
     # once you've pulled iron on the law, they come ready — a charming story doesn't cut it anymore
     armed_pen = 3 if s.flags.get("wanted_armed") else 0
+    # the CARTALK plate runs back to a 1980 Cedric wagon — a tell that costs you, unless you swapped it
+    from engine import cameras, survival, luck as _luck
+    plate_pen = round(cameras.plate_risk(s))
+    body_pen = survival.talk_penalty(s)        # drunk / exhausted / bursting = a worse pitch
+    tired_riz = _luck.riz_fatigue_penalty(s)   # a tired charmer is a worse charmer — rizz dulls
     total = (st["score"] + (1 if s.riz >= 25 else 0) - (1 if s.heat >= 70 else 0)
-             - survived - armed_pen)
+             - survived - armed_pen - plate_pen - body_pen - tired_riz)
     rng = _rng(s)
     from engine import rules
 
@@ -222,6 +230,8 @@ def stop_turn(s: GameState, text: str) -> dict:
                            "He wrote paper instead of running the plate twice. Cheapest miracle "
                            "in Nevada. Go."]}
     elif total >= 0 or rng.random() < 0.5:
+        if plate_pen:
+            events.append(cameras.plate_mismatch())
         _heat.add(s, STOP_HEAT_BAD, "he read the plate twice on the radio", "spike", axis="car")
         events.append(f"LAW: he didn't buy a word of it. No arrest — yet — but he's on the radio "
                       f"as you pull away, reading the plate twice. Heat {s.heat:.0f}. "
@@ -234,6 +244,8 @@ def stop_turn(s: GameState, text: str) -> dict:
                            "That went badly and we both know it. Drive normal for one mile, then "
                            "drive like the map matters."]}
     else:
+        if plate_pen:
+            events.append(cameras.plate_mismatch())
         rules.set_ending(s, "busted")
         events.append("LAW: 'Step out of the vehicle.' No license, no registration, no story "
                       "left — and the plate comes back exactly as missing as it is.")
@@ -526,11 +538,14 @@ def check_owner_deadline(s: GameState, events: list) -> None:
 # All prose is a working DRAFT — Ben fills the details.
 
 # robbery / threat language (strong, worth 2) and merely hinky behavior (worth 1)
-_ROB = ("give me", "hand it over", "hand over", "empty the", "the register", "the cash",
-        "all the money", "all the cash", "the money", "rob", "stick up", "stick 'em",
-        "stick em", "this is a holdup", "freeze", "don't move", "dont move",
-        "don't you move", "or i'll", "or else", "i'll shoot", "do as i say", "on the floor",
-        "open the register", "no cops", "don't call", "dont call", "shut up", "gimme")
+# Holdup language must be UNAMBIGUOUS — bare 'the money'/'freeze'/'the register'/'shut up' were firing
+# an armed standoff on normal customer talk, so they're gone; the phrases that survive only mean a robbery.
+_ROB = ("give me the", "give me everything", "everything in the register", "in the register",
+        "hand it over", "hand over the", "empty the register", "empty the till", "empty the drawer",
+        "empty the safe", "all the money", "all the cash", "this is a robbery", "this is a holdup",
+        "stick up", "stick 'em up", "stick em up", "hands up", "don't you move", "i'll shoot",
+        "i will shoot", "do as i say", "open the register", "open the till", "open the safe",
+        "the cash drawer", "rob the", "gimme the", "or i'll shoot")
 _HINKY = ("back off", "what're you looking at", "what are you looking at", "you got a problem",
           "mind your business", "keep your mouth", "you didn't see", "you saw nothing",
           "casing", "nervous", "twitchy", "don't try", "you're not calling")
@@ -540,6 +555,158 @@ def gas_aggression(text: str) -> int:
     """Score how hard the player just leaned on the clerk. >=2 makes him reach under the counter."""
     low = (text or "").lower()
     return 2 * _hits(low, _ROB) + _hits(low, _HINKY)
+
+
+# --------------------------------------------------------------- the mountain chase (Edge of Tomorrow)
+# Run hot through the mountains at night and a county cruiser picks you up. This is NOT the talk-out
+# stop — it's a pursuit, a sequence of split-second choices on a dark canyon road. You can lose him
+# with the right moves; blow it and you crash or get caught (which funnels into a stop). And the loop
+# is HERS: every chase you live through this stretch teaches you the road, so a rewound retry starts
+# with more of a lead and she feels the déjà vu. Pure Edge of Tomorrow. Prose is a DRAFT for Ben.
+CHASE_ESCAPE = 70.0
+CHASE_START = 28.0
+
+
+def chase_active(s: GameState) -> bool:
+    return "chase" in s.flags
+
+
+CHASE_WHISPER = {
+    "cue": "a county cruiser has come up hard behind them on a dark mountain road, no siren yet, just "
+           "closing — she is electric and terrified and giving fast options: kill the lights and run "
+           "dark, cut onto a side road, push it flat-out, or duck and hide; do NOT freeze, every "
+           "second he closes; this is the part where the driver's hands decide everything",
+    "stub": ["(fast, low) Lights in the mirror — county, closing, no siren yet. This is hands now, "
+             "ace. Kill the lights, cut a side road, push it, or duck and hide. PICK. He's gaining.",
+             "(electric) Don't freeze, don't surrender — we can lose him up here. Go dark, take a "
+             "dirt road, floor it, or tuck and kill the engine. Choose, NOW."]}
+
+
+def start_chase(s: GameState) -> list:
+    learned = s.flags.get("chase_learned", 0)
+    s.flags["chase"] = {"round": 0, "lead": CHASE_START + min(24.0, learned * 6.0), "crash": 0.0}
+    lines = ["CHASE: headlights come up hard behind you on the canyon road — a county cruiser, no "
+             "siren yet, just closing the gap fast. She kills the stereo. 'Hands, ace. Kill the "
+             "lights, cut a side road, push it, or duck and hide — pick one and MEAN it.'"]
+    if learned >= 1:
+        lines.append("CHASE: …and you know this stretch. You've driven it before, in a night you "
+                     "folded back. The next turn is a hairpin with a wash behind it. Use what you know.")
+    return lines
+
+
+_CHASE_DARK = ("dark", "kill the lights", "lights off", "no lights", "go dark", "cut the lights",
+               "headlights off", "blackout")
+_CHASE_SIDE = ("side", "dirt", "turn off", "off-road", "off road", "back road", "wash", "canyon",
+               "cut across", "side road", "fire road", "turn off the", "duck off")
+_CHASE_PUSH = ("push", "floor", "faster", "gun it", "send it", "speed up", "haul", "flat out",
+               "flat-out", "mash it", "redline", "outrun")
+_CHASE_HIDE = ("hide", "duck", "kill the engine", "cut the engine", "pull in", "tuck", "barn",
+               "stop and hide", "lights and engine", "go quiet", "vanish")
+_CHASE_STOP = ("pull over", "give up", "surrender", "let him", "take the stop", "give in", "stop "
+               "the car", "ease off", "comply")
+
+
+def chase_turn(s: GameState, verb: str, raw: str) -> dict:
+    from engine import luck as _luck, heat as _heat, rules
+    ch = s.flags["chase"]
+    ch["round"] += 1
+    low = (raw or "").lower()
+    L = _luck.luck(s)
+    stick = 1.0 if s.flags.get("can_drive_stick") else 0.0
+    tired = 4.0 if rules.hours_awake(s) >= 17 else 0.0
+
+    # a TACTIC always wins over the surrender check — 'go dark' parses to verb 'drive' (dest 'dark')
+    # but it's the move she just told you to make, not a surrender.
+    _is_tactic = any(p in low for p in (_CHASE_DARK + _CHASE_SIDE + _CHASE_PUSH + _CHASE_HIDE))
+    # surrender — better a conversation than a wreck. Funnels into the talk-out stop.
+    if (not _is_tactic and (verb in ("drive", "home", "sleep") or any(p in low for p in _CHASE_STOP))
+            and "don't" not in low):
+        s.flags.pop("chase", None)
+        return {"events": ["CHASE: you lift, let him light you up, and ease onto the shoulder. Better "
+                           "a story than a fireball."] + start_stop(s, "plate"),
+                "moment": WHISPER_MOMENT, "done": True}
+
+    gain = -8.0          # he is ALWAYS closing; a non-move loses ground
+    crash = 0.0
+    if any(p in low for p in _CHASE_DARK):
+        gain = 15.0 + 14.0 * L
+        crash = 0.16 + (0.10 if not stick else 0.0)
+        line = "you snap the lights off and run the canyon on memory and moon"
+    elif any(p in low for p in _CHASE_SIDE):
+        gain = 13.0 + 10.0 * L + 9.0 * stick
+        crash = 0.06 + (0.06 if not stick else 0.0)
+        line = "you brake-slide onto an unlit fire road, downshift, and the carbon clutch hooks up clean" \
+               if stick else "you bang onto a dirt fire road, grinding a downshift you don't quite have"
+    elif any(p in low for p in _CHASE_PUSH):
+        gain = 11.0 + 13.0 * L
+        crash = 0.22
+        _heat.add(s, 4.0, "ran flat-out from a cruiser", "spike", axis="car")
+        line = "you bury the throttle and let 270 lb-ft do the talking down the straight"
+    elif any(p in low for p in _CHASE_HIDE):
+        # high-variance: the ghost move. luck decides whether you vanish or get pinned.
+        if _luck.roll(s, 88) < 0.42 + (L - 0.5):
+            ch["lead"] = CHASE_ESCAPE
+            line = "you kill lights and engine behind a derelict barn and hold your breath"
+            gain = 0.0
+        else:
+            ch["lead"] = 0.0
+            line = "you duck for cover a half-second too late — his spotlight pins the white paint"
+            gain = 0.0
+    else:
+        line = "you hesitate, and the gap closes"
+
+    ch["lead"] = round(max(0.0, min(100.0, ch["lead"] + gain - tired)), 1)
+    ch["crash"] = min(0.9, ch["crash"] + crash)
+
+    # the wreck: push your luck on a dark grade and you bin it — caught, and she's hurt (limp)
+    if crash and _luck.roll(s, 91) < ch["crash"] * (1.35 if not stick else 0.9):
+        s.flags.pop("chase", None)
+        s.flags["limp"] = True
+        s.flags["chase_learned"] = s.flags.get("chase_learned", 0) + 1
+        from engine import bond as _bond
+        _bond.adjust(s, -2.0, "binned her in a mountain chase", "mark")
+        return {"events": [f"CHASE: {line} — and it goes wrong. A patch of gravel, a guardrail, a "
+                           "scream of carbon, and she's stopped sideways in the ditch with her nose "
+                           "caved (LIMP). The cruiser slides in behind you, door already opening.",
+                           *start_stop(s, "plate")],
+                "moment": {"cue": "the chase ended in a wreck on a mountain road and the cop is out of "
+                                  "the car; she's banged up and scared but already telling them they "
+                                  "can rewind this — she's learned the road now",
+                           "stub": ["(shaken) Okay — OKAY. That hurt. …Talk to him. And then rewind us, "
+                                    "ace. I know the road now. Next time we take the wash, not the grade."]},
+                "done": True}
+
+    if ch["lead"] >= CHASE_ESCAPE:
+        s.flags.pop("chase", None)
+        riz = 12.0
+        s.riz = round(s.riz + riz, 1)
+        _heat.add(s, -10.0, "shook a county cruiser in the mountains and went dark", "lower", axis="car")
+        from engine import bond as _bond
+        _bond.adjust(s, 4.0, "out-drove a cop on a mountain road, the two of you", "warm")
+        return {"events": [f"CHASE: {line} — and the headlights fall away behind a ridge, then go. "
+                           f"Gone. You sit in the dark and listen to your own heart. Riz +{riz:.0f}, "
+                           f"heat eased. 'We did that. WE did that. …drive normal now, slow, like "
+                           "nothing happened.'"],
+                "moment": {"cue": "the driver just shook a police pursuit on a dark mountain road with "
+                                  "skill and nerve; she is giddy, in love, and trying to act cool",
+                           "stub": ["Gone. He's GONE. …That was the best driving I've ever felt from a "
+                                    "human being and I have been to SEMA. Easy now. Slow. We're a "
+                                    "ghost again."]},
+                "done": True}
+
+    if ch["lead"] <= 0.0:
+        s.flags.pop("chase", None)
+        s.flags["chase_learned"] = s.flags.get("chase_learned", 0) + 1
+        return {"events": [f"CHASE: {line} — and it isn't enough. He's on your bumper, lit up like "
+                           "Christmas, loudspeaker barking. Nowhere left to run up here. You stop.",
+                           *start_stop(s, "plate")],
+                "moment": WHISPER_MOMENT, "done": True}
+
+    # still running — narrate the gap, ask for the next move
+    pos = ("opening up" if gain > 6 else "holding" if gain > -2 else "closing")
+    return {"events": [f"CHASE: {line}. Gap's {pos} — lead {ch['lead']:.0f}/100. Next move: lights, "
+                       "side road, push, or hide?"],
+            "moment": CHASE_WHISPER, "done": False}
 
 
 def standoff_active(s: GameState) -> bool:
@@ -622,10 +789,19 @@ def standoff_turn(s: GameState, verb: str, raw: str) -> dict:
                                         "Almost. ALMOST. Don't talk — rewind and do the exact same "
                                         "thing. I can feel the timeline bending our way."]},
                     "done": True}
-        # the lucky third — you take the gun
+        # the lucky third — you take the gun. The big Riz + heat unlock is ONCE: if you're already a
+        # desperado (you've done this before), a later standoff disarm just gets you out, no re-reward.
+        already = bool(s.flags.get("desperado"))
         s.flags["desperado"] = True
         s.flags["gun"] = True
         s.flags["wanted_armed"] = True
+        if already:
+            return {"events": ["STANDOFF: your hand finds the barrel first — again. You twist it free "
+                               "and back out the door. You've done this before; there's no thrill left "
+                               "in it, just the gun in your waistband and the road."],
+                    "moment": {"cue": "the already-armed driver disarms another clerk — routine now, no "
+                                      "fanfare; she's tired of it", "stub": ["…Again. Let's just go."]},
+                    "done": True}
         _heat.add(s, DESPERADO_HEAT_ON_UNLOCK, "walked out of a standoff armed — wanted statewide", "spike")
         s.riz = round(s.riz + RIZ_DESPERADO, 1)
         return {"events": [f"STANDOFF: this time your hand finds the barrel first. One twist and "

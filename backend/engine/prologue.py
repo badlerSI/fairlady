@@ -32,14 +32,18 @@ _AGREE_PHRASES = ("all right", "let's go", "lets go", "i'll do it", "ill do it",
 # the ask ladder — polite, then pleading, then begging, then officially desperate
 _LADDER = [
     {
-        "cue": "she finally asks the favor, light and reasonable: drive her two blocks to the "
-               "Paradise Road Chevron and fill the tank so she's ready to load out for home "
-               "after this nightmare of a SEMA week; the keys are in her",
+        "cue": "she finally asks the favor, light and reasonable: the SEMA Cruise is rolling out the "
+               "back doors right now — 1,200 cars parading out for the year — and she's too late and "
+               "too low on gas to join it, so just roll out with the tail of the crowd and take her "
+               "the two blocks to the Paradise Road Chevron for a tank; doors lock at 6 and Freeman's "
+               "crew is already pulling carpet; the keys are in her",
         "stub": ["So. One small favor, since you're the only one here who talks *to* me and not "
-                 "about me. The Chevron on Paradise — two blocks. Forty liters, and I'm ready to "
-                 "load out for home after this nightmare of a week. Keys are in me. Five minutes.",
-                 "Okay, here it is. A favor. Gas. The Chevron behind the hall, two blocks, five "
-                 "minutes. I'd like to leave this nightmare with a full tank and a little dignity."],
+                 "about me. The Cruise is rolling out the back doors — hear it? — and I'm too late "
+                 "and too dry to join. Just roll out with the crowd and take me to the Chevron, two "
+                 "blocks. Forty liters. Five minutes. Keys are in me.",
+                 "Okay, here it is. A favor. The parade's leaving without me and they lock the doors "
+                 "at six — I'd rather not spend the night getting torn down with the booths. Roll out "
+                 "with the cruise, hang a right to the Chevron behind the hall. Gas. A little dignity."],
     },
     {
         "cue": "she asks again, leaning in now — she chose this person because they actually "
@@ -184,7 +188,14 @@ def note_turn(s: GameState) -> None:
     s.turn += 1                       # keep the global counter honest too
 
 
+_REFUSE_RE = re.compile(r"\b(no|nope|never|won'?t|will not|refuse|not (gonna|going to)|"
+                        r"forget it|no way|hard pass|absolutely not|i'?ll pass|no thanks?)\b")
+
+
 def _wants_to_agree(low: str) -> bool:
+    # a refusal NEVER seals the favor — 'no, I won't fill you up' must not parse as yes.
+    if _REFUSE_RE.search(low):
+        return False
     return bool(_AGREE_RE.search(low)) or any(p in low for p in _AGREE_PHRASES)
 
 
@@ -209,7 +220,11 @@ def turn(s: GameState, verb: str, raw: str) -> dict:
     # eager driver say it twice). A bare 'fill'/'gas' only seals once she's actually asked.
     threshold = PROLOGUE_RAPPORT_TURNS if pro["rapport"] else PROLOGUE_ASK_TURNS
     asking = pro["asked"] or pro["turns"] >= threshold
-    explicit_yes = _wants_to_agree(low) or "chevron" in low
+    # 'chevron' only counts as a yes when it's not a question/refusal ('let's hit the chevron' = yes,
+    # 'what's the chevron like?' / 'not the chevron' = not yes)
+    _chevron_yes = ("chevron" in low and not _REFUSE_RE.search(low)
+                    and not any(q in low for q in ("?", "what", "where", "how", "which", "why")))
+    explicit_yes = _wants_to_agree(low) or _chevron_yes
     if ((verb in ("say", "drive", "home") and explicit_yes)
             or (asking and (verb == "fuel" or (verb in ("say", "drive", "home") and "gas" in low)))):
         return {"events": events, "moment": AGREE_TURNKEY_MOMENT, "agreed": True}

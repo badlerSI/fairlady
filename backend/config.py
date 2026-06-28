@@ -26,6 +26,9 @@ ADAPTER = os.environ.get("FAIRLADY_ADAPTER", "stub").strip().lower()
 ACE_BASE_URL = os.environ.get("FAIRLADY_ACE_URL", "https://ace-api.badler.ai").rstrip("/")
 ACE_TIMEOUT = float(os.environ.get("FAIRLADY_ACE_TIMEOUT", "30"))
 VOICE_ENABLED = _b("FAIRLADY_VOICE", True)  # request Kokoro audio urls
+# Long legs (>30 min) open a CONVERSATION with Ace instead of resolving instantly; 'put on music'
+# fast-forwards to the destination. ON for the real game; tests turn it off for deterministic drives.
+DRIVE_CONVERSATIONS = _b("FAIRLADY_DRIVE_CHAT", True)
 
 # Optional multi-voice TTS for non-Japanese NPCs (OpenAI-compatible /v1/audio/speech,
 # e.g. a full Kokoro server). If unset, FAIRLADY (en) and Japanese NPCs are voiced via
@@ -64,6 +67,19 @@ CARD_LIMIT = 10000.0          # $10k before the card gets rejected; swipes spike
 HAT_PRICE = 12.0             # a Chevron mini-mart ball cap
 HAT_HEAT_DROP = 6.0         # brim down — harder to ID off a camera frame
 VALET_HEAT_TRAP = 22.0      # valet ran the plate — cops staged on your return (a trap)
+
+# --- Disguising the CAR (the other heat axis) — the PPF-aware ladder, cheap → drastic ----------
+# CAR heat is the white Z herself: the BOLO, the ace-of-spades hood, the CARTALK plate. You can't
+# hide your face with these — they hide the CAR. All route to the 'car' axis.
+COVER_PRICE = 0.0           # the opaque fitted cover lives in her hatch — grabbing it is free
+COVER_HEAT_DROP = 18.0      # a covered car can't be read or photographed — while she's parked
+PLATE_SWAP_PRICE = 0.0      # a plate off a junker in a long-term lot — quiet and free if you're bold
+PLATE_SWAP_HEAT_DROP = 26.0 # a swapped plate reads clean to every ALPR (and kills the Cedric tell)
+HOOD_SWAP_PRICE = 120.0     # a plain steel hood from a pick-n-pull — the spade is the tell
+HOOD_SWAP_HEAT_DROP = 20.0  # no ace of spades, no instant recognition. SHE CONSENTS — the hood's a wrap
+RESPRAY_PRICE = 80.0        # rattle cans + masking; the real cost is her trust, not the money
+RESPRAY_HEAT_DROP = 45.0    # a different-colored car is a different car; the BOLO is for a white one
+RESPRAY_BOND_HIT = 30.0     # she BEGS you not to — and spraying her over crashes her into COLD (armed)
 
 # --- Heat (stolen car) ---------------------------------------------------------
 HEAT_START = 8.0
@@ -162,6 +178,14 @@ SEASON_SNOW_START = "2025-11-01"   # day 0 of the descending snow line
 SNOW_LINE_HIGH = 1.40              # terrain threshold open in early Nov (nothing closed)
 SNOW_LINE_LOW = 1.10               # by deep winter, even the 1.15 passes shut
 SNOW_LINE_DESCENT = 0.005          # per day the snow line drops this much in terrain-units
+
+# --- The calendar bites: two dated set-pieces on top of the snow line ------------
+# 1) Salt Lake City, first week of December — the owner (and the APC crew) catch up with you there.
+# 2) New Year's Eve 2025 — the hard wall. If you're still running on Dec 31, he uses the AirTag he
+#    planted at the show to find you and collect her for CES the next week. Unless you found it first.
+SLC_EVENT_START = "2025-12-01"
+SLC_EVENT_END = "2025-12-07"
+NYE_DATE = "2025-12-31"            # the road trip does not survive into 2026 unless you've already won
 
 # --- Clock ---------------------------------------------------------------------
 # Pacific Standard Time (Nov 7 2025 is after DST end). Stored as naive local.

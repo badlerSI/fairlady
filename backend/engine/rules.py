@@ -43,6 +43,8 @@ def _day_number(dt: datetime) -> int:
 def advance_clock(state: GameState, hours: float) -> None:
     state.clock = state.clock + timedelta(hours=hours)
     state.day = _day_number(state.clock)
+    from engine import survival
+    survival.accrue(state, hours)            # the body keeps its own clock — hunger, bladder, BAC
 
 
 def _rng(state: GameState) -> random.Random:
@@ -145,11 +147,19 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
         events.append(closed)
         return events
 
-    if not selfdrive and hours_awake(state) >= AWAKE_FORCE_HOURS:
+    from engine import survival as _surv
+    eff_awake = hours_awake(state) - _surv.caffeine_offset(state)   # coffee buys you a few more hours
+    if not selfdrive and eff_awake >= AWAKE_FORCE_HOURS:
         events.append("FATIGUE: you can't keep your eyes open — you have to stop for the night before "
-                      "driving on. Try 'sleep' where there are rooms, 'pull over' to sleep rough"
+                      "driving on. Try 'sleep' where there are rooms, 'pull over' to sleep rough, "
+                      "grab a coffee to push a little further"
                       + (", or 'let her drive'." if state.flags.get("self_driving") else "."))
         return events
+
+    if state.flags.pop("covered", None):                 # can't drive her draped — and the quiet
+        state.flags.pop("cover_credit", None)            # hours already counted, so the drop stays
+        events.append("COVER: you fold the cover back into the hatch — she did her time as a gray "
+                      "lump, and the heat she shed under it is yours to keep.")
 
     origin = state.place
     rt = world.route(origin, dest)
@@ -205,6 +215,7 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
                 events.append("CAMO: pushing her that hard shook the tarp loose and the grime off "
                               "the spade — the disguise is blown.")
         state.flags["lielow_streak"] = 0          # real miles reset the lie-low diminishing returns
+        state.flags["talks_here"] = {}            # ...and the talk-farm (you can chat her up again next stop)
         state.flags["rewind_tax"] = 0.0           # ...and clear the rewind strain — you've moved on
         state.flags.pop("ace_off", None)          # turn the key and she's watching again
         state.flags.pop("confirm_sleep_armed", None)
@@ -236,6 +247,20 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
             events.append("FATIGUE: you're nodding off at the wheel. You need to stop for the night.")
         elif state.fatigue >= 70:
             events.append("FATIGUE: eyes heavy. Find a place to stay soon.")
+        from engine import survival
+        events += survival.drain(state)      # hunger/bathroom telegraphs accrued over the leg
+        # oh DEER — a night mountain leg in deer season can put one in the headlights
+        from engine import luck as _luck
+        night = state.clock.hour >= 18 or state.clock.hour < 6
+        if state.status == "playing" and _luck.roll(state, 53) < _luck.deer_chance(state, dest, night):
+            events += _luck.resolve_deer(state, push)
+        # the mountain chase — run hot through the dark high country and a cruiser picks you up
+        if (state.status == "playing" and night and float(getattr(dest, "terrain", 1.0)) >= 1.1
+                and not state.flags.get("report_withdrawn") and not state.flags.get("no_heat")
+                and state.heat >= 50.0
+                and _luck.roll(state, 61) < min(0.6, (state.heat - 40.0) / 90.0)):
+            from engine import encounters
+            events += encounters.start_chase(state)
         law_check(state, events)
         return events
 
@@ -351,6 +376,8 @@ def _sleep_until_morning(state: GameState) -> float:
     state.clock = target
     state.day = _day_number(target)
     state.last_sleep_iso = target.isoformat()   # the awake-clock resets on sleep
+    from engine import survival
+    state.flags["_wake_debt"] = survival.sleep_reset(state)   # bathroom reset, BAC gone, caffeine due
     return hours
 
 
@@ -377,15 +404,44 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
     if rough or not place.has("lodging"):
         if not rough and not place.has("lodging"):
             events.append(f"SLEEP: no rooms at {place.name}. You pull over and sleep rough.")
-        from engine import heat as _heat
+        from engine import heat as _heat, inventory as _inv
+        camped = _inv.has(state, "tent")             # a tent turns a rough night into a real camp
         _sleep_until_morning(state)
-        state.fatigue = 20.0
-        # sleeping rough in a flashy car draws an eye — worse in a watched, affluent area
-        rough_h = ROUGH_SLEEP_HEAT * (2.0 if place.heat_zone else 1.0)
-        _heat.add(state, rough_h, "slept rough in a flashy car", "mark")
+        state.fatigue = min(140.0, (0.0 if camped else 20.0) + state.flags.pop("_wake_debt", 0.0))
+        # sleeping rough in a flashy car draws an eye — a tent off the road draws far fewer
+        rough_h = ROUGH_SLEEP_HEAT * (0.4 if camped else (2.0 if place.heat_zone else 1.0))
+        _heat.add(state, rough_h, "pitched a tent off the road" if camped else "slept rough in a flashy car",
+                  "mark" if not camped else "lower")
+        if camped:
+            events.append(f"SLEEP: you pitch the tent off the road and sleep like a person, not a "
+                          f"fugitive in a bucket seat. Rested. Heat {state.heat:.0f}. {_clock_str(state)}.")
+            return events
+        # ...and a cruiser may roll up wanting ID (luck + heat + how watched the spot is)
+        from engine import luck as _luck
+        if state.status == "playing" and _luck.roll(state, 71) < _luck.roadside_id_chance(state):
+            from engine import encounters
+            events.append("ROADSIDE: headlights sweep the car at 3 a.m. — a sheriff's cruiser, easing "
+                          "onto the shoulder behind you. A knuckle on the glass. 'Evening. Step out, "
+                          "let's see some ID.'")
+            events.extend(encounters.start_stop(state, "taillight"))
+            return events
         events.append(f"SLEEP: a rough night in the seats" + (" — and in the wrong part of town"
                       if place.heat_zone else "") + f". Half-rested, fatigue {state.fatigue:.0f}, "
                       f"heat {state.heat:.0f}. {_clock_str(state)}.")
+        return events
+
+    # Alma booked us a room — comped, off the books, free and clean
+    if state.flags.pop("alma_room_ready", None):
+        from engine import heat as _heat
+        _sleep_until_morning(state)
+        state.fatigue = min(140.0, state.flags.pop("_wake_debt", 0.0))
+        _heat.add(state, -6.0, "a comped room Alma booked, no paper", "lower")
+        events.append(f"SLEEP: the room Alma set up — clean sheets, a name that isn't yours, no bill. "
+                      f"Rested, free, invisible. Heat {state.heat:.0f}. {_clock_str(state)}.")
+        from engine import romance
+        d = romance.dream_on_sleep(state)
+        if d:
+            events.append(d)
         return events
 
     options = dict(economy.lodging_options(place))
@@ -406,7 +462,7 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
     from engine import heat as _heat
     from config import AIRBNB_HEAT
     _sleep_until_morning(state)
-    state.fatigue = 0.0
+    state.fatigue = min(140.0, state.flags.pop("_wake_debt", 0.0))   # a real bed, minus the caffeine you owe
     airbnb = kind == "airbnb"
     _heat.add(state, AIRBNB_HEAT if airbnb else HEAT_SLEEP_LODGING,
               "private stay, booked off the record" if airbnb else "a night off the road, lying low",
@@ -426,6 +482,11 @@ def sleep(state: GameState, kind: Optional[str] = None, prefer=None, rough: bool
         _card_mark(state, place, events, desk + " stay")
     elif paid["method"] == "card" and airbnb:
         _card_mark(state, place, events, "a card-booked rental (so much for the alias)")
+    # a real bed: the recurring dream of the cyan woman comes back (content reserved for Ben)
+    from engine import romance
+    dream = romance.dream_on_sleep(state)
+    if dream:
+        events.append(dream)
     return events
 
 

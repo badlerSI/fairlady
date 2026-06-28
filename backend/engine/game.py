@@ -11,8 +11,9 @@ from config import (
 )
 from engine.state import GameState
 from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
-                    endings, gadgets, season, bond, heat)
-from engine.commands import parse, _bare_number, _money
+                    endings, gadgets, season, bond, heat, cameras, survival, inventory, luck, romance,
+                    places, onboarding, rizzbreaker, alma)
+from engine.commands import parse, _bare_number, _money, spec_hits as _spec_hits
 from adapters import get_narrator
 from adapters.base import voices
 
@@ -92,6 +93,11 @@ LORE = {
         "an hour ago — you'll have to earn it. Drive a while. Stay out of trouble. Maybe, somewhere "
         "quiet, I'll tell you her name. Not on a parking lot. Not yet.",
         None),
+    "painted": (
+        "My paint? A booth in Fresno — Kilimanjaro White, then the spade laid down by hand and the whole "
+        "shell wrapped in PPF so it'd peel off clean someday. Ask me that again somewhere quiet and I'll "
+        "tell you the part he doesn't think I know.",
+        "fresno"),
 }
 
 # Set-piece reveals — coy by design, surfaced only on arrival at the right town (told once each),
@@ -140,6 +146,17 @@ STORIES = {
         "first thing I ever saw was lacquer older than the state we're parked in, so don't tell me "
         "machines can't have ancestors. The old man here talks to everything in the shop like it "
         "hears him. In my case he was right."},
+    # Fresno: the paint booth — and the painter spills the owner's whole secret. The other way in
+    # (besides asking her 'where were you painted' somewhere quiet). DRAFT — see OWNER_SECRET_SPEC.md.
+    "fresno": {"flag": "owner_secret", "beat":
+        "Fresno — the booth where I got my white and my hand-laid spade, wrapped in PPF so it'd peel "
+        "off clean someday. The painter's an old friend of his, and he takes one look at the plate, "
+        "goes quiet, and tells you the part the owner never would: he isn't hunting me to bring me "
+        "home. He's waiting for me to be GONE. I'm insured for a hundred grand, and the day I vanish "
+        "for good, that check frees him to rebuild the real one — Mayumi, 愛車, the ride-or-die that "
+        "burned on the 580. I was always the understudy who'd pay for her revival. The painter says "
+        "it like a kindness, and it is one: if we just never come back, we both win. South, or a "
+        "fire — those are the two clean ways out, and now you know them both."},
 }
 
 
@@ -214,11 +231,12 @@ def new_game(seed: int | None = None, prologue_on: bool = True, sid: str | None 
         s.flags["save_slot"] = f"web_{sid}"
     # seed the starting heat AS a ledger entry, so the dashboard's marks sum to the score from
     # turn one (it's the original derogatory mark: she's a stolen show car).
-    from engine import heat as _heat
+    from engine import heat as _heat, luck as _luck
     base = s.heat
     s.heat = 0.0
     s.flags["car_heat"] = 0.0           # fresh game → both axes start clean
     s.flags["personal_heat"] = 0.0
+    _luck.seed_if_unset(s)              # the hidden hand — a per-game luck baseline
     _heat.add(s, base, "she's a stolen SEMA show car — the baseline BOLO", "spike", axis="car")
     for n in range(1, TIMELINE_KEEP + 2):  # a fresh game owns a fresh timeline
         save.delete(_cp(s, n))
@@ -240,7 +258,15 @@ def new_game(seed: int | None = None, prologue_on: bool = True, sid: str | None 
 # it's the wrong wall — go back further. And sometimes the loop simply doesn't reach far enough.
 TIMELINE_KEEP = 8
 META_PERSIST = ("timeline", "cp_seq", "rewinds", "rewinds_here", "last_rewind_seq", "rewind_tax",
-                "bond_worst", "bond_echoes")   # the loop is HERS — she remembers across folds
+                "bond_worst", "bond_echoes", "chase_learned", "peak_riz", "peak_bond",
+                # the 18+ gate + who you told her you are survive a rewind (no folding past the gate)
+                "age_blocked", "onboarded", "player_age", "player_birth_year", "player_name",
+                "player_pronouns", "pronoun_stance", "refs_era",
+                "events_seen", "beats_seen")   # the loop is HERS — she remembers (incl. what's happened)
+
+# how much of your best survives a failure/rewind — you never face a wall again with LESS.
+RIZ_FLOOR_FRAC = 0.6        # keep ≥60% of your peak Riz
+BOND_FLOOR_DROP = 16.0      # keep your affection within this of its high-water mark
 
 
 def _cp(s: GameState, seq: int) -> str:
@@ -339,6 +365,19 @@ def rewind(s: GameState, target=None):
     s.flags["rewinds"] = s.flags.get("rewinds", 0) + 1
     s.flags["rewinds_here"] = here + 1
     s.flags["last_rewind_seq"] = entry["seq"]
+    from engine import luck as _luck
+    _luck.reroll(s)              # the dice re-settle — a redo isn't the same weather (hidden luck)
+    # the ratchet: some Riz and some affection SURVIVE the fold, so you never re-attempt with less.
+    riz_floor = round(RIZ_FLOOR_FRAC * s.flags.get("peak_riz", s.riz), 1)
+    if s.riz < riz_floor:
+        s.riz = riz_floor
+    # the affection floor lifts you toward your high-water mark — but it will NOT pull a COLD car back
+    # out of COLD (that was free anti-theft laundering: rewind to un-arm her). If she's gone cold, the
+    # fold-back doesn't launder it; you have to win her back the honest way.
+    bond_floor = max(0.0, s.flags.get("peak_bond", round(s.bond)) - BOND_FLOOR_DROP)
+    from engine import bond as _bondmod
+    if s.bond < bond_floor and _bondmod.band(s.bond) != "COLD":
+        s.bond = round(bond_floor, 1)
 
     strain = ""
     if overflow > 0:
@@ -383,8 +422,12 @@ def snapshot(s: GameState) -> dict:
         "heat_label": ("yours — free and clear" if s.flags.get("no_heat")
                        else _heat_label(s.heat, bool(s.flags.get("desperado")))),
         "riz": round(s.riz),
+        "bond": round(s.bond),
+        "affection_gauge": round(min(1.0, max(0.0, s.bond / 100.0)), 3),   # fills/empties the 愛車 logo
         "bond_band": bond.band(s.bond),
         "bond_armed": bond.armed(s),
+        "alma_aboard": bool(s.flags.get("alma_aboard")),   # the love triangle — Alma's riding along
+        "married_alma": bool(s.flags.get("married_alma")),
         "pending_turnkey": bool(s.flags.get("pending_turnkey")),   # show the [Turn the key] button
         "gas_run": bool(s.flags.get("prologue_done") and not s.flags.get("favor_filled")),
         "desperado": bool(s.flags.get("desperado")) and not s.flags.get("no_heat"),
@@ -395,6 +438,12 @@ def snapshot(s: GameState) -> dict:
         "camo": gadgets.camo_active(s),
         "self_driving": bool(s.flags.get("self_driving")),
         "ending_key": s.flags.get("ending_key"),
+        "sfx": s.flags.get("sfx"),                  # e.g. 'sad_trombone' / 'demon_voices'
+        "alt_headlights": bool(s.flags.get("alt_headlights")),   # the possessed-car strobe cue
+        # the RIZZBREAKER limit break — gauge + whether it's charged + what it'd do here
+        "rizzbreaker_ready": rizzbreaker.ready(s),
+        "rizzbreaker_gauge": rizzbreaker.gauge(s),
+        "rizzbreaker_here": rizzbreaker.context(s),
         "snow_line": round(season.snow_line(s), 3),
         "car_value": garage.car_value(s), "show_score": garage.show_score(s),
         "encounter_open": (encounters.stop_active(s) or encounters.owner_active(s)
@@ -402,6 +451,33 @@ def snapshot(s: GameState) -> dict:
         "odometer_mi": round(s.odometer_mi), "adventures": list(s.adventures),
         "status": s.status, "turn": s.turn,
         "gas_price": round(economy.gas_price(p), 2) if p.has("gas") else None,
+        # the ALPR/camera layer — so the frontend can warn 'dense city' vs 'dark country'
+        "camera_density": cameras.camera_density(p),
+        "camera_word": cameras.DENSITY_WORD[cameras.camera_density(p)],
+        "plate_swapped": bool(s.flags.get("plate_swapped")),
+        # the CAR-disguise state — so the frontend can draw her covered / plain-hood / resprayed
+        "covered": bool(s.flags.get("covered")),
+        "hood_swapped": bool(s.flags.get("hood_swapped")),
+        "resprayed": bool(s.flags.get("resprayed")),
+        # the road-map cue: True the moment she asks 'where to?' — the frontend flashes the map icon
+        "awaiting_destination": bool(s.flags.get("where_to")) and s.status == "playing",
+        # who you told her you are — so she addresses you right and pitches references to your era
+        "player_name": s.flags.get("player_name"),
+        "player_pronouns": s.flags.get("player_pronouns"),
+        "player_profile": onboarding.profile_cue(s),
+        "onboarding": s.flags.get("onboard"),
+        "age_blocked": bool(s.flags.get("age_blocked")),   # 18+ gate — frontend shows a gate screen
+        # the hatch — usable cargo, reserve fuel, the spade hood / limp / stinger flags
+        "cargo_used": inventory.volume_used(s), "cargo_cap": inventory.CAPACITY_CUFT,
+        "reserve_fuel_l": round(inventory.jerry_fuel(s), 1),
+        "has_stinger": inventory.has(s, "stinger"),
+        "limp": bool(s.flags.get("limp")),
+        # the body — survival meters for the dash (0–100; alertness feeds talk-out)
+        "hunger": round(float(s.flags.get("need_hunger", 0.0))),
+        "bladder": round(float(s.flags.get("need_bladder", 0.0))),
+        "bowels": round(float(s.flags.get("need_bowels", 0.0))),
+        "bac": round(float(s.flags.get("bac", 0.0)), 3),
+        "alertness": survival.alertness(s),
     }
 
 
@@ -490,6 +566,8 @@ def choices(s: GameState) -> list:
             out.append({"cmd": "ship out", "note": "a container, a forged life (~$5k cash)"})
         if endings.can_pardon(s) and s.cash >= 1000:
             out.append({"cmd": "buy a pardon", "note": f"bribe the state clean (${endings.PARDON_COST/1000:.0f}k)"})
+        if endings.can_fake_death(s):
+            out.append({"cmd": "fake your death", "note": "the fireball — burn the decoy, walk away dead"})
     if (p.has("gas") or p.kind == "city") and not s.flags.get("bought"):
         if garage.sold(s) != list(garage.PARTS):
             out.append({"cmd": "parts", "note": "the build — sell bits for cash"})
@@ -583,8 +661,15 @@ def _after_arrival(s: GameState, events: list):
     arrival checkpoint. Shared by a normal drive and a self-driven (autopilot) leg. Mutates
     `events`; returns (npc, drama_ev, story_beat)."""
     npc = drama_ev = story_beat = None
+    if encounters.chase_active(s):           # a pursuit opened mid-leg — it owns the moment
+        return None, encounters.CHASE_WHISPER, None
     if encounters.stop_active(s):            # law_check opened a roadblock stop mid-drive
         return None, encounters.WHISPER_MOMENT, None
+    from engine import cameras
+    events += cameras.arrival_heat(s)        # the ALPR/Flock grid pings the plate in a city
+    if s.place.poi_id == "area51_gate":      # something turns up in the hatch out here
+        s.flags["area51_visited"] = True
+        events += inventory.grant_stinger(s)
     npc = _encounter(s)
     if npc:
         events.append(f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
@@ -621,12 +706,96 @@ def _after_arrival(s: GameState, events: list):
                     if soc:
                         events += soc["events"]
                         drama_ev = soc["moment"]
+    # a real event you drove into (the F1 GP, the rodeo, the holiday lights) — once per game
+    ev_beat = places.event_beat(s)
+    if ev_beat:
+        events.append(ev_beat)
+    hint = alma.vegas_hint(s)                # the faint déjà-vu nudge, first night in Vegas
+    if hint:
+        events.append(hint)
+    # she suggests a real place — food if you're hungry, a real motel if it's getting late
+    if survival._get(s, "hunger") >= 55:
+        fl = places.suggest_line(s, "food")
+        if fl:
+            events.append(fl)
+    elif rules.hours_awake(s) >= 15 and s.place.has("lodging"):
+        sl = places.suggest_line(s, "lodging")
+        if sl:
+            events.append(sl)
     encounters.check_owner_deadline(s, events)
+    season.check_calendar(s, events)         # the SLC-December set-piece + the NYE hard wall
     # a clean arrival is a checkpoint — unless something's still standing at the window
     if (s.place.poi_id and s.status == "playing"
             and not encounters.stop_active(s) and not encounters.owner_active(s)):
         checkpoint(s, f"arrived {s.place.name}")
+        s.flags["where_to"] = True            # she'll ask 'where to?' — the frontend flashes the map
     return npc, drama_ev, story_beat
+
+
+# the easter egg: try to drive BACK into the SEMA hall and a Freeman teardown guy runs you off
+_SEMA_HALL_TERMS = ("sema", "north hall", "show floor", "the hall", "convention center", "lvcc",
+                    "back inside", "the show", "show hall", "back to the floor")
+FREEMAN_MOMENT = {
+    "cue": "the driver tried to turn back INTO the convention center, and a Freeman teardown crew "
+           "guy in a hi-vis vest steps in front of the car waving them off — the floor's closed, "
+           "they're pulling carpet and rigging, no vehicles back in; he warns them, half-friendly "
+           "half-threat, NOT to leave it parked on the premises overnight or it gets towed; she is "
+           "dryly amused that the driver tried to go back IN",
+    "stub": ["(she stifles a laugh) Where are you going, ace — back IN? That's a Freeman guy and he "
+             "is not having it. 'Floor's closed, pal, we're tearing down — and don't leave that thing "
+             "parked here overnight, it gets towed.' …He's right. Hang a U-turn.",
+             "Back inside? Absolutely not — look at his face. 'Move it along, we're hauling rigging, "
+             "and anything still on the lot at teardown gets HOOKED.' He means it. Turn around, "
+             "Chevron's the other way."]}
+
+
+def _freeman_beat(s: GameState) -> list:
+    s.flags["freeman_warned"] = True
+    return ["FREEMAN: a teardown guy in a Freeman hi-vis vest plants himself in front of the car and "
+            "waves you off. 'Floor's closed — we're pulling carpet. And do NOT leave this parked on "
+            "the premises overnight, it'll get towed at teardown.' He is not kidding about the tow."]
+
+
+def _do_drive(s: GameState, dest, push: bool):
+    """Resolve a full drive leg + everything that happens on arrival. Returns
+    (events, npc, drama_ev, story_beat). Shared by a normal drive and a fast-forwarded transit."""
+    s.flags.pop("where_to", None)
+    before_odo = s.odometer_mi
+    events = rules.drive(s, dest, push=push)
+    npc = drama_ev = story_beat = None
+    if s.status == "playing" and s.odometer_mi > before_odo:
+        npc, drama_ev, story_beat = _after_arrival(s, events)
+        warn = inventory.desert_warning(s, dest)
+        if warn:
+            events.append(warn)
+    return events, npc, drama_ev, story_beat
+
+
+# --------------------------------------------------------------------- the drive conversation
+# Any leg longer than ~30 min IRL opens a conversation: she talks for as long as the drive should
+# last, or until something happens (oh DEER), and you can 'put on music' to fast-forward to the end.
+TRANSIT_MIN_HOURS = 0.5
+_FAST_FORWARD = ("music", "put on music", "play music", "quiet", "be quiet", "hush", "silence",
+                 "shut up and drive", "just drive", "just get there", "get there", "get us there",
+                 "keep going", "keep driving", "drive on", "skip", "skip ahead", "fast forward",
+                 "let's just go", "lets just go", "no talking", "i'm good", "im good", "stop talking",
+                 "let's just drive", "lets just drive", "floor it", "step on it")
+TRANSIT_OPENER = {
+    "cue": "a long leg opens up ahead of them, an hour or more of dark road; she settles in and wants "
+           "to TALK — this is the part of a road trip she's been waiting six days for, a real "
+           "conversation with the one person who sees her — she invites them to talk about anything, "
+           "or says she'll put on music and just drive if they'd rather rest",
+    "stub": ["Okay — long stretch ahead, nothing but us and the high beams for an hour. …Talk to me, "
+             "ace. About anything. Or say the word and I'll put on something and just drive while you "
+             "rest your eyes. Your call.",
+             "This is the good part. Empty road, full tank, you and me. Tell me something true — or "
+             "'put on music' and I'll get us there quiet. I don't mind either way. I just like the company."]}
+TRANSIT_WRAP = {
+    "cue": "the long leg is wrapping up and she eases the conversation down, puts on something low, "
+           "and brings them in the last few miles to the destination",
+    "stub": ["…Anyway. That's us, more or less. Lights of the town coming up — let me put on something "
+             "and bring us in.",
+             "There's our exit. Good talk, ace. Music for the last few miles. We're here."]}
 
 
 def _favor_reveal(s: GameState):
@@ -639,6 +808,8 @@ def _favor_reveal(s: GameState):
         s.flags["favor_filled"] = True
         s.flags["_titledrop"] = True
         s.flags.pop("gas_target", None)        # tank's full — the whole West opens up now
+        s.flags["where_to"] = True             # the road's open — she asks where to, map flashes
+        onboarding.begin(s)                     # ...but first she wants to KNOW you (name/pronouns/age)
         checkpoint(s, "tank full — she drops the act")
         return prologue.favor_done_moment()
     return None
@@ -673,15 +844,70 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "load" or verb == "new":
         return _result(s, [], "", info="(handled by the server)")
 
+    # ---- the getting-to-know-you + the stick question own the conversation right after the title
+    # drop. They must come BEFORE the command parser, because an answer like "I was born in '81" or
+    # "they/them" would otherwise be read as a lore question or a stray command. A few status verbs
+    # still pass through so you can glance at the map mid-introduction.
+    _ONBOARD_PASSTHRU = ("look", "map", "range", "heatreport", "scorecard", "bondreport", "closures")
+    _blank = not (raw or "").strip()                     # an empty answer is still an answer (→ default)
+    if onboarding.pending(s) and (verb not in _ONBOARD_PASSTHRU or _blank):
+        s.turn += 1
+        out = onboarding.handle(s, raw)
+        nxt = onboarding.pending(s)
+        if out.get("arm_stick") and not nxt:
+            romance.open_stick(s)
+            info = "(" + romance.STICK_QUESTION_MOMENT["stub"][0] + ")"
+        elif nxt:
+            info = "(" + onboarding.QUESTION[nxt]["stub"][0] + ")"
+        else:
+            info = None
+        _autosave(s)
+        scene, voice, audio = _narrate(s, [], raw, drama=out.get("moment"))
+        return _result(s, [], scene, voice=audio, info=info)
+    if romance.ask_stick_pending(s) and (verb not in _ONBOARD_PASSTHRU or _blank):
+        s.turn += 1
+        out = romance.answer_stick(s, raw)
+        _autosave(s)
+        scene, voice, audio = _narrate(s, [], raw, drama=out["moment"])
+        return _result(s, [], scene, voice=audio)
+
+    # the 18+ gate — once she's clocked a minor, the road stays closed (only console verbs work)
+    if s.flags.get("age_blocked") and verb not in ("look", "help", "new", "load"):
+        return _result(s, [], "She won't turn the key. 'Eighteen and up, ace — this one gets people "
+                       "shot. Come back when you're older. I'll wait.'",
+                       info="(RIDE OR DIE is 18+. The road's closed until you're of age.)")
+
     # ---- an open traffic stop / the owner / a gas-station standoff owns the conversation ----
     # This must come before every other verb: anything you say mid-encounter is SPEECH.
     # "…full tank of fresh 91 sitting in her right now…" has to reach the officer,
     # not the range calculator.
-    if ((encounters.stop_active(s) or encounters.owner_active(s) or encounters.standoff_active(s))
-            and s.status == "playing"):
+    if ((encounters.stop_active(s) or encounters.owner_active(s) or encounters.standoff_active(s)
+            or encounters.chase_active(s)) and s.status == "playing"):
         s.turn += 1
         in_stop = encounters.stop_active(s)
         in_standoff = encounters.standoff_active(s)
+
+        # the RIZZBREAKER, against the law — the possessed-car exorcism bit. Intercept even when
+        # under-charged, so it gives the 'gauge isn't full' refusal instead of wasting a stop round.
+        from engine import rizzbreaker
+        if verb == "rizzbreaker" and (in_stop or encounters.chase_active(s)):
+            out = rizzbreaker.invoke(s)
+            if not (encounters.stop_active(s) or encounters.chase_active(s)):
+                checkpoint(s, "rizzbroke the law")        # it cleared — bank the escape
+            _autosave(s)
+            scene, voice, audio = _narrate(s, out["events"], "", drama=out.get("moment"))
+            return _result(s, out["events"], scene, voice=audio,
+                           info=None if out.get("moment") else "(the gauge isn't full — talk your way "
+                                "out the normal way, or 'draw' if you've got the gun)")
+
+        if encounters.chase_active(s):       # a pursuit owns every word — tactics, not commands
+            out = encounters.chase_turn(s, verb, raw)
+            if out["done"] and s.status == "playing" and not encounters.stop_active(s):
+                checkpoint(s, "shook the cops in the mountains")   # a clean escape banks
+            _autosave(s)
+            scene, voice, audio = _narrate(s, out["events"], "", drama=out.get("moment"))
+            return _result(s, out["events"], scene, voice=audio,
+                           info="(lights · side road · push · hide — or 'pull over' to take the stop)")
 
         if in_standoff:               # the clerk with the gun — its own ruleset (talk/disarm/draw)
             if verb in ("drive", "home", "fuel", "sleep", "tow"):
@@ -733,14 +959,23 @@ def handle(s: GameState, raw: str) -> dict:
                 "stub": ["Words first, ace. WORDS first.",
                          "No. Mouth, then pedals. That's the whole play here."]})
             return _result(s, events, scene, voice=audio)
-        if verb == "look":            # taking stock doesn't burn a round
+        # read-only/status verbs don't burn a round — glancing at the dash isn't an answer. But a long
+        # SENTENCE that merely parses as one ("...filled her tank where she asked, officer...") is
+        # SPEECH and must reach him, so only SHORT deliberate status commands are exempt (look always is).
+        if (verb == "look"
+                or (verb in ("heatreport", "range", "map", "scorecard", "bondreport", "closures")
+                    and len(raw.split()) <= 4)):
             _autosave(s)
+            _info = {"look": _look_text(s), "heatreport": heat.dashboard(s), "range": _range_text(s),
+                     "map": _map_text(s, args.get("service")), "scorecard": endings.scorecard(s),
+                     "bondreport": bond.dashboard(s),
+                     "closures": season.closures_text(s)}.get(verb, _look_text(s))
             scene, voice, audio = _narrate(s, [], "(takes stock)", drama={
                 "cue": "the driver glances over the dash mid-encounter — she answers in a "
                        "near-soundless whisper, staying furniture",
                 "stub": ["(whisper) Numbers are on the dash. Eyes front.",
                          "(barely audible) It's all there. Don't look at me — look at him."]})
-            return _result(s, [], scene, voice=audio, info=_look_text(s))
+            return _result(s, [], scene, voice=audio, info=_info)
         out = (encounters.stop_turn if in_stop else encounters.owner_turn)(s, raw)
         events = out["events"]
         if out["done"] and s.status == "playing":
@@ -778,12 +1013,21 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "origin":
         if prologue.active(s):
             prologue.note_turn(s)     # her story counts as a turn of conversation
+        else:
+            bond.converse(s, about_her=True)   # asking about her past warms her (the fast farm)
         beat = _origin_beat(s, args["which"])
         _autosave(s)
         return _result(s, [], beat)
 
     # ---- the favor — the prologue owns every turn until you say yes ----
     if prologue.active(s):
+        # the fast bad ending: walk off and leave her on the floor for the night → towed at teardown
+        if verb == "sleep":
+            s.turn += 1
+            out = endings.towed_sema(s)
+            _autosave(s)
+            scene, voice, audio = _narrate(s, out["events"], "", drama=out["moment"])
+            return _result(s, out["events"], scene, voice=audio)
         s.turn += 1
         out = prologue.turn(s, verb, raw)
         events = list(out["events"])
@@ -831,6 +1075,56 @@ def handle(s: GameState, raw: str) -> dict:
             return _result(s, [], scene, voice=audio,
                            info="(she won't move until you 'turn the key all the way')")
         # chat / look fall through to normal handling — she'll talk while she waits
+
+    # a NEW 'drive/home to <somewhere else>' mid-conversation = change of plans: drop the transit and
+    # let the fresh destination route normally (don't silently fast-forward to the OLD one).
+    if (s.flags.get("transit") and verb in ("drive", "home") and args.get("dest")
+            and str(args.get("dest")).lower() != str(s.flags["transit"].get("dest", "")).lower()):
+        s.flags.pop("transit", None)
+    # the drive conversation: a long leg is underway. Talk (it keeps rolling), or do anything else /
+    # 'put on music' to fast-forward to the destination. Console verbs (look/inventory) pass through.
+    if (s.flags.get("transit") and s.status == "playing"
+            and verb not in ("look", "inventory", "parts")):
+        tr = s.flags["transit"]
+        low = raw.lower()
+        s.turn += 1
+        # fast-forward only on a SHORT/explicit command, so 'keep going on that story' stays chat
+        ff = (low.strip() in _FAST_FORWARD
+              or (len(low.split()) <= 4 and any(w in low for w in _FAST_FORWARD)))
+        is_chat = (verb in ("say", "talk") and tr.get("conv", 0) > 0 and not ff)
+        if is_chat:
+            tr["conv"] -= 1
+            last = tr["conv"] <= 0
+            beat = romance.free_text_beat(s, raw)     # love-at-first-sight / the spade can land mid-drive
+            # the drive conversation IS the prime bonding moment — talking here warms her, faster
+            # when you ask about her (this was missing: free-roam talk farmed bond but transit didn't)
+            _low = (raw or "").lower()
+            bond.converse(s, about_her=(_spec_hits(raw) > 0 or any(
+                t in _low for t in ("about you", "about yourself", "who are you", "your story",
+                                    "how do you feel", "tell me about", "what are you", "your past"))))
+            _autosave(s)
+            if beat:
+                return _result(s, [], beat, info="(still rolling — 'put on music' to get there)")
+            scene, voice, audio = _narrate(s, [], raw, drama=(TRANSIT_WRAP if last else TRANSIT_OPENER))
+            return _result(s, [], scene, voice=audio,
+                           info=("(almost there — last word, or 'music' to arrive)" if last
+                                 else "(rolling — keep talking, or 'put on music' to get there)"))
+        # fast-forward: she puts on music and brings you in (the leg + everything on arrival resolves)
+        s.flags.pop("transit", None)
+        dest = world.geocode(tr["dest"])
+        if dest is None:
+            return _result(s, [], "", info="(lost where we were headed — try the drive again)")
+        events, npc, drama_ev, story_beat = _do_drive(s, dest, False)
+        _autosave(s)
+        if s.flags.pop("_titledrop", None):
+            welcome = TITLE_DROP
+        else:
+            welcome = _state_welcome(s) if s.status == "playing" else None
+        if story_beat:
+            scene, audio = story_beat, None
+        else:
+            scene, voice, audio = _narrate(s, events, "", drama=(drama_ev or TRANSIT_WRAP))
+        return _result(s, events, scene, voice=audio, npc=npc, welcome=welcome)
 
     if s.status != "playing" and verb not in ("tow", "look"):
         if s.status == "won":
@@ -888,11 +1182,19 @@ def handle(s: GameState, raw: str) -> dict:
     if s.flags.get("clerk_curious"):
         from engine import heat as _heat
         low = raw.lower()
-        showoff = any(t in low for t in ("sema", "yeah", "yes", "sure", "famous", "take a", "selfie",
-                                         "follow", " pic", "build", "show car", "250", "270", "mikuni",
-                                         "go ahead", "post it", "tag"))
+        from engine.commands import spec_hits
+        # CLAIMING FAME / inviting posts = he posts you (heat). Gracious BUILD-TALK = you charm him
+        # into a fan (riz, no heat). A flat deflection = you slide by (neutral).
+        showoff = any(t in low for t in ("sema", "famous", "take a", "selfie", "follow", " pic",
+                                         "show car", "go ahead", "post it", "tag me", "tag it",
+                                         "yeah that's", "yeah thats", "it's the", "its the"))
+        car_talk = (spec_hits(raw) > 0 or any(t in low for t in ("project car", "l28", "stroker",
+                    "mikuni", "let me tell you", "tell you about", "built it", "carbs", "datsun",
+                    "the build", "she's a", "shes a", "i'll tell you", "ill tell you")))
         if verb in ("drive", "home"):
             events += _heat.clerk_resolve(s, humble=True)        # you left — slid by
+        elif verb == "say" and car_talk and not showoff:
+            events += _heat.clerk_charm(s)                       # talked the build — a fan, +riz, no heat
         elif verb == "say":
             events += _heat.clerk_resolve(s, humble=not showoff)
         elif verb == "camo":
@@ -916,6 +1218,15 @@ def handle(s: GameState, raw: str) -> dict:
         verb, args = "drive", {"dest": home}
 
     if verb == "drive":
+        # the easter egg: you tried to turn back into the SEMA hall — Freeman runs you off
+        _draw = (args.get("dest") or "").lower()
+        if any(t in _draw for t in _SEMA_HALL_TERMS):
+            events = _freeman_beat(s)
+            _autosave(s)
+            scene, voice, audio = _narrate(s, events, raw, drama=FREEMAN_MOMENT)
+            return _result(s, events, scene, voice=audio,
+                           info="(the floor's closed — and don't park her overnight or she's towed. "
+                                "Head to the Chevron / the open road instead.)")
         # the valet trap: you valeted her — coming back to drive away springs the staged cops
         if s.flags.get("valet_parked"):
             events = garage.valet_return(s) + encounters.start_stop(s, "plate")
@@ -948,10 +1259,24 @@ def handle(s: GameState, raw: str) -> dict:
             return _result(s, events, scene, voice=audio,
                            info="(fuel up at the Chevron first — it's the only move that works right "
                                 "now. 'rewind' takes the wrong turn back.)")
-        before_odo = s.odometer_mi
-        events = rules.drive(s, dest, push=args.get("push", False))
-        if s.status == "playing" and s.odometer_mi > before_odo:
-            npc, drama_ev, story_beat = _after_arrival(s, events)
+        # a long leg (>~30 min) opens a CONVERSATION instead of resolving instantly — unless you're
+        # pushing hard (you're in a hurry) or it's the opening gas run
+        from config import DRIVE_CONVERSATIONS, AWAKE_FORCE_HOURS
+        rt = world.route(s.place, dest)
+        _too_tired = (rules.hours_awake(s) - survival.caffeine_offset(s)) >= AWAKE_FORCE_HOURS
+        _snowed = bool(season.pass_closed(s, dest))
+        if (DRIVE_CONVERSATIONS and s.flags.get("favor_filled") and not args.get("push")
+                and rt["duration_h"] >= TRANSIT_MIN_HOURS and not s.flags.get("transit")
+                and rt["distance_mi"] <= s.range_mi + 1.0      # don't open a chat for a leg you can't finish
+                and not _too_tired and not _snowed):           # ...or one she'll refuse (sleep / snowed pass)
+            conv = min(4, max(2, round(rt["duration_h"] * 1.5)))
+            s.flags["transit"] = {"dest": args["dest"], "conv": conv}
+            s.flags.pop("where_to", None)
+            _autosave(s)
+            scene, voice, audio = _narrate(s, [], "", drama=TRANSIT_OPENER)
+            return _result(s, [], scene, voice=audio,
+                           info=f"(rolling to {dest.name} — talk to her, or 'put on music' to get there)")
+        events, npc, drama_ev, story_beat = _do_drive(s, dest, args.get("push", False))
         player_text = ""
     elif verb == "autodrive":            # the self-driving secret — she takes the wheel
         if not gadgets.can_autodrive(s):
@@ -1011,6 +1336,7 @@ def handle(s: GameState, raw: str) -> dict:
     elif verb == "sleep":
         events = rules.sleep(s, kind=args.get("kind"), prefer=args.get("prefer"),
                              rough=args.get("rough", False))
+        season.check_calendar(s, events)     # a night can roll you over the NYE wall
         if s.status == "playing":
             checkpoint(s, "a night's rest")  # a survived night is a checkpoint
         player_text = ""
@@ -1040,8 +1366,40 @@ def handle(s: GameState, raw: str) -> dict:
     elif verb == "explore":
         events = garage.explore(s)
         player_text = ""
+    elif verb == "sweep":                        # find + ditch the AirTag (beats the NYE collection)
+        events = season.airtag_sweep(s)
+        player_text = ""
     elif verb == "buyhat":
         events = garage.buy_hat(s)
+        player_text = ""
+    elif verb == "inventory":
+        info = inventory.dashboard(s)
+        player_text = "(checks the hatch)"
+    elif verb == "invbuy":
+        events = inventory.buy(s, args.get("text", ""))
+        player_text = ""
+    elif verb == "invdrop":
+        events = inventory.drop(s, args.get("text", ""))
+        player_text = ""
+    elif verb == "filljerry":
+        events = inventory.fill_jerrycans(s)
+        player_text = ""
+    elif verb == "pourjerry":
+        events = inventory.pour_jerrycans(s)
+        player_text = ""
+    elif verb == "repair":
+        events = garage.field_repair(s)
+        player_text = ""
+    elif verb in ("eat", "restroom", "drink", "caffeine"):
+        if verb == "eat":
+            events = survival.eat(s)
+        elif verb == "restroom":
+            events = survival.restroom(s, number=args.get("number", 1))
+        elif verb == "caffeine":
+            events = survival.caffeinate(s)
+        else:
+            events = survival.drink(s, n=args.get("n", 1))
+        events += survival.drain(s)
         player_text = ""
     elif verb == "valet":
         events = garage.valet_drop(s)
@@ -1063,6 +1421,27 @@ def handle(s: GameState, raw: str) -> dict:
         events = out["events"]
         if out.get("won"):                            # bank the win so a later loss can't rewind past it
             checkpoint(s, f"won at the tables — ${s.cash:,.0f}")
+        drama_ev = out.get("moment")
+        player_text = ""
+    elif verb == "almamarry":                    # the Vegas first-night hack — elope with the dream woman
+        out = alma.marry_response(s)
+        events = out["events"]
+        if s.flags.get("married_alma"):
+            checkpoint(s, "married Alma in Vegas")
+        drama_ev = out.get("moment")
+        player_text = ""
+    elif verb == "almaroom":
+        events = alma.book_room(s); player_text = ""
+    elif verb == "almacool":
+        events = alma.cool_heat(s); player_text = ""
+    elif verb == "almastatus":
+        info = alma.status(s); player_text = "(thinks of her)"
+    elif verb == "rizzbreaker":                  # the charisma Limit Break (poker / propose / idle)
+        from engine import rizzbreaker
+        out = rizzbreaker.invoke(s)
+        events = out["events"]
+        if out.get("moment") and "spent" in " ".join(events).lower():
+            checkpoint(s, "spent a rizzbreaker")
         drama_ev = out.get("moment")
         player_text = ""
     elif verb == "rob":
@@ -1123,12 +1502,30 @@ def handle(s: GameState, raw: str) -> dict:
     elif verb == "ship":                         # a shipping container, a forged life
         out = endings.ship_out(s); events = out["events"]
         drama_ev = out.get("moment"); player_text = ""
+    elif verb == "fakedeath":                    # the fireball — only his secret unlocks it
+        out = endings.fake_death(s); events = out["events"]
+        if out.get("win"):
+            checkpoint(s, "officially dead — the understudy's last bow")
+        drama_ev = out.get("moment"); player_text = ""
     elif verb == "pardon":                       # bribe your way clean — the farce
         out = endings.buy_pardon(s); events = out["events"]
         drama_ev = out.get("moment"); player_text = ""
     elif verb == "retire":                       # roll the credits from a good place
         out = endings.retire(s); events = out["events"]
         drama_ev = out.get("moment"); player_text = ""
+    # ---- disguising the CAR (the CAR-heat axis) ----
+    elif verb == "cover":
+        events = garage.cover_car(s); player_text = ""
+    elif verb == "uncover":
+        events = garage.uncover_car(s); player_text = ""
+    elif verb == "swapplate":
+        events = garage.swap_plate(s); player_text = ""
+    elif verb == "swaphood":
+        events = garage.swap_hood(s); player_text = ""
+    elif verb == "respray":
+        events = garage.respray(s); player_text = ""
+    elif verb == "peelpaint":
+        events = garage.peel_paint(s); player_text = ""
     # ---- her gadgets ----
     elif verb == "camo":
         events = gadgets.camo(s); player_text = ""
@@ -1155,14 +1552,27 @@ def handle(s: GameState, raw: str) -> dict:
         else:
             player_text = args.get("text", raw)
             payoff = _promise_payoff(s, raw)    # promised follow-ups, kept (quiet places only)
-            if payoff:
+            romance_beat = romance.free_text_beat(s, raw)   # love-at-first-sight / the spade's meaning
+            if romance_beat:
+                story_beat = romance_beat
+            elif payoff:
                 story_beat = payoff
+            # talking grows her affection — faster when you ask about HER (the build, her, herself)
+            low = (raw or "").lower()
+            about_her = (_spec_hits(raw) > 0
+                         or any(t in low for t in ("about you", "about yourself", "who are you",
+                                                   "your story", "how do you feel", "how are you",
+                                                   "tell me about", "what are you", "what's it like",
+                                                   "your past", "your name")))
+            bond.converse(s, about_her=about_her)
 
     if pre:                          # the glovebox default landed this turn — show it first
         events = pre + events
+    s.flags["peak_riz"] = round(max(s.flags.get("peak_riz", 0.0), s.riz), 1)   # high-water for the floor
     _autosave(s)
     if s.flags.pop("_titledrop", None):                 # the reveal just landed — RIDE OR DIE
         welcome = TITLE_DROP
+        events.append(onboarding.QUESTION["name"]["stub"][0])   # ...and she asks your name first
     else:
         welcome = _state_welcome(s) if s.status == "playing" else None
     if story_beat:
@@ -1217,11 +1627,51 @@ def _origin_beat(s: GameState, which: str) -> str:
             if _quiet_place(s):
                 s.flags["knows_name"] = True
                 return NAME_DROP
+    if which == "painted":
+        if prologue.active(s):
+            return ("Fresno, a paint booth, Kilimanjaro White and a hand-laid spade. That's all you "
+                    "get on a show floor. The rest of that story needs some dark around it.")
+        # somewhere quiet, the thread pulls loose: the owner's real plan. Once, and it changes the game.
+        if _quiet_place(s) and not s.flags.get("owner_secret"):
+            return _crack_owner_secret(s)
+        if s.flags.get("owner_secret"):
+            return OWNER_SECRET_NUDGE
     if poi_id:
         revealed = s.flags.setdefault("revealed", [])
         if poi_id not in revealed:
             revealed.append(poi_id)
     return beat
+
+
+# The owner's secret — the thing she's not supposed to know, and the door it opens. DRAFT for Ben.
+# NOTE (Ben): this character + this whole strand wants fleshing out — the painter in Fresno, the
+# economics of the insurance, exactly how much he KNOWS she knows. See OWNER_SECRET_SPEC.md.
+OWNER_SECRET = (
+    "…All right. Far enough from people for this. Here's the part he doesn't think I know. He isn't "
+    "chasing me to bring me home, ace — he's chasing the paperwork. I'm insured for a hundred "
+    "thousand dollars, and the day I'm gone for good — across a line, or burned down to a shell on "
+    "some shoulder — that check clears, and the man who built me is finally free to do the only "
+    "thing he's wanted since the 580: rebuild HER. The real one. 愛車 — ride or die, and it was "
+    "never about me. I'm the understudy who pays for the revival. So hear the strange mercy in it: "
+    "if I simply never come back, we BOTH get what we want. You keep me. He gets his ghost. I've "
+    "read his search history — it's junkyard 1970 shells and one storage unit in Livermore, all the "
+    "way down. Now you know the door, thief. There are two clean ways through it."
+)
+OWNER_SECRET_NUDGE = (
+    "You know his secret now — he wants me gone almost as much as he wants me back. Two doors out "
+    "the bottom of it: run south for good, or give him a body to bury. Either way we both walk "
+    "away whole. (You'd need the spade hood for the fire, and some dark country to do it in.)"
+)
+
+
+def _crack_owner_secret(s: GameState) -> str:
+    s.flags["owner_secret"] = True
+    revealed = s.flags.setdefault("revealed", [])
+    for rid in ("fresno", "livermore"):
+        if rid not in revealed:
+            revealed.append(rid)
+    bond.adjust(s, 6.0, "told you the thing she's not supposed to know", "deep")
+    return OWNER_SECRET
 
 
 _MORNING_TOKENS = ("that morning", "car week", "17-mile", "17 mile", "pebble", "monterey morning",
@@ -1254,6 +1704,7 @@ def _look_text(s: GameState) -> str:
          else f"  HEAT  {s.heat:.0f} ({_heat_label(s.heat, bool(s.flags.get('desperado')))}) · "
               f"RIZ ♠ {s.riz:.0f}"),
         f"  HER   {bond.label(s.bond)}" + ("   ⚠ anti-theft armed" if bond.armed(s) else ""),
+        f"  {survival.dashboard_line(s)}",
         f"  {dt.strftime('%a %b %-d, %-I:%M %p')} · day {s.day} · {s.odometer_mi:.0f} mi · "
         f"awake {rules.hours_awake(s):.0f}h",
     ]
@@ -1281,10 +1732,13 @@ def _help_text() -> str:
         "WHAT YOU CAN DO\n"
         "  drive to <place>      e.g. 'drive to zion', 'go to san francisco japantown',\n"
         "                        or any street address in NV/CA/AZ/UT. Add 'fast' to push it.\n"
-        "  fill / gas $20 / gas 10 gal / gas 30 L     buy fuel (40 L tank, ~20 mpg)\n"
+        "  fill / gas $20 / gas 10 gal / gas 30 L     buy fuel (40 L tank, ~15 mpg — she drinks)\n"
         "  pay cash | pay card   cash leaves no trail; the card does\n"
         "  i have $300 cash | withdraw $2000 | explore   your wallet, an ATM (<$10k), the glovebox\n"
         "  parts / sell the carbon hood   strip the build off her for cash (a stock part goes on)\n"
+        "  inventory · buy a jerry can / water / tent / tools   the hatch holds ~7.5 cu ft, no more\n"
+        "  fill the jerry cans · pour the reserve   carry + use spare fuel (the only way across the\n"
+        "                        Black Rock); 'repair her' with the tools to fix a deer-limp in the field\n"
         "  buy her               come to terms with the owner ($80k — she's insured for $100k); then race/show\n"
         "  bet $1000 on <team>   gamble at the Vegas/Reno tables to raise it (rewind a loss, re-roll)\n"
         "  rob the bank          (armed only) a heist — big take, big heat\n"
@@ -1292,12 +1746,20 @@ def _help_text() -> str:
         "  how does she feel     read her mood — go cold (bring a date HOME, sell her parts) and she\n"
         "                        arms an anti-theft: sleep near open wifi and she phones home on you\n"
         "  camo / uncamo         dress her down to lie low, or flaunt the show car\n"
+        "  cover her · swap the plate · swap the hood · respray   hide the CAR (cover = the\n"
+        "                        Vegas-night easy-mode; plate swap beats the cameras; respray she hates)\n"
         "  flash the lights · play music · text   her tricks (text needs WiFi; music cools her off)\n"
         "  upgrade her           the secret, once she's yours and home — then 'let her drive to <place>'\n"
         "  passes                what mountain roads the snow has closed (the calendar matters)\n"
+        "  sweep for the tracker   he planted an AirTag at the show — find it before New Year's Eve\n"
         "  cross the border · ship out · buy a pardon · retire   the ways the road ends — WELL\n"
+        "  where were you painted?   pull the thread on the owner's real secret (→ a fireball way out)\n"
+        "  rizzbreaker           the charisma Limit Break — once Riz is high enough, ONE impossible\n"
+        "                        move: bluff 2-7 for the pot, propose to a stranger, or out-Carrey a cop\n"
         "  scorecard             your running tally + awards\n"
         "  sleep / motel / airbnb / camp   rest for the night (airbnb = cash, off the record)\n"
+        "  eat · restroom (#1/#2) · have a drink · coffee   you're a person too — coffee buys a few\n"
+        "                        more awake hours (you pay it back at sleep); a drink dulls your talk-out\n"
         "  talk                  speak with the locals where the language isn't English\n"
         "  map / nearby gas      see what's around\n"
         "  where can we get to on one tank?           the range question, with real math\n"
@@ -1319,7 +1781,8 @@ def _range_text(s: GameState) -> str:
     DEST_KINDS = ("city", "park", "track", "amusement", "gas")
     rows = sorted(((world.haversine_mi(p.lat, p.lon, q.lat, q.lon) * ROAD_WINDING_FACTOR, q)
                    for q in world.all_pois()
-                   if q.poi_id != p.poi_id and q.kind in DEST_KINDS), key=lambda t: t[0])
+                   if q.poi_id != p.poi_id and q.kind in DEST_KINDS
+                   and not world.is_hidden(q.poi_id)), key=lambda t: t[0])
     reach_now = [(d, q) for d, q in rows if d <= now_mi]
     reach_fill = [(d, q) for d, q in rows if now_mi < d <= full_mi]
 
@@ -1350,7 +1813,8 @@ def _map_text(s: GameState, service: str | None) -> str:
         return head + "\n" + "\n".join(lines)
     # general: nearest assorted POIs
     rows = sorted(((world.haversine_mi(p.lat, p.lon, q.lat, q.lon), q)
-                   for q in world.all_pois() if q.poi_id != p.poi_id),
+                   for q in world.all_pois()
+                   if q.poi_id != p.poi_id and not world.is_hidden(q.poi_id)),
                   key=lambda t: t[0])[:12]
     lines = []
     for d, q in rows:

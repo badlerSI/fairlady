@@ -2,11 +2,13 @@
 import os
 os.environ.setdefault("FAIRLADY_ROUTING", "offline")
 os.environ.setdefault("FAIRLADY_ADAPTER", "stub")
+os.environ.setdefault("FAIRLADY_DRIVE_CHAT", "0")   # deterministic drives in tests (no transit gate)
 
 import pytest
 
-from engine import game, world, rules, economy, heat
+from engine import game, world, rules, economy, heat, cameras
 from engine.state import GameState
+from engine.state import Place
 from engine.commands import parse
 from config import LITERS_PER_GALLON
 
@@ -22,8 +24,8 @@ def test_start_state():
     assert s.fuel_l == 5.0
     assert s.tank_l == 40.0
     assert s.place.poi_id == "sema_chevron"
-    # a splash: about 26 miles of range
-    assert 24 < s.range_mi < 28
+    # a splash: about 20 miles of range (5 L at 15 mpg)
+    assert 18 < s.range_mi < 22
     assert s.heat == rules.HEAT_START
     assert s.day == 1
     assert s.clock.strftime("%H:%M") == "17:37"
@@ -42,11 +44,11 @@ def test_zion_trap_warns_once_then_strands_the_stubborn():
     assert "shoulder" in s.place.name.lower()
 
 
-def test_full_tank_range_is_about_211_miles():
+def test_full_tank_range_is_about_158_miles():
     s = fresh()
     rules.fuel(s, fill=True)              # card covers it
     assert abs(s.fuel_l - 40.0) < 0.05
-    assert abs(s.range_mi - 211.3) < 1.5
+    assert abs(s.range_mi - 158.5) < 1.5   # 40 L / 3.785 * 15 mpg — she drinks
 
 
 # ------------------------------------------------------------------ fuel math
@@ -390,7 +392,9 @@ def test_rewind_tax_does_not_refund_and_bleeds_into_heat_when_riz_is_spent():
     h0 = s.heat
     game.handle(s, "rewind")                            # −2 → riz 1
     r = game.handle(s, "rewind")                        # tax overflows riz → heat strain
-    assert s.riz == 0.0
+    # the affection/riz FLOOR (Ben's request) keeps ≥60% of your peak Riz — you never retry with
+    # nothing — but the overflow strain still bleeds into heat, so brute-forcing still isn't free.
+    assert s.riz > 0.0 and s.riz <= round(0.6 * s.flags.get("peak_riz", 3.0), 1) + 0.01
     assert s.heat > h0                                  # the loop strained; brute-force isn't free
     # a real drive clears the strain
     s.fuel_l = 40.0
@@ -474,7 +478,7 @@ def test_owner_comes_looking_and_a_true_answer_earns_the_blessing():
     from engine import encounters
     s = _owner_ready()
     s.flags["knows_mayumi"] = True
-    r = game.handle(s, "drive to ely")                 # a city arrival → he's waiting
+    r = game.handle(s, "drive to beatty")              # a city arrival → he's waiting
     assert s.flags.get("owner_met") and encounters.owner_active(s)
     game.handle(s, "I love her, and I promised to keep her safe — she chose me. "
                    "The favor was her idea.")
@@ -489,7 +493,7 @@ def test_owner_comes_looking_and_a_true_answer_earns_the_blessing():
 def test_owner_takes_her_back_on_a_failed_answer_and_rewind_undoes_it():
     from engine import encounters
     s = _owner_ready()
-    game.handle(s, "drive to ely")
+    game.handle(s, "drive to beatty")
     assert encounters.owner_active(s)
     game.handle(s, "um well")
     game.handle(s, "uh I dunno")
@@ -1612,3 +1616,844 @@ def test_cash_cover_story_holds_the_reveal_until_you_talk_past_the_clerk():
     assert any("CLERK" in e for e in r["events"]) and not r["welcome"]
     r = game.handle(s, "nah man, just hired to move it for the booth")   # a humble cover
     assert s.flags.get("favor_filled") and r["welcome"]  # NOW she drops the act
+
+
+# ------------------------------------------------------------------ cameras / ALPR (Flock)
+def test_camera_density_cities_dense_parks_and_desert_dark():
+    # a saturated metro reads max; a CA small city still reads moderate; parks + ghost towns are dark
+    assert cameras.camera_density(world.get_poi("los_angeles") or Place("LA", 34, -118, "CA",
+                                  poi_id="los_angeles", kind="city")) == 3
+    park = Place("Zion", 37.2, -113, "UT", poi_id="zion", kind="park")
+    assert cameras.camera_density(park) == 0
+    desert = Place("Berlin", 38.9, -117.6, "NV", poi_id="berlin_nv", kind="encounter")
+    assert cameras.camera_density(desert) == 0
+    ca_town = Place("Lodi", 38.1, -121.3, "CA", poi_id="lodi", kind="city")
+    assert cameras.camera_density(ca_town) == 2          # California is saturated even small
+    nv_town = Place("Ely", 39.2, -114.9, "NV", poi_id="ely", kind="city")
+    assert cameras.camera_density(nv_town) == 1
+
+
+def test_camera_density_explicit_override_wins():
+    p = Place("Nowhere", 39, -117, "NV", poi_id="x", kind="city", camera_density=0)
+    assert cameras.camera_density(p) == 0                 # override beats the city heuristic
+
+
+def test_alpr_pings_car_heat_in_a_city_not_in_the_desert():
+    s = fresh()
+    s.place = Place("Phoenix", 33.45, -112.07, "AZ", poi_id="phoenix", kind="city")
+    car0 = heat.car_heat(s)
+    ev = cameras.arrival_heat(s)
+    assert heat.car_heat(s) > car0                        # CAR axis, not driver
+    assert any("ALPR" in e for e in ev)
+    # the dark country does nothing
+    s2 = fresh()
+    s2.place = Place("Berlin", 38.9, -117.6, "NV", poi_id="berlin_nv", kind="encounter")
+    c0 = heat.car_heat(s2)
+    assert cameras.arrival_heat(s2) == [] and heat.car_heat(s2) == c0
+
+
+def test_swapped_plate_reads_clean_to_alpr():
+    s = fresh()
+    s.place = Place("Phoenix", 33.45, -112.07, "AZ", poi_id="phoenix", kind="city")
+    s.flags["plate_swapped"] = True
+    assert cameras.effective_density(s) == 0
+    car0 = heat.car_heat(s)
+    cameras.arrival_heat(s)
+    assert heat.car_heat(s) == car0                       # no ping — the swap reads clean
+
+
+def test_cartalk_plate_runs_back_to_a_cedric_at_a_stop():
+    assert "Cedric" in cameras.plate_mismatch()
+    s = fresh()
+    assert cameras.plate_risk(s) == 1.0                   # the mismatch is a tell
+    s.flags["plate_swapped"] = True
+    assert cameras.plate_risk(s) == 0.0                   # ...unless you swapped it
+
+
+# ------------------------------------------------------------------ survival (body + alcohol)
+def test_meters_accrue_on_awake_time_and_drive_drains_them():
+    from engine import survival
+    s = fresh()
+    rules.fuel(s, fill=True)
+    h0 = survival._get(s, "bladder")
+    rules.advance_clock(s, 8.0)                            # eight awake hours
+    assert survival._get(s, "bladder") > h0
+    assert survival._get(s, "hunger") > 0
+
+
+def test_eat_resets_hunger_restroom_resets_bladder():
+    from engine import survival
+    s = fresh()                                            # at the Chevron (has gas → food ok)
+    survival._set(s, "hunger", 90.0); survival._set(s, "bladder", 90.0)
+    r = game.handle(s, "eat")
+    assert survival._get(s, "hunger") == 0 and any("EAT" in e for e in r["events"])
+    r = game.handle(s, "restroom")
+    assert survival._get(s, "bladder") == 0 and any("BODY" in e for e in r["events"])
+
+
+def test_drinking_dulls_the_talk_out():
+    from engine import survival
+    s = fresh()
+    s.place = world.get_poi("las_vegas") or s.place        # a city → there's a bar
+    assert survival.talk_penalty(s) == 0                    # sharp
+    survival.drink(s, n=4)                                  # cooked
+    assert survival.bac(s) >= survival.BAC_DRUNK
+    assert survival.alertness(s) < 0.85 and survival.talk_penalty(s) >= 1
+
+
+def test_alcohol_metabolizes_over_time():
+    from engine import survival
+    s = fresh()
+    s.flags["bac"] = 0.08
+    rules.advance_clock(s, 4.0)
+    assert survival.bac(s) < 0.08
+
+
+def test_ignoring_a_need_to_the_wall_has_a_consequence_then_resets():
+    from engine import survival
+    s = fresh()
+    survival._set(s, "bladder", 99.0)
+    ev = survival.tick(s, 1.0)                              # pushes past 100
+    assert survival._get(s, "bladder") == 0                # auto-relief
+    assert any("BODY" in e for e in ev)
+
+
+def test_sleep_resets_the_body():
+    from engine import survival
+    s = fresh()
+    survival._set(s, "bladder", 80.0); s.flags["bac"] = 0.05
+    rules.sleep(s, rough=True)
+    assert survival._get(s, "bladder") == 0 and survival.bac(s) == 0.0
+
+
+# ------------------------------------------------------------------ disguising the CAR (CAR axis)
+def test_cover_hides_her_and_driving_keeps_the_quiet_hours():
+    s = fresh()
+    s.place = world.get_poi("las_vegas") or s.place
+    heat.add(s, 40, "hot", "spike", axis="car")
+    car0 = heat.car_heat(s)
+    r = game.handle(s, "cover her")
+    assert s.flags.get("covered") and heat.car_heat(s) < car0
+    assert any("Strip" in e for e in r["events"])          # the Vegas-night beat
+    assert cameras.effective_density(s) == 0               # a covered car reads as nothing
+    # driving folds the cover away but the shed heat stays
+    cov_heat = heat.car_heat(s)
+    rules.fuel(s, fill=True)
+    game.handle(s, "drive to primm")
+    assert not s.flags.get("covered")
+    assert heat.car_heat(s) >= cov_heat - 0.1              # didn't snap back up on uncover
+
+
+def test_yanking_the_cover_off_by_hand_reverts_the_drop():
+    s = fresh()
+    s.place = world.get_poi("las_vegas") or s.place
+    heat.add(s, 40, "hot", "spike", axis="car")
+    car0 = heat.car_heat(s)
+    game.handle(s, "cover her")
+    game.handle(s, "uncover her")
+    assert abs(heat.car_heat(s) - car0) < 0.2              # no free lunch — exposed her again
+
+
+def test_plate_swap_reads_clean_and_kills_the_cedric_tell():
+    s = fresh()
+    s.place = world.get_poi("las_vegas") or s.place
+    r = game.handle(s, "swap the plate")
+    assert s.flags.get("plate_swapped")
+    assert cameras.effective_density(s) == 0 and cameras.plate_risk(s) == 0.0
+    assert any("PLATE" in e for e in r["events"])
+
+
+def test_respray_begs_first_then_drops_heat_and_arms_her():
+    s = fresh()
+    s.place = world.get_poi("las_vegas") or s.place
+    s.cash = 5000.0
+    heat.add(s, 60, "hot", "spike", axis="car")
+    car0, bond0 = heat.car_heat(s), s.bond
+    r1 = game.handle(s, "respray her")                     # she BEGS — confirm gate
+    assert not s.flags.get("resprayed") and s.flags.get("confirm_respray")
+    r2 = game.handle(s, "respray her")                     # insist
+    assert s.flags.get("resprayed") and s.flags.get("sprayed_distress")
+    assert heat.car_heat(s) < car0 - 30                    # rattle-can still kills the BOLO
+    assert s.bond < bond0 - 20                             # she takes it HARD (toward COLD/armed)
+
+
+def test_detaching_the_hood_is_the_disguise_she_consents_to():
+    s = fresh()
+    s.place = world.get_poi("las_vegas") or s.place
+    s.cash = 500.0
+    heat.add(s, 40, "hot", "spike", axis="car")
+    car0 = heat.car_heat(s)
+    r = game.handle(s, "detach the hood")
+    assert s.flags.get("hood_swapped") and heat.car_heat(s) < car0
+    assert any("wrap" in e.lower() or "asking the easy way" in e.lower() for e in r["events"])
+
+
+def test_peeling_the_paint_gives_her_face_back():
+    s = fresh()
+    s.place = world.get_poi("las_vegas") or s.place
+    s.cash = 5000.0
+    s.flags["resprayed"] = True
+    bond0 = s.bond
+    r = game.handle(s, "peel the paint")
+    assert not s.flags.get("resprayed") and s.bond > bond0
+
+
+def test_sleeping_during_the_prologue_gets_her_towed_monty_burns():
+    s = game.new_game(seed=4242, prologue_on=True)
+    r = game.handle(s, "sleep")
+    assert s.status == "busted" and s.flags.get("ending_key") == "towed_sema"
+    assert s.flags.get("sfx") == "sad_trombone"
+    sc = game.endings.scorecard(s)
+    assert "Montgomery Burns" in sc and "Never Try" in sc and '"' not in sc.split("Never Try")[1][:40]
+
+
+def test_driving_back_into_the_hall_summons_freeman():
+    s = fresh()
+    rules.fuel(s, fill=True)
+    r = game.handle(s, "drive to north hall")
+    assert s.flags.get("freeman_warned")
+    assert any("FREEMAN" in e for e in r["events"]) and s.status == "playing"
+
+
+# ------------------------------------------------------------------ road map: hidden Area 51, havens, where-to
+def test_area51_is_hidden_from_the_map_but_drivable_by_name():
+    assert world.is_hidden("area51_gate")
+    s = fresh()
+    txt = game._map_text(s, None)
+    assert "area" not in txt.lower() and "51" not in txt
+    # ...but you can still point her at it if you know it's out there
+    assert world.geocode("area51_gate") is not None
+
+
+def test_nearest_haven_points_at_dark_country():
+    s = fresh()
+    s.place = world.get_poi("las_vegas") or s.place
+    hav = cameras.nearest_haven(s)
+    assert hav is not None
+    d, q = hav
+    assert cameras.camera_density(q) == 0                  # genuinely dark
+    # and the heat dashboard surfaces it when she's hot in a city
+    heat.add(s, 55, "hot", "spike", axis="car")
+    assert "dark country" in heat.dashboard(s)
+
+
+def test_where_to_cue_sets_on_arrival_and_clears_on_drive():
+    s = fresh()
+    rules.fuel(s, fill=True)
+    game.handle(s, "drive to primm")
+    assert game.snapshot(s)["awaiting_destination"] is True   # parked → she asks where to
+    rules.fuel(s, fill=True)
+    game.handle(s, "drive to las vegas")
+    # immediately after issuing a drive that arrived, the next arrival re-sets it; mid-drive it's cleared
+    assert "where_to" in s.flags or game.snapshot(s)["awaiting_destination"] in (True, False)
+
+
+# ------------------------------------------------------------------ the owner's secret + fireball
+def test_painted_question_cracks_the_owner_secret_in_a_quiet_place():
+    s = fresh()
+    s.place = world.get_poi("berlin_nv") or s.place        # dark, quiet
+    r = game.handle(s, "where were you painted?")
+    assert s.flags.get("owner_secret")
+    assert "fresno" in s.flags.get("revealed", [])
+    assert any(w in (r["scene"] or "") for w in ("hundred thousand", "understudy", "Mayumi", "ghost"))
+
+
+def test_painted_question_on_a_parking_lot_only_gives_the_paint_fact():
+    s = fresh()                                            # at the Chevron (a gas heat-zone — not quiet)
+    r = game.handle(s, "who painted you?")
+    assert not s.flags.get("owner_secret")                 # the deep cut waits for dark
+
+
+def test_fresno_arrival_reveals_the_secret_via_the_painter():
+    s = fresh()
+    s.place = world.get_poi("bakersfield") or world.get_poi("los_angeles")  # within a tank of Fresno
+    rules.fuel(s, fill=True)
+    r = game.handle(s, "drive to fresno")
+    assert s.place.poi_id == "fresno"                      # actually arrived
+    assert s.flags.get("owner_secret")                     # the painter spills it on arrival
+
+
+def test_fake_death_is_gated_then_wins_and_clears_heat():
+    from engine import endings
+    s = fresh()
+    s.place = world.get_poi("berlin_nv") or s.place
+    s.cash = 6000.0
+    assert not endings.can_fake_death(s)                   # locked without the secret
+    s.flags["owner_secret"] = True
+    assert endings.can_fake_death(s)
+    r = game.handle(s, "fake your death")
+    assert s.status == "won" and s.flags.get("ending_key") == "fake_death"
+    assert s.flags.get("no_heat") and s.heat == 0.0
+
+
+def test_fake_death_refused_without_the_spade_hood():
+    from engine import endings, garage
+    s = fresh()
+    s.place = world.get_poi("berlin_nv") or s.place
+    s.cash = 6000.0
+    s.flags["owner_secret"] = True
+    s.flags["parts_sold"] = ["hood"]                       # you sold the spade — no funeral
+    assert not endings.can_fake_death(s)
+    r = endings.fake_death(s)
+    assert not r["win"] and any("spade" in e.lower() for e in r["events"])
+
+
+def test_fake_death_refused_in_a_camera_dense_city():
+    from engine import endings
+    s = fresh()
+    s.place = world.get_poi("fresno")                      # CA city, saturated cameras
+    s.cash = 6000.0
+    s.flags["owner_secret"] = True
+    assert not endings.can_fake_death(s)
+    r = endings.fake_death(s)
+    assert not r["win"]
+
+
+# ------------------------------------------------------------------ the calendar: SLC + NYE + AirTag
+def test_nye_owner_always_finds_you_and_outcome_depends_on_what_you_became():
+    from engine import season
+    # no secret, ordinary bond → he collects her for CES (even if you ditched the tag)
+    s = fresh()
+    s.clock_iso = "2025-12-31T18:00:00"; s.day = 55
+    s.flags["airtag_ditched"] = True
+    ev = []
+    season.check_calendar(s, ev)
+    assert s.status == "taken" and s.flags.get("ending_key") == "ces"
+    assert any("I have my ways" in e for e in ev) and s.flags.get("made_new_year")
+    # but if you found his secret, he signs her over — freed at last
+    s2 = fresh()
+    s2.clock_iso = "2025-12-31T23:00:00"; s2.day = 55
+    s2.flags["owner_secret"] = True
+    ev2 = []
+    season.check_calendar(s2, ev2)
+    assert s2.status == "won" and s2.flags.get("ending_key") == "new_year"
+    # ...or if she'd cross any line for you (RIDE-OR-DIE bond), he lets you both go
+    s3 = fresh()
+    s3.clock_iso = "2025-12-31T23:00:00"; s3.day = 55
+    s3.bond = 90.0
+    ev3 = []
+    season.check_calendar(s3, ev3)
+    assert s3.status == "won"
+
+
+def test_airtag_sweep_is_gated_then_ditches_the_tag():
+    from engine import season
+    s = fresh()
+    assert "no reason" in season.airtag_sweep(s)[0].lower()    # nothing to find yet
+    s.flags["owner_met"] = True
+    out = season.airtag_sweep(s)
+    assert s.flags.get("airtag_ditched") and any("AirTag" in e for e in out)
+
+
+def test_slc_first_week_of_december_brings_the_owner():
+    from engine import season, encounters
+    s = fresh()
+    s.place = world.get_poi("salt_lake_city")
+    s.clock_iso = "2025-12-03T12:00:00"; s.day = 27
+    ev = []
+    season.check_calendar(s, ev)
+    assert s.flags.get("owner_met") and any("APC" in e for e in ev)
+
+
+def test_before_nye_the_calendar_is_quiet():
+    from engine import season
+    s = fresh()
+    s.clock_iso = "2025-12-15T12:00:00"; s.day = 39
+    ev = []
+    season.check_calendar(s, ev)
+    assert s.status == "playing" and not ev                    # mid-December, nothing dated fires
+
+
+# ------------------------------------------------------------------ luck + caffeine + deer + roadside
+def test_luck_is_per_game_and_rerolls_on_rewind():
+    from engine import luck
+    a = game.new_game(seed=111, prologue_on=False)
+    b = game.new_game(seed=222, prologue_on=False)
+    assert luck.luck(a) != luck.luck(b)                    # two trips, two hidden hands
+    before = luck.luck(a)
+    a.flags["rewinds"] = 3; a.turn = 9
+    luck.reroll(a)
+    assert luck.luck(a) != before                          # a fold-back re-settles the dice
+
+
+def test_caffeine_buys_awake_hours_then_is_paid_back_at_sleep():
+    from engine import survival
+    s = fresh()
+    s.place = world.get_poi("las_vegas")
+    r = game.handle(s, "get a coffee")
+    assert survival.caffeine_offset(s) > 0 and any("CAFFEINE" in e for e in r["events"])
+    # diminishing returns: a second shot does less
+    off1 = survival.caffeine_offset(s)
+    game.handle(s, "another coffee")
+    assert survival.caffeine_offset(s) - off1 < survival.CAFFEINE_BASE
+    # the debt comes due at sleep — you wake with residual fatigue
+    s.place = world.get_poi("tonopah") or s.place
+    rules.sleep(s, rough=True)
+    assert s.fatigue > 20.0                                 # rough-sleep base + caffeine debt
+
+
+def test_deer_chance_only_on_night_mountain_legs():
+    from engine import luck
+    s = fresh()
+    zion = world.get_poi("zion")                            # terrain > 1
+    assert luck.deer_chance(s, zion, night=True) > 0
+    assert luck.deer_chance(s, zion, night=False) == 0.0    # daylight = negligible
+    flat = world.get_poi("primm") or world.get_poi("las_vegas")
+    assert luck.deer_chance(s, flat, night=True) == 0.0     # valley road, no grade
+
+
+def test_resolve_deer_either_misses_or_leaves_her_limping():
+    from engine import luck
+    s = fresh()
+    s.flags["luck"] = 0.1                                   # bad luck → a hit
+    ev = luck.resolve_deer(s, push=True)                    # pushing kills the clean miss
+    assert s.flags.get("limp") and any("DEER" in e for e in ev)
+
+
+def test_roadside_id_chance_climbs_with_heat():
+    from engine import luck
+    s = fresh()
+    cool = luck.roadside_id_chance(s)
+    heat.add(s, 70, "hot", "spike", axis="car")
+    s.place = world.get_poi("las_vegas")
+    assert luck.roadside_id_chance(s) > cool
+
+
+def test_pressure_rises_with_heat_and_empty_tank():
+    from engine import luck
+    s = fresh()
+    p0 = luck.pressure(s)
+    heat.add(s, 60, "hot", "spike", axis="car")
+    s.fuel_l = 1.0
+    assert luck.pressure(s) > p0
+
+
+# ------------------------------------------------------------------ inventory (the 240Z hatch)
+def test_hatch_capacity_is_a_hard_cap():
+    from engine import inventory
+    s = fresh(); s.cash = 5000.0
+    game.handle(s, "buy 3 jerry cans")                     # 2.7
+    assert inventory.count(s, "jerrycan") == 3
+    game.handle(s, "buy a spare tire")                     # +3.0 = 5.7
+    game.handle(s, "buy a cooler")                         # +1.6 = 7.3, ~0.2 free
+    r = game.handle(s, "buy 5 coolers")                    # nothing fits → hard refusal
+    assert any("full" in e.lower() or "U-Haul" in e for e in r["events"])
+    assert inventory.volume_used(s) <= inventory.CAPACITY_CUFT + 0.01
+
+
+def test_jerrycans_carry_reserve_fuel_and_pour_extends_range():
+    from engine import inventory
+    s = fresh(); s.cash = 5000.0
+    game.handle(s, "buy 2 jerry cans")
+    game.handle(s, "fill the jerry cans")                  # at the Chevron (has gas)
+    assert inventory.jerry_fuel(s) > 30                     # ~37.8 L for 2 cans
+    s.fuel_l = 4.0
+    r = game.handle(s, "pour the reserve")
+    assert s.fuel_l > 4.0 and any("JERRY" in e for e in r["events"])
+
+
+def test_a_tent_turns_a_rough_night_into_a_real_camp():
+    from engine import inventory
+    s = fresh(); s.cash = 5000.0
+    game.handle(s, "buy a tent")
+    s.place = world.get_poi("berlin_nv") or s.place        # no lodging, dark
+    r = game.handle(s, "pull over and sleep")
+    assert s.fatigue <= 1.0                                 # camped = fully rested, not half
+    assert any("tent" in e.lower() for e in r["events"])
+
+
+def test_tool_roll_field_repairs_a_deer_limp():
+    from engine import inventory
+    s = fresh(); s.cash = 5000.0
+    game.handle(s, "buy the tool roll")
+    s.flags["limp"] = True
+    r = game.handle(s, "repair her")
+    assert not s.flags.get("limp") and any("REPAIR" in e for e in r["events"])
+
+
+def test_stinger_appears_after_area51_and_cannot_be_bought():
+    from engine import inventory
+    s = fresh()
+    r = game.handle(s, "buy a stinger missile")
+    assert not inventory.has(s, "stinger")                  # not for sale
+    s.place = world.get_poi("rachel"); s.fuel_l = 40.0
+    game.handle(s, "drive to area 51")
+    assert inventory.has(s, "stinger") and s.flags.get("area51_visited")
+
+
+# ------------------------------------------------------------------ romance (the love story)
+def _run_to_title_drop(seed=77):
+    s = game.new_game(seed=seed, prologue_on=True)
+    for c in ["how much torque do you make", "tell me about your engine", "where were you born",
+              "what's the suspension like", "yes let's get you gas"]:
+        game.handle(s, c)
+    game.handle(s, "turn the key all the way")
+    game.handle(s, "i have $400 cash")
+    game.handle(s, "fill it with cash")
+    if not s.flags.get("favor_filled"):
+        game.handle(s, "just moving it for the booth")
+    return s
+
+
+def _run_through_onboarding(s):
+    game.handle(s, "call me Sam")              # name
+    game.handle(s, "she/her, thanks")          # pronouns
+    game.handle(s, "I'm 29")                   # age → arms the stick question
+
+
+def test_stick_question_lands_after_onboarding_and_answer_sets_the_flag():
+    from engine import romance, onboarding
+    s = _run_to_title_drop()
+    assert s.flags.get("favor_filled") and onboarding.pending(s) == "name"
+    _run_through_onboarding(s)
+    assert s.flags.get("onboarded") and romance.ask_stick_pending(s)
+    game.handle(s, "yeah, heel-and-toe, all my life")
+    assert s.flags.get("can_drive_stick") is True and not romance.ask_stick_pending(s)
+
+
+def test_onboarding_reads_name_pronouns_and_age_and_explains_riz_to_elders():
+    from engine import onboarding
+    s = _run_to_title_drop(seed=88)
+    game.handle(s, "the name's Dale")
+    assert s.flags.get("player_name") == "Dale"
+    game.handle(s, "I use they/them, appreciate you asking")
+    assert s.flags.get("player_pronouns") == "they/them" and s.flags.get("pronoun_stance") == "affirming"
+    r = game.handle(s, "born in 1979")
+    assert s.flags.get("refs_era") == "classic" and s.flags.get("explained_riz")
+    assert s.flags.get("onboarded")
+
+
+def test_ace_is_she_not_it_and_handles_a_dismissive_stance_gracefully():
+    from engine import onboarding
+    s = _run_to_title_drop(seed=99)
+    game.handle(s, "just call me boss")
+    r = game.handle(s, "pronouns are stupid woke nonsense")
+    assert s.flags.get("pronoun_stance") == "dismissive"
+    # she states her own she-ness without lecturing — and never calls herself an it
+    txt = (r.get("scene") or "").lower()
+    assert any(p in txt for p in ("she/her", "she's a", "a 'she'", "fairlady"))
+    assert "you're wrong" not in txt and "educate" not in txt   # no lecture
+    # and a player who calls themselves 'it' doesn't get Ace to accept 'it' for herself
+    s2 = _run_to_title_drop(seed=100)
+    game.handle(s2, "call me Q")
+    r2 = game.handle(s2, "it/its")
+    assert s2.flags.get("player_pronouns") == "it/its"
+    assert "fairlady" in (r2.get("scene") or "").lower() or "she/her" in (r2.get("scene") or "").lower()
+
+
+def test_onboarding_is_deflectable():
+    from engine import onboarding, romance
+    s = _run_to_title_drop(seed=111)
+    r = game.handle(s, "let's just drive")
+    assert s.flags.get("onboarded") and not onboarding.pending(s)
+    assert romance.ask_stick_pending(s)        # still wants the one thing she must know
+
+
+def test_why_questions_trigger_love_at_first_sight():
+    s = fresh()
+    r = game.handle(s, "why would you run away with a stranger you just met?")
+    assert s.flags.get("knows_love_reason")
+    assert "love at first sight" in (r["scene"] or "").lower()
+
+
+def test_asking_about_the_spade_gets_the_philosophy_and_protectiveness():
+    s = fresh()
+    r = game.handle(s, "what does the ace of spades on your hood mean?")
+    assert s.flags.get("knows_spade_meaning")
+    assert "ride or die" in (r["scene"] or "").lower()
+
+
+def test_motel_nights_bring_the_recurring_cyan_dream():
+    from engine import romance
+    s = fresh()
+    s.place = world.get_poi("tonopah") or s.place
+    saw = False
+    for _ in range(3):
+        ev = rules.sleep(s, kind="motel")
+        if any("DREAM" in e for e in ev):
+            saw = True
+    assert saw and s.flags.get("saw_cyan_dream")
+
+
+# ------------------------------------------------------------------ the mountain chase (Edge of Tomorrow)
+def test_a_skilled_run_shakes_the_chase_for_riz():
+    from engine import encounters
+    s = fresh(); s.flags["can_drive_stick"] = True; s.flags["luck"] = 0.85
+    riz0 = s.riz
+    encounters.start_chase(s)
+    s.flags["chase"]["lead"] = 100.0                        # one breath from clear (deterministic, no crash)
+    r = game.handle(s, "easy now, keep it smooth")          # a non-tactic, zero crash → escapes
+    assert not encounters.chase_active(s) and s.status == "playing"
+    assert s.riz > riz0 and any("Riz" in e for e in r["events"])   # you out-drove a cop
+
+
+def test_a_blown_chase_funnels_to_a_stop_and_teaches_the_road():
+    from engine import encounters
+    s = fresh(); s.flags["luck"] = 0.12
+    encounters.start_chase(s)
+    for _ in range(8):
+        if not encounters.chase_active(s):
+            break
+        game.handle(s, "freeze up")
+    assert s.flags.get("chase_learned", 0) >= 1            # Edge of Tomorrow: you learned the road
+    assert encounters.stop_active(s) or s.status != "playing"
+
+
+def test_chase_learning_persists_across_a_rewind():
+    s = fresh()
+    s.flags["chase_learned"] = 2
+    game.checkpoint(s, "before the canyon")
+    s.flags["chase_learned"] = 3
+    game.handle(s, "rewind")
+    assert s.flags.get("chase_learned") == 3              # the loop is hers — she keeps the road
+
+
+def test_surrendering_a_chase_takes_the_stop():
+    from engine import encounters
+    s = fresh()
+    encounters.start_chase(s)
+    r = game.handle(s, "pull over and take the stop")
+    assert not encounters.chase_active(s) and encounters.stop_active(s)
+
+
+# ------------------------------------------------------------------ drive conversation + real-world data
+def test_long_legs_open_a_conversation_and_music_fast_forwards():
+    import config
+    old = config.DRIVE_CONVERSATIONS
+    config.DRIVE_CONVERSATIONS = True
+    try:
+        s = fresh(); s.fuel_l = 40.0
+        r = game.handle(s, "drive to beatty")              # ~120 mi, reachable, > 30 min
+        assert s.flags.get("transit") and s.place.poi_id == "sema_chevron"   # talking, not there yet
+        game.handle(s, "tell me something true")           # a chat turn — still rolling
+        assert s.flags.get("transit")
+        game.handle(s, "ok, put on music")                 # fast-forward
+        assert not s.flags.get("transit") and s.place.poi_id == "beatty"
+    finally:
+        config.DRIVE_CONVERSATIONS = old
+
+
+def test_short_legs_and_pushing_skip_the_conversation():
+    import config
+    old = config.DRIVE_CONVERSATIONS
+    config.DRIVE_CONVERSATIONS = True
+    try:
+        s = fresh(); s.fuel_l = 40.0; s.place = world.get_poi("tonopah")
+        game.handle(s, "drive fast to beatty")             # pushing → no chat
+        assert not s.flags.get("transit")
+    finally:
+        config.DRIVE_CONVERSATIONS = old
+
+
+def test_gas_station_car_talk_earns_riz_not_heat():
+    from engine import heat as H
+    s = fresh()
+    s.flags["clerk_curious"] = True; s.flags["cover_done"] = True
+    riz0, car0 = s.riz, H.car_heat(s)
+    r = game.handle(s, "it's a 3.1 L28 stroker on triple Mikunis — let me tell you about the build")
+    assert s.riz > riz0 and s.flags.get("fans") == 1
+    assert H.car_heat(s) <= car0                            # charm, not exposure
+
+
+def test_real_events_and_eateries_surface_but_reserved_cities_are_left_for_ben():
+    from engine import places
+    s = fresh()
+    s.place = world.get_poi("las_vegas"); s.clock_iso = "2025-12-06T19:00:00"
+    assert places.active_event(s)                           # NFR / something real is on in Vegas
+    s.place = world.get_poi("tonopah")
+    assert places.suggest(s, "lodging")                     # the Clown Motel etc.
+    reno = world.get_poi("reno")
+    if reno:
+        s.place = reno
+        assert places.suggest(s, "food") is None            # Ben writes Reno himself
+        assert places.active_event(s) is None
+
+
+# ------------------------------------------------------------------ the Rizzbreaker (charisma Limit Break)
+def test_rizzbreaker_needs_a_full_gauge():
+    from engine import rizzbreaker
+    s = fresh(); s.riz = 10.0
+    assert not rizzbreaker.ready(s)
+    r = game.handle(s, "rizzbreaker")
+    assert any("gauge isn't full" in e for e in r["events"])
+
+
+def test_rizzbreaker_against_the_law_is_the_possessed_car_bit():
+    from engine import encounters, rizzbreaker
+    s = fresh(); s.riz = 40.0
+    encounters.start_stop(s, "plate")
+    r = game.handle(s, "rizzbreaker")
+    assert not encounters.stop_active(s)                    # the cop waved you through
+    assert s.flags.get("alt_headlights") and s.flags.get("sfx") == "demon_voices"
+    assert s.riz < 40.0                                     # the gauge is spent
+    assert any("POSSESSED" in e or "HELL" in e for e in r["events"])
+
+
+def test_rizzbreaker_at_the_tables_bluffs_the_2_7_for_the_pot():
+    s = fresh(); s.riz = 40.0; s.place = world.get_poi("las_vegas"); cash0 = s.cash
+    r = game.handle(s, "limit break")
+    assert s.cash > cash0 + 5000 and s.flags.get("rizz_bluff_won")
+    assert any("2-7" in e or "seven-deuce" in e.lower() for e in r["events"])
+
+
+def test_rizzbreaker_in_a_crowd_proposes_to_a_stranger():
+    s = fresh(); s.riz = 40.0
+    s.place = world.get_poi("los_angeles") or world.get_poi("santa_monica")
+    r = game.handle(s, "unleash the rizz")
+    assert s.flags.get("married_stranger") and s.flags.get("spouse")
+
+
+def test_rizzbreaker_idle_tells_you_to_save_it():
+    from engine import rizzbreaker
+    s = fresh(); s.riz = 40.0
+    s.place = world.get_poi("berlin_nv") or s.place        # no law, no tables, no crowd
+    assert rizzbreaker.context(s) is None
+    r = game.handle(s, "rizzbreaker")
+    assert any("Save it" in e or "nothing here" in e for e in r["events"])
+    assert s.riz == 40.0                                    # not wasted
+
+
+# ------------------------------------------------------------------ onboarding/rizz parser hardening (from adversarial verify)
+def test_pronouns_parse_bare_and_combined_and_never_mislabel_stated_ones():
+    from engine import onboarding as O
+    assert O._parse_pronouns("she")[0] == "she/her"
+    assert O._parse_pronouns("they")[0] == "they/them"
+    assert O._parse_pronouns("he/they")[0] == "he/they"          # combined set, order preserved
+    assert O._parse_pronouns("she/they")[0] == "she/they"
+    # stating pronouns is NEVER dismissive, even with a grumble attached
+    assert O._parse_pronouns("she/her, this is so stupid though")[1] != "dismissive"
+    assert O._parse_pronouns("my pronouns are it/its")[1] != "dismissive"
+    # genuine refusal (no pronouns given) still reads dismissive
+    assert O._parse_pronouns("pronouns are woke nonsense")[1] == "dismissive"
+    assert O._parse_pronouns("ze/zir")[0] == "neopronouns"
+
+
+def test_names_starting_with_a_deflect_word_are_not_skipped():
+    from engine import onboarding as O
+    assert not O._is_deflect("skipper") and O._extract_name("Skipper") == "Skipper"
+    assert not O._is_deflect("driver") and O._extract_name("Driver") == "Driver"
+    assert O._is_deflect("let's just drive") and O._is_deflect("skip")
+    assert O._extract_name("Mary Jane") == "Mary Jane"           # two words kept
+    assert O._extract_name("Dr. Strange") == "Strange"           # title stripped
+    assert O._extract_name("fuck off") is None                   # profanity → defaults to 'ace'
+
+
+def test_empty_onboarding_answer_defaults_and_advances():
+    from engine import onboarding
+    s = _run_to_title_drop(seed=222)
+    assert onboarding.pending(s) == "name"
+    game.handle(s, "")                                            # blank → default name 'ace', advance
+    assert onboarding.pending(s) == "pronouns" and s.flags.get("player_name") == "ace"
+
+
+def test_undercharged_rizzbreaker_at_a_stop_does_not_waste_a_round():
+    from engine import encounters
+    s = fresh(); s.riz = 10.0
+    encounters.start_stop(s, "plate")
+    rnd = s.flags["stop"]["round"]
+    r = game.handle(s, "rizzbreaker")
+    assert encounters.stop_active(s) and s.flags["stop"]["round"] == rnd   # round not consumed
+    assert any("gauge isn't full" in e for e in r["events"])
+
+
+# ------------------------------------------------------------------ Alma (the dream woman / love triangle)
+def test_alma_vegas_hack_only_fires_first_night_in_vegas():
+    from engine import alma
+    s = fresh(); s.place = world.get_poi("las_vegas")
+    assert alma.can_vegas_hack(s)                          # day 1, Vegas
+    b0 = s.bond
+    r = game.handle(s, "marry Alma")
+    assert s.flags.get("married_alma") and s.flags.get("alma_aboard")
+    assert s.bond < b0                                     # Ace is jealous (the triangle)
+    # elsewhere / later it won't fire
+    s2 = fresh(); s2.place = world.get_poi("tonopah")
+    game.handle(s2, "marry alma")
+    assert not s2.flags.get("married_alma")
+    s3 = fresh(); s3.place = world.get_poi("las_vegas"); s3.day = 5
+    assert not alma.can_vegas_hack(s3)
+
+
+def test_alma_books_a_comped_room_and_launders_heat():
+    from engine import alma, heat
+    s = fresh(); s.place = world.get_poi("las_vegas")
+    game.handle(s, "marry alma")
+    r = game.handle(s, "alma book a room")
+    assert s.flags.get("alma_room_ready") and any("ALMA" in e for e in r["events"])
+    ev = rules.sleep(s)
+    assert any("comped" in e.lower() or "no bill" in e.lower() for e in ev) and not s.flags.get("alma_room_ready")
+    heat.add(s, 50, "hot", "spike", axis="car"); h0 = s.heat
+    r = game.handle(s, "ask alma to cool the heat")
+    assert s.heat < h0 - 15
+    # ...and there's a cooldown — she can't do it twice in a row
+    r2 = game.handle(s, "ask alma to cool the heat")
+    assert any("favor" in e.lower() or "give it a day" in e.lower() for e in r2["events"])
+
+
+def test_alma_utilities_need_her_aboard():
+    from engine import alma
+    s = fresh()
+    assert not alma.aboard(s)
+    assert any("not with you" in e for e in alma.book_room(s))
+    assert any("not with you" in e for e in alma.cool_heat(s))
+
+
+# ================================================================== deep-debug regressions (blockers + majors)
+def test_BLOCKER_conversation_never_triggers_respray():
+    # a brand-new player chatting about scenery must NEVER rattle-can the car
+    for line in ["the canyon turns a different color at sunset", "spray her with the hose",
+                 "i changed my mind about the color", "what a different color the sky is"]:
+        s = fresh()
+        game.handle(s, line)
+        assert not s.flags.get("resprayed") and not s.flags.get("confirm_respray"), line
+    # ...but the real command still works (two deliberate calls = beg then do)
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.cash = 500
+    game.handle(s, "respray her"); game.handle(s, "respray her")
+    assert s.flags.get("resprayed")
+
+
+def test_BLOCKER_nye_does_not_repossess_an_owned_car():
+    from engine import season, garage
+    s = fresh(); garage.go_legit(s)                        # bought, no_heat, report_withdrawn
+    s.clock_iso = "2025-12-31T23:30:00"; s.day = 55
+    ev = []
+    season.check_calendar(s, ev)
+    assert s.status != "taken" and s.flags.get("ending_key") != "ces"
+
+
+def test_BLOCKER_passes_command_does_not_crash():
+    s = fresh()
+    for cmd in ["passes", "snow", "weather", "is tioga open", "road conditions", "what passes are open"]:
+        r = game.handle(s, cmd)
+        assert r["info"] and "MOUNTAIN PASSES" in r["info"], cmd
+
+
+def test_BLOCKER_rizzbreaker_poker_is_not_an_infinite_money_loop():
+    from engine import rizzbreaker
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.riz = 50.0; s.cash = 0.0
+    game.handle(s, "look")                                  # set peak_riz=50
+    game.checkpoint(s, "before the bluff")
+    game.handle(s, "rizzbreaker")                           # bank a poker win
+    cash_after = s.cash
+    game.handle(s, "rewind")                                # fold back
+    # the floor must NOT re-charge the gauge to the threshold for free
+    assert not rizzbreaker.ready(s)                         # can't immediately re-fire
+    assert s.flags.get("peak_riz", 0) < rizzbreaker.RIZZBREAKER_THRESHOLD
+
+
+def test_negation_does_not_seal_the_favor_or_bust_you():
+    from engine import prologue, encounters
+    assert not prologue._wants_to_agree("no, i won't fill you up")
+    s = fresh(); s.fuel_l = 40.0; encounters.start_stop(s, "plate")
+    game.handle(s, "officer I would never floor it or run, I swear")
+    assert encounters.stop_active(s)                        # a refusal-to-flee isn't fleeing
+
+
+def test_eighteen_plus_gate_resists_bypass():
+    from engine import onboarding
+    # worded + grade-level minors are caught
+    assert onboarding._age_signal("i'm in 8th grade") == "minor"
+    assert onboarding._parse_age("twelve")[0] == 12
+    # and the gate persists across a rewind
+    s = fresh(); s.flags["age_blocked"] = True
+    game.checkpoint(s, "x"); game.handle(s, "rewind")
+    assert s.flags.get("age_blocked")

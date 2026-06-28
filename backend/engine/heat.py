@@ -19,7 +19,7 @@ from __future__ import annotations
 from config import DESPERADO_HEAT_FLOOR
 from engine.state import GameState
 
-LOG_KEEP = 16
+LOG_KEEP = 48              # deep enough that the dashboard reconciles on a long, ALPR-heavy trip
 MARK_FADE_MI = 260.0       # a derogatory mark fully ages off after ~a tank of clean miles
 
 
@@ -59,11 +59,18 @@ VIS_WORD = {0: "nowhere — no eyes for miles", 1: "low-key", 2: "busy, a few ph
 
 
 def exposure(s: GameState) -> int:
-    """How exposed she actually is HERE, accounting for the Z camo disguise (one notch quieter)."""
+    """How exposed she actually is HERE, after disguise: a cover hides her completely; the Z camo,
+    a swapped-off ace-of-spades hood, and a respray each knock a notch off how recognizable she is."""
+    if s.flags.get("no_heat"):
+        return visibility(s.place)
+    if s.flags.get("covered"):
+        return 0                                  # a covered car is nothing — no eyes find it
     vis = visibility(s.place)
-    if s.flags.get("camo") and not s.flags.get("no_heat"):
-        vis = max(0, vis - 1)
-    return vis
+    if s.flags.get("camo"):
+        vis -= 1
+    if s.flags.get("hood_swapped") or s.flags.get("resprayed"):
+        vis -= 1                                  # lost the tell / lost the white — harder to clock
+    return max(0, vis)
 
 
 # --------------------------------------------------------------- the meter
@@ -231,6 +238,13 @@ def dashboard(s: GameState) -> str:
         levers.append("pay CASH from here on to stop the bleed")
     if h >= 45:
         levers.append("cross a state line and run clean miles — marks age off")
+        if visibility(s.place) >= 2:                  # she's in a city — point her at the dark country
+            from engine import cameras
+            hav = cameras.nearest_haven(s)
+            if hav:
+                d, q = hav
+                levers.append(f"get OUT of the cameras — {q.name} is ~{d:.0f} mi of dark country "
+                              "(no ALPR, no eyes)")
     if exposure(s) >= 2:
         levers.append("you're parked somewhere bright — keep moving"
                       + (" (camo helps, but barely)" if visibility(s.place) >= 3 else ""))
@@ -326,6 +340,20 @@ def social_fuel(s: GameState) -> dict | None:
                                 "gone. One selfie and we're his story."]}}
 
 
+def clerk_charm(s: GameState) -> list:
+    """The skill move at a curious pump: instead of hiding the car or showing it off, you TALK to
+    the kid about it — the real build, gracious and generous. He stops filming and starts listening.
+    A fan is not a witness. Earns Riz and costs no heat. (The opposite of getting posted.)"""
+    s.flags.pop("clerk_curious", None)
+    riz = 5.0
+    s.riz = round(s.riz + riz, 1)
+    s.flags["fans"] = s.flags.get("fans", 0) + 1
+    return [f"CLERK: you crouch by the fender and actually talk to him — the 3.1 L28 stroker, the "
+            f"triple Mikunis, why the wheels are what they are. He lowers the phone and just listens, "
+            f"then shakes your hand like you taught him something. A fan, not a witness. "
+            f"Riz +{riz:.0f} → {s.riz:.0f}. (No heat — charm beats a cover story every time.)"]
+
+
 def clerk_resolve(s: GameState, humble: bool) -> list:
     """Resolve the curious clerk once it's open: a humble word (or just leaving) slides by; showing
     off / lingering gets the car posted."""
@@ -375,6 +403,8 @@ def lie_low(s: GameState) -> list:
         return ["LIE LOW: you've already gone as quiet as a parked car can. Sitting here longer just "
                 "burns daylight — put some real road behind you to shake the rest."]
     add(s, -cool, "laid low, out of sight", "lower")
+    from engine import survival
+    body = survival.drain(s)
     return [f"LIE LOW: you tuck her behind {('a derelict barn' if vis == 0 else 'the building')} "
             f"and wait it out an hour. Nobody comes. −{cool:.0f} → {s.heat:.0f}."
-            + ("" if streak == 0 else "  (diminishing — drive to reset.)")]
+            + ("" if streak == 0 else "  (diminishing — drive to reset.)")] + body

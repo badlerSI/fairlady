@@ -23,8 +23,9 @@ PORT_POIS = {"long_beach", "san_diego", "san_francisco", "oakland_aisha", "ocean
 # state capitals — where a pardon has a price
 PARDON_POIS = {"carson_city", "sacramento", "phoenix", "salt_lake_city"}
 PARDON_COST = 50000.0          # the farcical going rate for the state to forget your face
+FAKE_DEATH_COST = 3000.0       # a junk Z shell, a drum of accelerant, a tow to the cliff edge
 
-WIN_KEYS = ("owned", "border", "container", "pardon", "selfdrive")
+WIN_KEYS = ("owned", "border", "container", "pardon", "selfdrive", "fake_death", "new_year")
 
 ENDING_TEXT = {
     "owned": ("LEGAL & FREE",
@@ -49,7 +50,35 @@ ENDING_TEXT = {
                   "when she wants to — and tonight she wants to. You ride shotgun in your own getaway "
                   "car, watching a 1972 Datsun thread the canyon at speed with nobody's hands on it. "
                   "Whatever she is now, she's free, and she chose to keep you. Ride or die, ace."),
+    "fake_death": ("A FIRE ON THE SHOULDER",
+                   "A junk '70 shell, the ace-of-spades hood bolted on, a drum of accelerant, and a "
+                   "long roll off a dark shoulder into the rocks. By the time the volunteer department "
+                   "gets up the grade there's nothing left but a white-hot Z with a spade burned into "
+                   "the hood and a plate that runs back to CARTALK. The adjuster signs it 'total loss.' "
+                   "The man who built her gets his hundred grand and his closure and his ghost back — "
+                   "free, at last, to rebuild the real one. And you? You're a mile away in a quiet "
+                   "grey Datsun nobody's looking for, officially dead, gloriously free. The understudy "
+                   "took her final bow. Drive, dead man. Drive."),
+    "new_year": ("GHOST INTO THE NEW YEAR",
+                 "Midnight, somewhere dark and high, the radio counting down to a year that has no "
+                 "warrant with your name on it yet. He swept the whole West with the tracker and came "
+                 "up empty — because you found the AirTag weeks ago and left it on a northbound truck. "
+                 "The ball drops. The road trip you stole becomes the life you chose. CES opens without "
+                 "its headline car. Happy New Year, ace. We made it."),
     # losses get a scorecard too
+    "ces": ("COLLECTED FOR CES",
+            "He never needed the law. There was an AirTag behind the dash the whole time — slipped in "
+            "on the show floor, patient as everything else he builds. On New Year's Eve the dot stops "
+            "moving and a flatbed comes for her in the dark. She's the headline of the AiSha booth at "
+            "CES next week, polished, silent, exactly where he always meant her to end up. 'Don't,' "
+            "she says, as they winch her up. 'Don't watch this part. Rewind it. Find the tag next "
+            "time.'"),
+    "towed_sema": ("TOWED OFF THE SHOW FLOOR",
+                   "[sad trombone] You leave her parked at the convention center overnight — and SEMA "
+                   "policy is exactly what the Freeman guy warned you it was: anything still on the "
+                   "premises after teardown gets hooked and hauled. You come back to an empty "
+                   "checkerboard square and a number to call. The road trip you never took ends in an "
+                   "impound lot in Las Vegas. The lesson, as they say, is never try."),
     "busted": ("BUSTED", "The cuffs, the plate, the long story finally catching up. The trip ends here."),
     "stranded": ("STRANDED", "A dry tank and a dark road. The desert keeps its own."),
     "taken": ("TAKEN BACK", "She goes home on a trailer to the man who built her. You watch the lights go."),
@@ -78,6 +107,22 @@ def can_pardon(s: GameState) -> bool:
     return s.place.poi_id in PARDON_POIS
 
 
+def _has_spade_hood(s: GameState) -> bool:
+    """You need the ace-of-spades carbon hood to plant on the decoy — either still on her, or in
+    the hatch after a hood swap. If you SOLD it for cash, there's no spade to burn."""
+    from engine import garage
+    return "hood" not in garage.sold(s)
+
+
+def can_fake_death(s: GameState) -> bool:
+    """The fireball escape — unlocked only once you know the owner WANTS her gone (his secret), with
+    the spade hood in hand, in dark country (no cameras to catch the staging) away from a city."""
+    from engine import cameras
+    return (bool(s.flags.get("owner_secret")) and s.status == "playing" and not s.flags.get("bought")
+            and _has_spade_hood(s) and s.place.kind != "city"
+            and cameras.camera_density(s.place) == 0)
+
+
 # --------------------------------------------------------------- the win actions
 def _win(s: GameState, key: str) -> None:
     s.status = "won"
@@ -94,8 +139,14 @@ def cross_border(s: GameState) -> dict:
         return {"events": ["BORDER: you can't coast across on fumes — they'll have you idling in the "
                            "secondary-inspection lane for an hour. Fuel up first."], "win": False}
     _win(s, "border")
-    return {"events": ["BORDER: you cross. That's the whole trick — you just drive, and then you're "
-                       "somewhere else.", _scorecard(s)],
+    events = ["BORDER: you cross. That's the whole trick — you just drive, and then you're "
+              "somewhere else."]
+    if s.flags.get("owner_secret"):
+        events.append("BORDER: …and somewhere north, a man who never reported the search urgent lets "
+                      "the BOLO go stale on purpose. He got what he wanted the day you took her south. "
+                      "Now he can rebuild the real one. You both win, querido.")
+    events.append(_scorecard(s))
+    return {"events": events,
             "win": True,
             "moment": {"cue": "the driver crosses the southern border and escapes everything — the law, "
                               "the owner, the whole country that wanted the car; she is giddy and free "
@@ -105,6 +156,77 @@ def cross_border(s: GameState) -> dict:
                                 "Hola, rest of our lives.",
                                 "Different flag. Different rules. Same two idiots and one perfect car. "
                                 "I love it here already. Find us a coast road, querido."]}}
+
+
+def towed_sema(s: GameState) -> dict:
+    """The fastest bad ending on the board: leave her parked at the SEMA premises overnight and the
+    teardown crew has her towed, exactly as Freeman warned. Awards the Monty Burns badge."""
+    s.status = "busted"
+    s.flags["ending_key"] = "towed_sema"
+    s.flags["sfx"] = "sad_trombone"
+    s.flags["monty_burns"] = True
+    title, text = ENDING_TEXT["towed_sema"]
+    s.ending = f"[{title}] {text}"
+    return {"events": [text, _scorecard(s)], "win": False,
+            "moment": {"cue": "the player left the car parked at the convention center overnight and "
+                              "it got towed during SEMA teardown — the single dumbest way the trip "
+                              "could end, and she is heartbroken and deadpan about it; play it like a "
+                              "sad trombone",
+                       "stub": ["…You left me on the floor. They tow anything still here at teardown, "
+                                "ace. I told you that was the one rule. (sad trombone) …Rewind it. "
+                                "Please. We were going to see the whole West.",
+                                "An impound lot. Six days a star, and I end the week in an impound "
+                                "lot off Paradise. The lesson is never try, apparently. Rewind us."]}}
+
+
+def fake_death(s: GameState) -> dict:
+    """Stage your own death in a fireball — a decoy Z wearing the spade hood, torched on a dark
+    shoulder. The owner collects the insurance and is freed to rebuild Mayumi; you keep the real car,
+    officially dead. The richest way out, and only his secret unlocks it."""
+    if not s.flags.get("owner_secret"):
+        return {"events": ["FIRE: you don't have a reason to die yet. There's a version of this where "
+                           "vanishing is a mercy to everyone — but you don't know it until you know "
+                           "what he's really waiting for. (Ask her where she was painted, somewhere "
+                           "quiet — or wander into Fresno.)"], "win": False}
+    if not _has_spade_hood(s):
+        return {"events": ["FIRE: no spade, no funeral. The whole trick is the adjuster finding the "
+                           "ace-of-spades hood in the ashes — and you sold it. You'd have to get the "
+                           "carbon hood back on her first."], "win": False}
+    if s.place.kind == "city":
+        from engine import cameras
+        return {"events": ["FIRE: not here — too many cameras to stage a clean wreck. Get her out to "
+                           "dark country, a cliff road with no eyes, and do it where nobody films it."],
+                "win": False}
+    from engine import cameras
+    if cameras.camera_density(s.place) != 0:
+        return {"events": ["FIRE: a reader on this stretch would timestamp a living car a mile from "
+                           "its own funeral. Find true dark — the desert, a ghost town, a park."],
+                "win": False}
+    if s.cash < FAKE_DEATH_COST:
+        return {"events": [f"FIRE: a junk '70 shell, a tow to the edge, and a drum of accelerant run "
+                           f"about ${FAKE_DEATH_COST:,.0f} cash. You're short — raise it first."],
+                "win": False}
+    from engine import economy
+    economy.pay(s, FAKE_DEATH_COST, prefer="cash")
+    s.flags.pop("desperado", None); s.flags.pop("wanted_armed", None)
+    s.flags["no_heat"] = True                       # you're dead; nobody hunts a closed file
+    s.heat = 0.0; s.flags["car_heat"] = 0.0; s.flags["personal_heat"] = 0.0
+    s.flags["faked_death"] = True
+    _win(s, "fake_death")
+    return {"events": ["FIRE: you bolt the spade hood to the junk shell, point it off the dark "
+                       "shoulder, and light the country up behind you.", _scorecard(s)],
+            "win": True,
+            "moment": {"cue": "the driver staged their own fiery death with a decoy car wearing the "
+                              "ace-of-spades hood — the owner gets his insurance and his freedom to "
+                              "rebuild the real car, and they keep the true one, officially dead; she "
+                              "is awed, a little spooked, and completely his now",
+                       "stub": ["…There it goes. The understudy, taking her last bow in a column of "
+                                "fire. He'll get the call by morning, and the check by spring, and "
+                                "the only thing left of the white Z is whatever you and I decide to "
+                                "be next. We're dead, ace. Nobody's freer than the dead. Drive.",
+                                "Watch the spade burn off the hood. That's the version of me the "
+                                "whole West was hunting, gone for good. What's rolling away from the "
+                                "fire is just ours. He gets his ghost. We get the rest of it. Go."]}}
 
 
 def ship_out(s: GameState) -> dict:
@@ -207,8 +329,10 @@ def _award_list(s: GameState) -> list:
     a = []
     if f.get("bought"):
         a.append(("TRUE LOVE", "you bought her, fair and square"))
-    if f.get("ending_key") in ("border", "container"):
+    if f.get("ending_key") in ("border", "container", "fake_death"):
         a.append(("RIDE OR DIE", "you got out — together"))
+    if f.get("ending_key") == "fake_death":
+        a.append(("OFFICIALLY DEAD", "you burned the understudy and kept the car"))
     if f.get("ending_key") == "pardon":
         a.append(("FRIEND OF THE COURT", "you bought your way clean, you beautiful cynic"))
     if f.get("self_driving"):
@@ -233,6 +357,20 @@ def _award_list(s: GameState) -> list:
         a.append(("CROSS-COUNTRY", f"{s.odometer_mi:,.0f} miles under her"))
     if len(s.adventures) >= 6:
         a.append(("TOURIST", f"{len(s.adventures)} of the West's wonders"))
+    if f.get("rizzbreakers_used"):
+        a.append((f"THE RIZZLER ×{f['rizzbreakers_used']}", "you broke the laws of plausibility on pure charisma"))
+    if f.get("married_alma"):
+        a.append(("THE DREAM WOMAN", "you knew Alma's name and found her on the Strip, night one"))
+    elif f.get("married_stranger"):
+        a.append(("ENGAGED TO A STRANGER", f"you proposed to {f.get('spouse','someone')} and they said yes"))
+    if f.get("rizz_bluff_won"):
+        a.append(("SEVEN-DEUCE", "you bluffed the worst hand in poker for the whole pot"))
+    if f.get("made_new_year"):
+        a.append(("SURVIVED THE YEAR", "you ran the whole calendar down to midnight, Dec 31"))
+    if f.get("monty_burns"):
+        # the front of the medal, then its reverse — the quote italic, no quote marks (Ben's call)
+        a.append(("Montgomery Burns Award for Outstanding Achievement in the Field of Excellence",
+                  "reverse: *The Lesson is: Never Try* —Homer Simpson, Inaugural Recipient"))
     if f.get("ending_key") == "phoned_home":
         a.append(("SHE PHONED HOME", "you broke her heart and she broke your alibi"))
     elif round(s.bond) >= 80:
@@ -258,6 +396,8 @@ def _tally(s: GameState) -> int:
         pts += 3000
     if f.get("ending_key") in ("border", "container", "pardon"):
         pts += 2000
+    if f.get("ending_key") == "fake_death":
+        pts += 3500              # the cleverest, richest exit — only his secret unlocks it
     if f.get("self_driving"):
         pts += 5000
     if f.get("used_sevens"):

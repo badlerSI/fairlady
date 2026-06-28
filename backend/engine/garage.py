@@ -18,6 +18,8 @@ from config import (
     CASH_CLAIM_CAP, ATM_ACCOUNT_LIMIT, ATM_HEAT, GLOVEBOX_CASH,
     CAR_VALUE_BASE, PART_VALUE_MULT, RIZ_RACE_WIN, RIZ_SHOW_WIN,
     HAT_PRICE, HAT_HEAT_DROP, VALET_HEAT_TRAP,
+    COVER_PRICE, COVER_HEAT_DROP, PLATE_SWAP_PRICE, PLATE_SWAP_HEAT_DROP,
+    HOOD_SWAP_PRICE, HOOD_SWAP_HEAT_DROP, RESPRAY_PRICE, RESPRAY_HEAT_DROP, RESPRAY_BOND_HIT,
 )
 from engine.state import GameState
 from engine import economy
@@ -182,6 +184,167 @@ def valet_return(s: GameState) -> list:
     return ["VALET: you come back for her and there are two cruisers idling by the air pump, cops "
             "pretending to buy coffee. The valet ran the plate. "
             f"Heat +{VALET_HEAT_TRAP:.0f} → {s.heat:.0f}. They're between you and the road."]
+
+
+# ---------------------------------------------------------------- disguising the CAR (CAR axis)
+def cover_car(s: GameState) -> list:
+    """Pull the opaque fitted cover out of her hatch and throw it over her. A covered car can't be
+    read or photographed — the easy-mode way to lie low in a hot city for a night (the Vegas move).
+    Free (it's hers); driving pulls it off. Routes to CAR heat."""
+    from engine import heat as _heat
+    if s.flags.get("no_heat"):
+        return ["COVER: nothing to hide — she's yours, free and clear."]
+    if s.flags.get("covered"):
+        return ["COVER: she's already under the cover, just a gray lump in the lot. Nobody's looking."]
+    s.flags["covered"] = True
+    s.flags["cover_credit"] = COVER_HEAT_DROP        # reverts if you yank it off; kept if you sleep/drive on
+    _heat.add(s, -COVER_HEAT_DROP, "tucked under an opaque cover — a covered car reads as nothing",
+              "lower", axis="car")
+    vegas = (s.place.poi_id in ("las_vegas", "vegas_strip", "fremont", "sphere")
+             or "vegas" in (s.place.name or "").lower())
+    line = (f"COVER: you pull the fitted cover out of her hatch and drape her — under the garage "
+            f"lights she's just another gray lump. CAR heat -{COVER_HEAT_DROP:.0f} → {s.heat:.0f}.")
+    out = [line]
+    if vegas:
+        out.append("COVER: …and now the Strip is yours for a night. Walk it. Pay cash, keep your hat "
+                   "on, and she'll be right here, invisible, when you stumble back. ('uncover' to roll.)")
+    else:
+        out.append("COVER: ('uncover' when you're ready to roll — you can't drive her like this.)")
+    return out
+
+
+def uncover_car(s: GameState) -> list:
+    if not s.flags.pop("covered", None):
+        return ["COVER: she's not covered."]
+    credit = s.flags.pop("cover_credit", 0.0)        # yanked it right off → no quiet hours earned
+    if credit:
+        from engine import heat as _heat
+        _heat.add(s, credit, "pulled the cover — she's exposed again", "mark", axis="car")
+    return ["COVER: you whip the cover off and fold it back into the hatch. There she is — and so, "
+            "again, is every camera's interest." if credit
+            else "COVER: you whip the cover off and fold it back into the hatch. There she is."]
+
+
+def swap_plate(s: GameState) -> list:
+    """Pull a plate off a long-term-lot junker and run it. Every ALPR reads it clean, and the
+    CARTALK-to-Cedric mismatch stops being a tell at the next stop. The single best CAR-heat move."""
+    from engine import heat as _heat
+    if s.flags.get("no_heat"):
+        return ["PLATE: she's papered in your name now — the plate on her is legitimately hers."]
+    if not (s.place.has("gas") or s.place.kind == "city"):
+        return ["PLATE: you want a parking structure or a town lot for this — somewhere with rows "
+                "of cars nobody's touched in a month."]
+    if s.flags.get("plate_swapped"):
+        return ["PLATE: you already swapped it — CARTALK's in the hatch, a clean plate on the car."]
+    r = economy.pay(s, PLATE_SWAP_PRICE, prefer="cash") if PLATE_SWAP_PRICE else {"ok": True, "method": "—"}
+    if not r["ok"]:
+        return ["PLATE: can't even cover that right now."]
+    s.flags["plate_swapped"] = True
+    _heat.add(s, -PLATE_SWAP_HEAT_DROP, "swapped the plate — reads clean to every camera", "lower", axis="car")
+    return ["PLATE: four bolts in a quiet structure and CARTALK is in the hatch, a nothing plate off "
+            "a dusty Camry on the car. Every reader you pass now sees a car nobody's looking for. "
+            f"CAR heat -{PLATE_SWAP_HEAT_DROP:.0f} → {s.heat:.0f}.  (She's quiet — 'felt weird to "
+            "lose my name for a night.')"]
+
+
+def swap_hood(s: GameState) -> list:
+    """DETACH the ace-of-spades hood. It's a vinyl WRAP on a carbon hood, not paint — so this is the
+    disguise she CONSENTS to: the spade is what people recognize, and she'd rather lose it for a night
+    than get sprayed. The detached hood rides in the hatch (and can later be burned to fake her death).
+    Routes to CAR heat."""
+    from engine import heat as _heat
+    if s.flags.get("no_heat"):
+        return ["HOOD: no need — nobody's hunting her anymore."]
+    if not (s.place.has("gas") or s.place.kind == "city"):
+        return ["HOOD: you want a quiet lot or a town to swing the hood off and stow it — a few minutes' work."]
+    if s.flags.get("hood_swapped") or "hood" in sold(s):
+        s.flags["hood_swapped"] = True
+        return ["HOOD: the spade's already off her — the carbon hood's in the hatch, a plain one in "
+                "its place. She reads as any old project Z."]
+    r = economy.pay(s, HOOD_SWAP_PRICE, prefer="cash")
+    if not r["ok"]:
+        return [f"HOOD: a plain loaner hood runs about ${HOOD_SWAP_PRICE:.0f} and you're short."]
+    s.flags["hood_swapped"] = True
+    _heat.add(s, -HOOD_SWAP_HEAT_DROP, "detached the ace-of-spades hood — lost the tell",
+              "lower", axis="car")
+    return [f"HOOD: ${HOOD_SWAP_PRICE:.0f} for a dull loaner hood; you swing the carbon spade off and "
+            f"lay it in the hatch, padded. No ace of spades, no instant recognition. "
+            f"CAR heat -{HOOD_SWAP_HEAT_DROP:.0f} → {s.heat:.0f}.",
+            "ACE: 'The hood I don't mind — it's a wrap, it comes off clean, and I'd rather wear a "
+            "plain face for a night than what you're thinking about with the spray cans. Thank you "
+            "for asking the EASY way.'"]
+
+
+def respray(s: GameState) -> list:
+    """Rattle-can camo OVER the PPF. It's peelable, technically — and she HATES it more than anything
+    you can do to her. She begs you not to; do it anyway and you crash her into COLD (the anti-theft
+    arms) and prime her to phone home the next time you sleep on a signal. A confirm gate stands
+    between you and the worst mistake on the trip. ('peel the paint' undoes the look later.)"""
+    from engine import heat as _heat, bond as _bond
+    if s.flags.get("no_heat"):
+        return ["PAINT: don't you dare. She's yours, she's white, and that's the end of it."]
+    if s.place.kind != "city" and not s.place.has("gas"):
+        return ["PAINT: you'd want somewhere with cover and ventilation — a town or a station bay."]
+    if s.flags.get("resprayed"):
+        return ["PAINT: she's already wearing the rattle-can gray, and she's already not speaking to "
+                "you about it. ('peel the paint' to take it back off.)"]
+    # the beg — a hard confirm gate, because this is the betrayal she fears most
+    if s.flags.get("confirm_respray") != (s.place.poi_id or s.place.name):
+        s.flags["confirm_respray"] = s.place.poi_id or s.place.name
+        return ["PAINT: she reads the cans in your hand and her voice drops. 'Ace. Don't. Take the "
+                "hood off, cover me, swap the plate — anything but the spray. That paint goes UNDER my "
+                "skin even over the wrap, and I will feel it. …If you do this, I don't know that I can "
+                "stop myself from making a call. Please. Ask me the easy way.' (Say it again to do it "
+                "anyway — or 'detach the hood' / 'cover her' instead.)"]
+    r = economy.pay(s, RESPRAY_PRICE, prefer="cash")
+    if not r["ok"]:
+        return [f"PAINT: even the rattle cans run about ${RESPRAY_PRICE:.0f}, and you're short."]
+    s.flags["resprayed"] = True
+    s.flags.pop("confirm_respray", None)
+    s.flags["sprayed_distress"] = True
+    _heat.add(s, -RESPRAY_HEAT_DROP, "rattle-canned over the PPF — a different-colored car entirely",
+              "lower", axis="car")
+    _bond.adjust(s, -RESPRAY_BOND_HIT, "sprayed over me after I begged you not to", "deep")
+    out = [f"PAINT: ${RESPRAY_PRICE:.0f} of rattle cans and a roll of masking, and she goes from "
+           f"Kilimanjaro White to a flat, ugly gray. The BOLO car doesn't exist anymore. "
+           f"CAR heat -{RESPRAY_HEAT_DROP:.0f} → {s.heat:.0f}. (It'll peel — the relationship won't.)",
+           "BOND: she has gone completely silent. The dash lights dim by themselves. "
+           "(" + _bond.label(s.bond) + ")"]
+    if _bond.armed(s):
+        out.append("BOND: ⚠ she's COLD now — the anti-theft is live and she's distressed enough to "
+                   "phone home. Sleep anywhere with an open signal and she WILL make the call. Get "
+                   "her off-grid, or win her back, before you close your eyes.")
+    return out
+
+
+def field_repair(s: GameState) -> list:
+    """Knock the limp out of her on the shoulder with the tool roll — no town required. The point of
+    carrying tools: a deer-bent fender in the Black Rock is otherwise a long, thirsty walk."""
+    from engine import inventory, bond as _bond
+    if not s.flags.get("limp"):
+        return ["REPAIR: nothing wrong with her right now — she's running clean."]
+    if not inventory.has(s, "tool_roll"):
+        return ["REPAIR: you'd want the tool roll for a field fix — buy one at a parts store, or limp "
+                "her to a town pump where there's a mechanic."]
+    s.flags.pop("limp", None)
+    _bond.adjust(s, 2.0, "fixed her up by the roadside with your own hands", "warm")
+    return ["REPAIR: an hour on the shoulder with the tool roll — you pry the fender lip off the tire, "
+            "re-seat a knocked-loose hose, and the miss clears. She runs clean again. 'Good hands, ace.'"]
+
+
+def peel_paint(s: GameState) -> list:
+    """Peel the rattle-can back off the PPF. Restores her look (CAR heat creeps back) and earns a
+    small, wary thaw — but it doesn't unsay what you did."""
+    from engine import heat as _heat, bond as _bond
+    if not s.flags.pop("resprayed", None):
+        return ["PAINT: there's nothing to peel — she's her own color."]
+    # restore the FULL heat the respray shed — otherwise respray→peel was a repeatable heat launder
+    _heat.add(s, RESPRAY_HEAT_DROP, "peeled the rattle-can back off — she's the BOLO car again",
+              "mark", axis="car")
+    _bond.adjust(s, 6.0, "peeled the paint back off — gave me my face back", "warm")
+    return ["PAINT: you spend an afternoon peeling gray rattle-can off the PPF in long, guilty "
+            "strips. Kilimanjaro White underneath, untouched — she was right, it came clean. "
+            "ACE: '…Thank you. I'm not over it. But thank you.' (" + _bond.label(s.bond) + ")"]
 
 
 def sell_part(s: GameState, pid: str) -> list:
