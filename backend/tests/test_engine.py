@@ -2492,3 +2492,41 @@ def test_dm_judge_offline_is_deterministic_and_flags_trolling():
     assert judge.assess(s, "banter", "the triple Mikunis sing like a desert wind, honestly")["clever"]
     v = judge.assess(s, "traffic_stop", "lmao officer you can't even see me")
     assert v["messing"] and not v["pass"]
+
+
+# ================================================================== Alma clubbing + Fresno painter
+def test_alma_clubbing_woo_rewards_good_lines_and_punishes_creeps():
+    from engine import alma
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.day = 1
+    assert alma.can_club(s)
+    game.handle(s, "go clubbing")
+    assert alma.club_active(s)
+    game.handle(s, "I drove a stolen car here on a dare from the car itself, and you're the first thing in Vegas that looked back")
+    game.handle(s, "My ride's a 240Z with a death wish and I think you two would get along, or kill each other")
+    game.handle(s, "Run away with me — no last names, just the desert and whatever's chasing both of us")
+    assert s.flags.get("alma_aboard") and not alma.club_active(s)
+
+
+def test_alma_clubbing_creep_gets_walked_out_on():
+    from engine import alma
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.day = 1
+    game.handle(s, "hit a club")
+    for _ in range(4):
+        if not alma.club_active(s):
+            break
+        game.handle(s, "lol nice tits babe")
+    assert not s.flags.get("alma_aboard") and s.flags.get("alma_blew_it")
+
+
+def test_clubbing_only_in_vegas_first_night():
+    from engine import alma
+    s = fresh(); s.place = world.get_poi("tonopah")
+    r = game.handle(s, "go clubbing")
+    assert not alma.club_active(s) and any("Vegas" in e for e in r["events"])
+
+
+def test_fueling_at_fresno_summons_the_painter():
+    s = fresh(); s.place = world.get_poi("fresno"); s.fuel_l = 8.0; s.cash = 200.0
+    assert not s.flags.get("owner_secret")
+    r = game.handle(s, "fill her up")
+    assert s.flags.get("owner_secret") and "painted that spade" in (r.get("scene") or "")

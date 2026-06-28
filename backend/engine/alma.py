@@ -16,6 +16,22 @@ from engine.state import GameState
 
 ALMA_NAME = "Alma"
 VEGAS_POIS = {"las_vegas", "vegas_strip", "fremont", "sphere", "neon_museum", "lv_motor_speedway"}
+
+# Alma's backstory — a DRAFT for Ben to rewrite. She's the femme fatale from the dreams: a grifter and
+# a fixer who's been everywhere and is wanted in three of them, equal parts danger and tenderness. She
+# "knows people" (the comped rooms, the heat she can make vanish) because she spent years being the
+# person other people knew. She's running from something she won't name, drawn — against her better
+# judgment — to anyone else who's running, especially a stranger who'd steal a car for a feeling. Her
+# name means 'soul'. The cyan is real: there's something not-quite-explained about how she keeps
+# turning up in the driver's dreams before they ever meet. Ben fills the rest.
+ALMA_BACKSTORY = (
+    "Alma — no last name she'll give twice. A fixer, a grifter, a woman who's left a forwarding address "
+    "in every city worth leaving. She knows the night clerks and the bent cops and which records can be "
+    "made to disappear, because for fifteen years that was the job. She's running from one specific "
+    "thing she won't name, and she has a weakness she'd never admit: people who are also running, "
+    "especially the romantic idiots who do it for love instead of money. And somehow — this is the part "
+    "neither of you can explain — you've been dreaming her in cyan for a week."
+)
 ALMA_COOL_HEAT = 24.0          # how much heat she can make disappear
 ALMA_COOL_COOLDOWN_H = 18.0    # ...and how often she can do it
 ALMA_BOND_HIT = 9.0            # what marrying her costs you with Ace, the first time
@@ -82,6 +98,97 @@ def vegas_hint(s: GameState) -> str | None:
         return ("DÉJÀ VU: the Strip feels like a place you've already been, in a dream, with someone "
                 "whose name is right on the tip of your tongue. (If you know it, this is the night.)")
     return None
+
+
+# --------------------------------------------------------------- the clubbing encounter (the real way)
+# The discoverable path (the name-hack is the credits/meta easter egg): go clubbing in Vegas the first
+# night and you MEET her — and whether she comes along is a real social check, judged by the DM, not a
+# password. Win her over with the right lines (not a creep, not a bore, not a fool); blow it and she
+# walks. Spark accumulates over a few exchanges; reach the threshold and she rides along.
+CLUB_WIN = 3
+
+
+def can_club(s: GameState) -> bool:
+    return (not married(s) and not aboard(s) and s.status == "playing" and not s.flags.get("no_heat")
+            and _in_vegas(s) and s.day <= 1 and not s.flags.get("alma_blew_it"))
+
+
+def club_active(s: GameState) -> bool:
+    return "club" in s.flags
+
+
+CLUB_OPENER = {
+    "cue": "the driver walks into a dark Vegas club, neon and bass, and there she is in a back booth — "
+           "the exact woman from the cyan dream, watching them like she's been expecting them; she's "
+           "beautiful and dangerous and clearly trouble; she tips her glass and says something that's "
+           "half invitation, half dare; this is a real woo, not a password — be interesting or be gone",
+    "stub": ["She's in the back booth, cyan light on her face like she stepped out of your sleep. She "
+             "tips her glass an inch toward the empty seat. 'You're late,' she says, 'and you don't "
+             "know my name yet, and you're still going to sit down. …Go on, then. Surprise me.'"]}
+
+
+def start_club(s: GameState) -> list:
+    s.flags["club"] = {"spark": 0, "round": 0}
+    s.flags["alma_met"] = True
+    return ["CLUB: bass you feel in the floor, a long bar, and a back booth where a woman in cyan light "
+            "is already watching you like she knew you'd come. She slides her glass to the empty seat. "
+            "(This is a real conversation — win her over, or lose her. Say something worth her time.)"]
+
+
+def club_turn(s: GameState, raw: str) -> dict:
+    from engine import judge, bond as _bond
+    c = s.flags["club"]
+    c["round"] += 1
+    v = judge.assess(s, "persuade", raw, difficulty=6,
+                     context="the driver is trying to charm Alma — a wary, dangerous femme fatale, a "
+                             "fixer who's seen every line — into running off with them and a stolen car "
+                             "the first night in Vegas; she despises creeps, bores, and try-hards, and "
+                             "is secretly a sucker for someone running on a romantic feeling; reward "
+                             "wit, nerve, and honesty, punish sleaze and cliché")
+    if v.get("messing") or (not v.get("pass") and not v.get("clever") and v.get("score", 50) < 35):
+        c["spark"] -= 1
+        react = ("ALMA: she sets the glass down. 'That's the line you went with? In that jacket?' The "
+                 "warmth goes out of the booth a few degrees.")
+    elif v.get("pass") or v.get("clever") or v.get("score", 50) >= 65:
+        c["spark"] += 1
+        react = "ALMA: a real smile, the first one. She leans in an inch. 'Hm. Keep going, stranger.'"
+    else:
+        react = "ALMA: she swirls her drink, unreadable. 'Mm. Not bad. Not yet, either.'"
+
+    if c["spark"] >= CLUB_WIN:
+        s.flags.pop("club", None)
+        s.flags["alma_aboard"] = True
+        _bond.adjust(s, -ALMA_BOND_HIT * 0.6, "left a Vegas club with a woman in cyan", "deep")
+        return {"events": [react,
+                "CLUB: she finishes the drink in one motion and stands, close enough now that you can "
+                "smell smoke and something expensive. 'Okay. OKAY. You're either the best night I've "
+                "had in a year or the worst decision, and I genuinely cannot tell which.' She picks up "
+                "your keys off the bar — your keys — and spins them once. 'I'm Alma. Let's go ruin our "
+                "lives. The white one out front is yours, I assume?' Alma rides with you now."],
+                "moment": {"cue": "the driver won Alma over in the club and she's coming along — thrilled, "
+                                  "reckless, already half in love; meanwhile Ace is waiting out front and "
+                                  "is NOT going to love this, the love triangle just lit up",
+                           "stub": ["(Ace, dry, from the lot) …Who. Is. That. And why is she holding my "
+                                    "keys. …Oh, this is going to be a SUMMER."]},
+                "done": True}
+    if c["round"] >= 4 or c["spark"] <= -2:
+        s.flags.pop("club", None)
+        s.flags["alma_blew_it"] = True
+        return {"events": [react,
+                "CLUB: she stands before you can recover, drops a bill on the table, and is gone into "
+                "the crowd like she was never there. 'Maybe in the next life, stranger.' The booth's "
+                "empty and the night's colder. (She was a one-shot. 'rewind' to the night you arrived "
+                "if you want her back.)"],
+                "moment": {"cue": "the driver blew it with Alma and she walked out of the club for good; "
+                                  "a real loss, the kind you feel; Ace is quietly, complicatedly relieved",
+                           "stub": ["(Ace, gentle) …Her loss, ace. Whoever she was. Get in. The desert "
+                                    "doesn't care how that went, and neither, mostly, do I."]},
+                "done": True}
+    return {"events": [react, "CLUB: (the booth's still warm. Another line — make it count.)"],
+            "moment": {"cue": "mid-flirtation with Alma in the club, she's waiting for the next line, "
+                              "intrigued but not won; the driver needs wit and nerve",
+                       "stub": ["(she waits, one eyebrow up)"]},
+            "done": False}
 
 
 def marry_response(s: GameState) -> dict:

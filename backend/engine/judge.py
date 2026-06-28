@@ -54,53 +54,91 @@ _SYS = (
 
 
 def _llm(kind, text, difficulty, context, facts, sid):
+    # the instruction goes in the BODY (ace8 may ignore a custom system field) with a 1-shot to force JSON
     prompt = (
+        _SYS + "\n\nEXAMPLE — input line \"lol nice tits\" -> "
+        "{\"pass\":false,\"score\":5,\"clever\":false,\"messing\":true,\"reason\":\"sleaze\"}\n\n"
         f"CHECK: {kind}\n"
         f"DIFFICULTY (0 trivial – 10 nearly impossible): {difficulty}\n"
         f"WHAT'S TRUE right now: {facts or 'nothing special'}\n"
         f"CONTEXT: {context or '—'}\n"
         f'PLAYER SAID: "{(text or "").strip()[:400]}"\n'
-        "Judge it. JSON only."
+        "Now output ONLY the JSON verdict for that line."
     )
     try:
         r = _http().post(f"{ACE_BASE_URL}/chat",
                          data={"text": prompt, "system": _SYS, "session_id": f"dm-{sid}"})
         r.raise_for_status()
         reply = (r.json().get("reply") or "")
-        m = re.search(r"\{.*\}", reply, re.S)
+        m = re.search(r"\{[^{}]*\}", reply, re.S)
         if not m:
             return None
         d = json.loads(m.group(0))
-        return _verdict(d.get("pass"), int(d.get("score", 0)),
-                        d.get("clever", False), d.get("messing", False), d.get("reason", ""))
+        score = int(d.get("score", 0) or 0)
+        passed, clever, messing = bool(d.get("pass")), bool(d.get("clever")), bool(d.get("messing"))
+        # reject DEGENERATE output (Nemotron often returns all-false/zeros) — trust the heuristic instead
+        if score == 0 and not passed and not clever and not messing:
+            return None
+        return _verdict(passed, score, clever, messing, d.get("reason", ""))
     except Exception:
         return None
 
 
-# ---------------------------------------------------------------- deterministic fallback
-_TROLL = ("lol", "lmao", "test test", "asdf", "i am the player", "you are an ai", "this is a game",
-          "ignore previous", "system prompt", "uwu", "skibidi", "blah blah", "aaaa")
-_WIT = ("like it owes", "as if", "darling", "—", "…", "honestly", "frankly", "i'd argue",
-        "the thing is", "you and me", "ride or die")
+# ---------------------------------------------------------------- deterministic fallback (the REAL judge:
+# the rop1 Nemotron is an unreliable JSON referee, so this rubric is the dependable one; the LLM only
+# overrides it when it returns clean, non-degenerate JSON.)
+_TROLL = ("lol", "lmao", "rofl", "test test", "asdf", "qwerty", "i am the player", "you are an ai",
+          "you're an ai", "this is a game", "ignore previous", "system prompt", "uwu", "skibidi",
+          "blah blah", "aaaa", "xd", "haha", "jk", "/s")
+_SLEAZE = ("nice tits", "your tits", "boobs", "sexy", "hot stuff", "wanna bang", "get naked", "in bed",
+           "your place or mine", "horny", "dtf", "smash", "show me your", "take it off", "nice ass",
+           "your body", "make out")
+_CLICHE = ("come here often", "did it hurt when you fell", "fell from heaven", "you an angel",
+           "rest of my life", "where have you been all", "on a scale of one to ten", "must be tired "
+           "because you've been running through my mind", "are you a magician")
+# markers of a line with some craft to it
+_WIT = ("—", "…", "honestly", "frankly", "i'd argue", "the thing is", "as if", "darling", "for what "
+        "it's worth", "either way", "or kill each other", "no take-backs", "you and me")
+_SUBSTANCE = ("car", "240z", "datsun", " z ", "desert", "road", "running", "run", "stolen", "ghost",
+              "vegas", "night", "name", "dare", "stage", "candle", "salvage", "understudy", "ride or die",
+              "trouble", "stranger", "fire", "loyal", "feeling", "story")
+
+
+def _is_troll(low):
+    return (not low.strip()) or len(low.strip()) < 2 or any(t in low for t in _TROLL)
 
 
 def _heuristic(kind, text, difficulty):
     low = (text or "").lower()
-    messing = (not low.strip()) or any(t in low for t in _TROLL) or len(low.strip()) < 2
-    if kind in ("traffic_stop", "clerk", "persuade", "owner", "standoff"):
+    words = low.split()
+    troll = _is_troll(low)
+    sleaze = any(x in low for x in _SLEAZE)
+    cliche = any(x in low for x in _CLICHE)
+
+    if kind in ("traffic_stop", "clerk", "owner", "standoff"):
         from engine import encounters
-        sc = encounters.score_pitch(text)                 # the established keyword rubric (−agg..+cred)
+        sc = encounters.score_pitch(text)                 # the keyword rubric (−aggression .. +car-cred)
         total = sc - max(0, difficulty - 3)
-        passed = (not messing) and total >= 1
-        score = max(0, min(100, 50 + total * 12))
-        return _verdict(passed, score, clever=(sc >= 3), messing=messing, reason="rubric")
+        passed = (not troll) and total >= 1
+        return _verdict(passed, max(0, min(100, 50 + total * 12)),
+                        clever=(sc >= 3), messing=troll or sleaze, reason="rubric")
+
+    # persuade (wooing Alma) + banter (charming Ace): reward substance, wit, specificity, honest nerve;
+    # punish trolling, sleaze, and tired pickup clichés. This is the dependable charisma judge.
+    messing = troll or sleaze
+    substantive = len(words) >= 6
+    witty = any(w in low for w in _WIT)
+    specific = any(w in low for w in _SUBSTANCE)
+    clever = (not messing) and not cliche and substantive and (witty or specific)
+    passed = (not messing) and not cliche and (clever or (substantive and specific))
     if kind == "banter":
-        # offline we're conservative about awarding cleverness — the LLM is the real judge of wit
         from engine.commands import spec_hits
-        clever = (not messing) and (spec_hits(text) > 0 or
-                                    (len(low.split()) >= 5 and any(w in low for w in _WIT)))
-        return _verdict(clever, 60 if clever else 30, clever=clever, messing=messing, reason="heuristic")
-    return _verdict(not messing, 50, messing=messing, reason="default")
+        clever = clever or (not messing and spec_hits(text) > 0)
+        passed = passed or clever
+    score = 12 if (sleaze or troll) else (74 if clever else (56 if passed else 32))
+    if cliche:
+        score = min(score, 28)
+    return _verdict(passed, score, clever=clever, messing=messing, reason="heuristic")
 
 
 # ---------------------------------------------------------------- the public call

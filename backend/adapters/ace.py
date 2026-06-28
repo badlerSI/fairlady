@@ -70,9 +70,9 @@ class AceNarrator(Narrator):
 
     def _frame(self, persona, s, events, player_text, extra=None):
         cues = self._cues(events, s)
-        # suppress the running gas/sleep pressure during the OPENING (the favor IS the gas ask — don't
-        # double-nag) and whenever the driver is mid-conversation with no real new mechanical beat.
-        pressure = [] if s.get("opening") else self._pressure(s)
+        # suppress the running gas/sleep pressure during the OPENING (the favor IS the gas ask) and
+        # during any open ENCOUNTER (a stop, a standoff, the club, the owner) — the moment owns the beat.
+        pressure = [] if (s.get("opening") or s.get("encounter_open")) else self._pressure(s)
         has_words = bool(player_text and player_text != "(takes stock)")
 
         lines = [persona, ""]

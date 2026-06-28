@@ -135,6 +135,14 @@ def parse(raw: str) -> Tuple[str, dict]:
                "draw on him", "draw the gun", "pull iron", "pull the trigger", "show the gun"):
         return ("draw", {})
 
+    # go clubbing (the discoverable way to MEET Alma the first night in Vegas)
+    if (low in ("club", "clubbing", "go clubbing", "go to a club", "hit a club", "hit the clubs",
+                "find a club", "go out", "go dancing", "go to the club", "hit the strip", "go out tonight",
+                "go to a bar", "hit a nightclub", "nightclub", "go party", "let's go out", "lets go out",
+                "paint the town", "go to a casino bar", "hit the town")
+            or ("go" in low and any(w in low for w in ("club", "dancing", "out tonight", "party")))):
+        return ("club", {})
+
     # ---- Alma (the dream woman / companion) — book a room, cool the heat, or marry her in Vegas ----
     if (low in ("alma", "where's alma", "wheres alma", "find alma", "who is alma", "who's alma",
                 "about alma", "alma status", "is alma here")

@@ -886,10 +886,26 @@ def handle(s: GameState, raw: str) -> dict:
     # "…full tank of fresh 91 sitting in her right now…" has to reach the officer,
     # not the range calculator.
     if ((encounters.stop_active(s) or encounters.owner_active(s) or encounters.standoff_active(s)
-            or encounters.chase_active(s)) and s.status == "playing"):
+            or encounters.chase_active(s) or alma.club_active(s)) and s.status == "playing"):
         s.turn += 1
         in_stop = encounters.stop_active(s)
         in_standoff = encounters.standoff_active(s)
+
+        if alma.club_active(s):              # the Alma woo owns the conversation — every line is a move
+            if verb in ("drive", "home", "sleep", "tow"):   # walk out on her
+                s.flags.pop("club", None)
+                s.flags["alma_blew_it"] = True
+                out = {"events": ["CLUB: you turn for the door before she's done talking, and when you "
+                                  "glance back the booth is empty. Some doors only open once."],
+                       "moment": None}
+            else:
+                out = alma.club_turn(s, raw)
+            if out.get("done") and s.flags.get("alma_aboard"):
+                checkpoint(s, "left the club with Alma")
+            _autosave(s)
+            scene, voice, audio = _narrate(s, out["events"], "", drama=out.get("moment"))
+            return _result(s, out["events"], scene, voice=audio,
+                           info="(win her over — wit and nerve, not lines; or walk away)")
 
         # the RIZZBREAKER, against the law — the possessed-car exorcism bit. Intercept even when
         # under-charged, so it gives the 'gauge isn't full' refusal instead of wasting a stop round.
@@ -1329,8 +1345,15 @@ def handle(s: GameState, raw: str) -> dict:
             drama_ev = rev
         elif s.status == "playing" and not gas_run and pumped and s.fuel_l >= s.tank_l - 0.5:
             checkpoint(s, "topped off")  # a full tank is a clean save point (and sets up the standoff)
+        # FRESNO: the man who painted her works a shop by this very pump — fuel up here and he clocks
+        # his own hand-laid spade across the lot and walks over, and the owner's whole secret comes loose
+        if (s.status == "playing" and pumped and s.place.poi_id == "fresno"
+                and not s.flags.get("owner_secret")):
+            beat = _fresno_painter(s)
+            if beat:
+                story_beat = beat
         # a curious clerk may clock the show car at a bright, busy pump (post-opening play)
-        if (s.status == "playing" and pumped and not gas_run and not s.flags.get("clerk_curious")):
+        elif (s.status == "playing" and pumped and not gas_run and not s.flags.get("clerk_curious")):
             from engine import heat as _heat
             clerk = _heat.social_fuel(s)
             if clerk:
@@ -1426,6 +1449,21 @@ def handle(s: GameState, raw: str) -> dict:
         if out.get("won"):                            # bank the win so a later loss can't rewind past it
             checkpoint(s, f"won at the tables — ${s.cash:,.0f}")
         drama_ev = out.get("moment")
+        player_text = ""
+    elif verb == "club":                         # go clubbing — meet Alma in Vegas the first night
+        if alma.can_club(s):
+            events = alma.start_club(s)
+        elif alma.aboard(s) or alma.married(s):
+            events = ["CLUB: you've already got Alma — no need to go looking. She's right here."]
+        elif s.flags.get("alma_blew_it"):
+            events = ["CLUB: the booth she was in is empty now. That was a one-night kind of woman, and "
+                      "the night's over. ('rewind' to the evening you rolled in, if you can't let it go.)"]
+        elif not (s.place.poi_id in alma.VEGAS_POIS or "vegas" in (s.place.name or "").lower()):
+            events = ["CLUB: no scene worth the name out here. The clubs that matter are in Vegas — and "
+                      "there's a particular kind of night that only happens your first one in town."]
+        else:
+            events = ["CLUB: you make the rounds — neon, bass, overpriced drinks — but the magic of a "
+                      "first Vegas night has passed. Just a crowd now."]
         player_text = ""
     elif verb == "almamarry":                    # the Vegas first-night hack — elope with the dream woman
         out = alma.marry_response(s)
@@ -1689,6 +1727,29 @@ OWNER_SECRET_NUDGE = (
     "the bottom of it: run south for good, or give him a body to bury. Either way we both walk "
     "away whole. (You'd need the spade hood for the fire, and some dark country to do it in.)"
 )
+
+
+FRESNO_PAINTER = (
+    "PUMP: you're topping her off when a man crosses the Fresno lot wiping his hands on a rag, slow, "
+    "staring at the hood. 'I painted that spade,' he says. 'By hand. Kilimanjaro White and a steady "
+    "afternoon, for a friend of mine, the year his world ended.' He looks at the plate, then at you, "
+    "and his face does something complicated. 'He know you've got her?' …And then, because he can see "
+    "you don't, he tells you the thing the owner never would: he isn't hunting her to bring her home. "
+    "He's waiting for her to be GONE — the insurance, a hundred grand, the only thing that frees him to "
+    "rebuild the real one, Mayumi, the ride-or-die that burned on the 580. 'You keep her,' the painter "
+    "says, quiet. 'You'd be doing the both of them a kindness. South, or a fire — those are the clean "
+    "ways out. He'll thank you, in the only way he's got left.'"
+)
+
+
+def _fresno_painter(s: GameState) -> str:
+    s.flags["owner_secret"] = True
+    revealed = s.flags.setdefault("revealed", [])
+    for rid in ("fresno", "livermore"):
+        if rid not in revealed:
+            revealed.append(rid)
+    bond.adjust(s, 4.0, "the painter told you the truth at the Fresno pump", "deep")
+    return FRESNO_PAINTER
 
 
 def _crack_owner_secret(s: GameState) -> str:
