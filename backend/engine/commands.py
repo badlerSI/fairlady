@@ -356,10 +356,14 @@ def parse(raw: str) -> Tuple[str, dict]:
             or low.startswith(("enter the show", "show her in", "enter her in"))):
         return ("show", {})
 
-    # payment method
-    if low in ("pay cash", "use cash", "cash", "pay with cash"):
+    # payment method — exact phrases, plus short natural variants anchored to a PAY verb ("I'll pay
+    # cash", "let's use the card", "put it on the card") so a narrated choice sets the method before 'fill'.
+    _pays = re.match(r"^(?:i'?ll |let'?s |we'?ll |just |okay,? )?(?:pay|use|put it on|charge|swipe)\b", low)
+    if (low in ("pay cash", "use cash", "cash", "pay with cash", "cash please", "cash it is")
+            or (_pays and "cash" in low and "card" not in low and "credit" not in low)):
         return ("pay", {"method": "cash"})
-    if low in ("pay card", "use card", "card", "pay with card", "credit"):
+    if (low in ("pay card", "use card", "card", "pay with card", "credit", "card please")
+            or (_pays and ("card" in low or "credit" in low) and "cash" not in low)):
         return ("pay", {"method": "card"})
 
     # ---- the endgame: ways OUT, and the credits ----
