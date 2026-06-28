@@ -3121,6 +3121,6 @@ def test_dated_event_surfaces_in_window_and_place():
     out = dated_events.on_arrival(s)
     assert out and out[0].startswith("EVENT")
     assert "las_vegas" not in []  # sanity
-    # outside the window: nothing
-    s2 = fresh(); s2.place = world.get_poi("las_vegas"); s2.day = 2
+    # outside any Vegas event window (between the NFR and the bowl game): nothing
+    s2 = fresh(); s2.place = world.get_poi("las_vegas"); s2.day = 48
     assert dated_events.on_arrival(s2) == []
