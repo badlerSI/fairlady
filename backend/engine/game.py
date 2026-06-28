@@ -1575,6 +1575,8 @@ def handle(s: GameState, raw: str) -> dict:
         events = alma.cool_heat(s); player_text = ""
     elif verb == "almastatus":
         info = alma.status(s); player_text = "(thinks of her)"
+    elif verb == "almabackstory":
+        events = alma.backstory_reveal(s); player_text = ""
     elif verb == "rizzbreaker":                  # the charisma Limit Break (poker / propose / idle)
         from engine import rizzbreaker
         out = rizzbreaker.invoke(s)

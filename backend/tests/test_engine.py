@@ -2781,3 +2781,16 @@ def test_gas_favor_leak_stripped_post_opening_kept_during():
     leak = "I pull hard past five grand. Help me get gas — two blocks, five minutes, the offer stands."
     assert "two blocks" not in A._clean(leak, allow_favor=False)
     assert "two blocks" in A._clean(leak, allow_favor=True)
+
+
+def test_alma_backstory_reveals_once_when_aboard():
+    from engine import alma
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.flags["alma_aboard"] = True
+    r = game.handle(s, "Alma, what's your story?")
+    assert s.flags.get("alma_backstory_told") and "fixer" in " ".join(r["events"]).lower()
+    r2 = game.handle(s, "Alma, who are you really?")     # told once; second ask deflects
+    assert "more than I tell anyone" in " ".join(r2["events"])
+    # not available before she's aboard
+    s2 = fresh()
+    r3 = game.handle(s2, "Alma, what's your story?")
+    assert "not here to ask" in " ".join(r3["events"]).lower()

@@ -125,6 +125,11 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("buy bob", "purchase bob", "buy bob from him", "buy the loaner", "pay for bob",
                "buy bob for 7000", "buy bob for $7000", "buy bob for seven thousand"):
         return ("buybob", {})
+    # ask Alma who she really is (reveals her backstory once she's aboard)
+    if ("alma" in low and any(p in low for p in ("your story", "who are you", "who you are",
+            "about yourself", "your past", "your deal", "real name", "who you really", "where you from",
+            "what's your", "whats your", "tell me about you", "what is your story"))):
+        return ("almabackstory", {})
     if (low in ("make bob talk", "give bob a voice", "upgrade bob", "bob talk", "make bob speak",
                 "upgrade bob to talk", "give bob a voice box") or ("bob" in low and "talk" in low and
                 any(w in low for w in ("make", "give", "upgrade", "want")))):

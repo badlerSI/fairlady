@@ -252,6 +252,26 @@ def cool_heat(s: GameState) -> list:
             f"→ {s.heat:.0f}. (Ace is quiet. Ace does not love that Alma can do this and she can't.)"]
 
 
+def backstory_reveal(s: GameState) -> list:
+    """Ask Alma who she really is — once she's along for the ride. She gives it up slow, once, the way
+    a fixer does: a fact at a time, nothing you could prove. Gated on her being aboard; told once."""
+    if not (aboard(s) or married(s)):
+        return ["ALMA: she's not here to ask. (Find her clubbing in Vegas the first night — if you "
+                "know her name.)"]
+    if s.flags.get("alma_backstory_told"):
+        return ["ALMA: 'I already told you more than I tell anyone, and most of THAT was true. Leave a "
+                "girl some mystery, would you.' (She's done volunteering for tonight.)"]
+    s.flags["alma_backstory_told"] = True
+    from engine import bond as _bond
+    _bond.adjust(s, -0.5, "spent the drive getting to know Alma instead of me", "mark")  # Ace notices
+    return [
+        "ALMA: she watches the dark go by for a long mile before she answers.",
+        f"ALMA: '{ALMA_BACKSTORY}'",
+        "ALMA: '…So now you know more than the last three people who thought they did. Drive, romantic. "
+        "We've both got things in the rearview.'",
+    ]
+
+
 def status(s: GameState) -> str:
     if married(s):
         return (f"愛 ALMA — your wife, riding shotgun. She books rooms off the books ('alma book a "
