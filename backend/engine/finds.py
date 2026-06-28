@@ -39,9 +39,10 @@ def _eligible(s: GameState, item: dict, dest, talked: int) -> bool:
     region = getattr(dest, "region", None)
     pid = getattr(dest, "poi_id", None)
     if isinstance(where, str):
-        return region == where
+        return where == "anywhere" or region == where
     if isinstance(where, list):
-        return (pid in where) or (getattr(s.place, "poi_id", None) in where)
+        # a list may hold poi_ids AND/OR region codes (NV/CA/AZ/UT) — match either
+        return (pid in where or getattr(s.place, "poi_id", None) in where or region in where)
     return False
 
 

@@ -278,7 +278,7 @@
    "kind": "encounter",
    "region": "NV",
    "lat": 39.1701,
-   "lon": -119.7510,
+   "lon": -119.751,
    "services": [
     "lodging"
    ],
@@ -3832,6 +3832,49 @@
    "terrain": 1.1,
    "beat": "Heber City. Forty-three miles southeast of Salt Lake — close enough to feel the city breathing, far enough to deny it. Forty-three miles isn't geography; it's a decision.",
    "scene": "wm_heber_city"
+  },
+  {
+   "id": "hayward",
+   "name": "Hayward",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.6688,
+   "lon": -122.0808,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "An East Bay flatland city of warehouses and bay mud — and, in a low building off the freeway, the Zoox robotaxi works.",
+   "scene": "wm_oakland_aisha"
+  },
+  {
+   "id": "santa_nella",
+   "name": "Santa Nella",
+   "kind": "city",
+   "region": "CA",
+   "lat": 37.0986,
+   "lon": -121.0146,
+   "services": [
+    "gas",
+    "lodging",
+    "food"
+   ],
+   "blurb": "An I-5 pit stop in the Central Valley flats, famous for one thing: Pea Soup Andersen's, green soup and a windmill since 1924.",
+   "scene": "wm_fresno"
+  },
+  {
+   "id": "black_rock_city",
+   "name": "Black Rock City (off-season)",
+   "kind": "encounter",
+   "region": "NV",
+   "lat": 40.7864,
+   "lon": -119.2065,
+   "services": [],
+   "heat_zone": false,
+   "terrain": 1.0,
+   "blurb": "The Black Rock playa, 50 weeks a year just cracked white nothing to the curve of the earth — no city, no people, only the ghost of one and a wind that carries strange things.",
+   "scene": "wm_gerlach"
   }
  ]
 }

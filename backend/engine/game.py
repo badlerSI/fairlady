@@ -765,6 +765,18 @@ def _after_arrival(s: GameState, events: list):
     if s.place.poi_id == "area51_gate":      # something turns up in the hatch out here
         s.flags["area51_visited"] = True
         events += inventory.grant_stinger(s)
+    # set-piece arrivals — the special places that aren't just a town beat
+    from engine import setpieces
+    if setpieces.at_black_rock(s):
+        events.append(setpieces.black_rock_arrival(s))
+    elif setpieces.at_palm_springs(s):
+        pa = setpieces.palm_arrival(s)
+        if pa:
+            events.append(pa)
+    else:
+        f1 = setpieces.f1_arrival(s)
+        if f1:
+            events.append(f1)
     npc = _encounter(s)
     if npc:
         events.append(f"ENCOUNTER: {npc['who']} greets you in {npc['label']}, "
@@ -858,6 +870,7 @@ def _do_drive(s: GameState, dest, push: bool):
     """Resolve a full drive leg + everything that happens on arrival. Returns
     (events, npc, drama_ev, story_beat). Shared by a normal drive and a fast-forwarded transit."""
     s.flags.pop("where_to", None)
+    s.flags["last_origin_poi"] = getattr(s.place, "poi_id", None)   # for the Palm Springs back-out
     before_odo = s.odometer_mi
     events = rules.drive(s, dest, push=push)
     npc = drama_ev = story_beat = None
@@ -1398,6 +1411,18 @@ def handle(s: GameState, raw: str) -> dict:
             _autosave(s)
             scene, voice, audio = _narrate(s, events, raw)
             return _result(s, events, scene, voice=audio)
+        # PALM SPRINGS TIME LOOP: every road out folds back to the wedding — UNLESS you drive back the
+        # way you came (the escape), which breaks it. (Nyles remembers each loop; she never does.)
+        if s.flags.get("palm_loop"):
+            from engine import setpieces
+            if getattr(dest, "poi_id", None) and getattr(dest, "poi_id", None) == setpieces.palm_escape_dest(s):
+                events = setpieces.loop_break(s)
+                # fall through — the drive out actually happens this time
+            else:
+                events = setpieces.loop_reset(s, dest.name)
+                _autosave(s)
+                scene, voice, audio = _narrate(s, events, raw)
+                return _result(s, events, scene, voice=audio)
         target = s.flags.get("gas_target")
         if target and not s.flags.get("favor_filled") and getattr(dest, "poi_id", None) != target:
             # SOFT FAIL — the tank isn't full yet. Don't move, don't end the game: checkpoint + rewind.
@@ -1564,6 +1589,21 @@ def handle(s: GameState, raw: str) -> dict:
         from engine import finds
         events = finds.take(s)
         player_text = ""
+    elif verb in ("enterrift", "taketab", "zooxpitch", "racecircuit"):
+        from engine import setpieces
+        if verb == "enterrift":
+            out = setpieces.enter_rift(s)
+        elif verb == "taketab":
+            out = setpieces.take_tab(s)
+        elif verb == "zooxpitch":
+            out = setpieces.zoox_pitch(s)
+        else:
+            out = setpieces.race_street_course(s)
+        events = out["events"]
+        drama_ev = out.get("moment")
+        if s.flags.get("self_driving") and verb == "zooxpitch":
+            checkpoint(s, "Zoox woke her up — she drives herself")
+        player_text = ""
     elif verb == "usefind":
         from engine import finds
         out = finds.use(s, args.get("text", ""))
@@ -1574,7 +1614,8 @@ def handle(s: GameState, raw: str) -> dict:
         player_text = ""
     elif verb in ("eat", "restroom", "drink", "caffeine"):
         if verb == "eat":
-            events = survival.eat(s)
+            from engine import setpieces
+            events = setpieces.pea_soup(s) if setpieces.at_pea_soup(s) else survival.eat(s)
         elif verb == "restroom":
             events = survival.restroom(s, number=args.get("number", 1))
         elif verb == "caffeine":

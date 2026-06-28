@@ -128,14 +128,33 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("buy bob", "purchase bob", "buy bob from him", "buy the loaner", "pay for bob",
                "buy bob for 7000", "buy bob for $7000", "buy bob for seven thousand"):
         return ("buybob", {})
-    # take a roadside find Ace just pointed out (explicit grab phrasings only — no bare 'yes')
-    if (low in ("take it", "grab it", "take that", "grab that", "pick it up", "stop for it", "snag it",
-                "pull over for it", "grab the find", "take the find", "stop and grab it", "grab it!")
-            or (low.startswith(("take the ", "grab the ", "snag the ", "pick up the ")) and len(low.split()) <= 5)):
+    # take a roadside find Ace just pointed out (explicit grab phrasings only — no bare 'yes', and not
+    # the set-piece 'take the tab/acid' which routes elsewhere)
+    if ((low in ("take it", "grab it", "take that", "grab that", "pick it up", "stop for it", "snag it",
+                 "pull over for it", "grab the find", "take the find", "stop and grab it", "grab it!")
+            or (low.startswith(("take the ", "grab the ", "snag the ", "pick up the ")) and len(low.split()) <= 5))
+            and not any(w in low for w in ("tab", "acid", "blotter"))):
         return ("takefind", {})
     # use a roadside find (the use-DM)
     if low.startswith(("use ", "use the ")):
         return ("usefind", {"text": raw})
+
+    # ---- set-piece verbs ----
+    if any(p in low for p in ("enter the rift", "into the rift", "follow nyles", "go in the cave",
+                              "enter the cave", "into the cave", "follow him in", "go into the rift")):
+        return ("enterrift", {})
+    if (any(p in low for p in ("take the tab", "take the acid", "drop the tab", "drop acid", "eat the tab",
+                               "take the blotter", "lick the tab", "take it off the windshield"))
+            or ("tab" in low and any(w in low for w in ("take", "drop", "lick", "eat")))):
+        return ("taketab", {})
+    if (any(p in low for p in ("convince zoox", "pitch zoox", "the zoox pitch", "ask zoox", "zoox pitch",
+                               "talk to zoox", "sell zoox", "make her self-driving at zoox"))
+            or ("zoox" in low and any(w in low for w in ("convince", "pitch", "ask", "sell", "talk")))):
+        return ("zooxpitch", {})
+    if (any(p in low for p in ("race the street course", "race the circuit", "bust onto the circuit",
+                               "drive the f1 circuit", "race the strip", "onto the track", "race the f1",
+                               "bust the barriers", "get on the circuit"))):
+        return ("racecircuit", {})
 
     # ask Alma who she really is (reveals her backstory once she's aboard)
     if ("alma" in low and any(p in low for p in ("your story", "who are you", "who you are",

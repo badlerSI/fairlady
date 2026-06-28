@@ -3044,3 +3044,47 @@ def test_roadside_find_surfaces_only_while_talking_and_can_be_taken():
 def test_finds_catalog_loads():
     from engine import finds
     assert len(finds._FINDS) >= 10 and "rolex" in finds._BY_ID and "stray_puppy" in finds._BY_ID
+
+
+# ================================================================== set-pieces
+def test_palm_springs_groundhog_loop():
+    from engine import setpieces
+    s = fresh(); s.place = world.get_poi("palm_springs"); s.fuel_l = 40.0
+    s.flags["last_origin_poi"] = "indio"
+    assert setpieces.palm_arrival(s)
+    game.handle(s, "enter the rift")
+    assert s.flags.get("palm_loop")
+    game.handle(s, "drive to los angeles")               # any road out folds back to the wedding
+    assert s.place.poi_id == "palm_springs" and s.flags.get("palm_loop_count") == 1
+    game.handle(s, "drive to indio")                     # back the way you came → escape
+    assert s.flags.get("palm_escaped") and not s.flags.get("palm_loop")
+
+def test_black_rock_tab_maxes_affection():
+    from engine import setpieces
+    s = fresh(); s.place = world.get_poi("black_rock_city")
+    setpieces.black_rock_arrival(s)
+    b = s.bond
+    game.handle(s, "take the tab")
+    assert s.flags.get("affection_max") and s.bond > b and s.flags.get("brc_done")
+
+def test_zoox_self_drive_needs_bought_and_riz():
+    from engine import setpieces
+    s = fresh(); s.place = world.get_poi("hayward")
+    setpieces.zoox_pitch(s)
+    assert not s.flags.get("self_driving")               # not bought → refused
+    s.flags["bought"] = True; s.riz = 35
+    game.handle(s, "convince zoox")
+    assert s.flags.get("self_driving")
+
+def test_f1_window_and_street_course_bust():
+    from engine import setpieces
+    s = fresh(); s.place = world.get_poi("las_vegas"); s.day = 15
+    assert setpieces.f1_arrival(s)                        # GP weekend in Vegas
+    game.handle(s, "race the street course")
+    assert s.status == "busted"
+
+def test_pea_soup_fills_you_up():
+    from engine import setpieces, survival
+    s = fresh(); s.place = world.get_poi("santa_nella"); survival._set(s, "hunger", 80)
+    game.handle(s, "eat")
+    assert survival._get(s, "hunger") == 0.0
