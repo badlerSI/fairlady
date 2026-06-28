@@ -3088,3 +3088,23 @@ def test_pea_soup_fills_you_up():
     s = fresh(); s.place = world.get_poi("santa_nella"); survival._set(s, "hunger", 80)
     game.handle(s, "eat")
     assert survival._get(s, "hunger") == 0.0
+
+
+# ================================================================== town encounters (KoL/WoL layer)
+def test_town_encounter_fires_once_on_arrival():
+    from engine import town_encounters
+    s = fresh(); s.fuel_l = 40.0; s.place = world.get_poi("goldfield")
+    r = game.handle(s, "drive to tonopah")               # Tonopah = a city with the Clown Motel vignette
+    assert any(e.startswith("·") for e in r["events"])   # the odd little encounter surfaced
+    assert "tonopah" in s.flags.get("town_enc_seen", [])
+    # and it does NOT repeat on a second visit
+    s.place = world.get_poi("goldfield")
+    r2 = game.handle(s, "drive to tonopah")
+    assert not any(e.startswith("·") for e in r2["events"])
+
+def test_town_encounters_catalog_covers_cities():
+    from engine import town_encounters
+    import json
+    cities = [p["id"] for p in json.load(open("content/pois.json"))["pois"] if p.get("kind") == "city"]
+    covered = sum(1 for c in cities if town_encounters.has(c))
+    assert covered >= len(cities) * 0.95                  # ~every city has an odd little encounter

@@ -829,6 +829,12 @@ def _after_arrival(s: GameState, events: list):
         sl = places.suggest_line(s, "lodging")
         if sl:
             events.append(sl)
+    # the West-of-Loathing town vignette — one odd little encounter per town, ONCE, but only when
+    # nothing bigger (a story reveal, the owner, a stop, a set-piece) is already owning this arrival.
+    if (story_beat is None and drama_ev is None and npc is None and s.status == "playing"
+            and not encounters.stop_active(s) and not encounters.owner_active(s)):
+        from engine import town_encounters
+        events += town_encounters.surface(s)
     encounters.check_owner_deadline(s, events)
     bob_moment = bobmode.check_bob_deadline(s, events)   # the family-home call / cold-betrayal / lapse
     if bob_moment and drama_ev is None:
