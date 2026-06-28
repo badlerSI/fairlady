@@ -134,37 +134,33 @@ def resolve_deer(s: GameState, push: bool) -> list:
 
 # --------------------------------------------------------------- punctures, drowsiness, damage
 def puncture_chance(s: GameState, dest, push: bool) -> float:
-    """Odds of a flat on a leg. Higher on rough/desert grades and broken two-lanes, worse if you push,
-    worse tired. Low per-leg, real over a trip — that's why you carry a spare."""
+    """Odds of a flat on a leg. She's on newish tires, so this is RARE — but the spare well is full of
+    her compute and there's NO jack, so a flat is CATASTROPHIC (a tow, not a 20-minute change). Pushing
+    on rough desert grades is the main way to find a sidewall-killer."""
     from engine import rules
     terrain = float(getattr(dest, "terrain", 1.0))
-    base = 0.035 + max(0.0, terrain - 1.0) * 0.10     # washboard, cattle guards, blown retread
+    base = 0.010 + max(0.0, terrain - 1.0) * 0.030    # rare: ~1% flat valley, ~5% rough grade pushing
     if push:
-        base *= 1.6                                    # speed finds the pothole
+        base *= 1.7                                    # speed into a pothole is how good tires still die
     if rules.hours_awake(s) >= 16:
-        base *= 1.2
-    return min(0.4, base)
+        base *= 1.15
+    return min(0.10, base)
 
 
 def resolve_puncture(s: GameState, push: bool) -> list:
-    """A flat. With a spare in the hatch you change it (time, a little fatigue); without one you limp
-    on the donut/rim to the next town (she runs rough), or worse if you were pushing."""
-    from engine import inventory, rules, bond as _bond
-    if inventory.has(s, "spare"):
-        inventory._inv(s)["spare"] -= 1
-        if inventory._inv(s)["spare"] <= 0:
-            del inventory._inv(s)["spare"]
-        rules.advance_clock(s, 0.4)
-        s.fatigue = min(140.0, s.fatigue + 8.0)
-        return ["FLAT: a bang and a shudder — right rear's gone. You jack her up on the shoulder and "
-                "bolt on the full-size spare. Forty minutes and some skinned knuckles, but you're "
-                "rolling. (Spare used — buy another before the next empty stretch.)"]
+    """A flat — and it's catastrophic. No jack (the spare well is packed with her compute), so you can't
+    change it on the shoulder no matter what's in the hatch. She's down and needs a TOW to a tire shop."""
+    from engine import bond as _bond
+    s.flags["broken_down"] = True                      # tow-only, like the holed-piston knock breakdown
+    s.flags["breakdown_cause"] = "flat"
     s.flags["limp"] = True
-    _bond.adjust(s, -1.5, "ran a flat into the rim with no spare", "mark")
-    extra = " You were pushing, so the rim's tweaked too — find a real tire ASAP." if push else ""
-    return [f"FLAT: a bang and the wheel goes heavy — right rear, and NO spare in the hatch.{extra} You "
-            "limp her in on the rim, sparks and a smell of hot rubber (LIMP). 'Slow, ace. SLOW. Get me "
-            "to a tire before this gets expensive.'"]
+    _bond.adjust(s, -2.0, "blew a tire and there's no jack to save us", "mark")
+    hard = " You were pushing, and the sidewall let go like a gunshot." if push else ""
+    return [f"FLAT: a bang and the wheel drops onto the rim — right rear, blown.{hard} You pop the hatch "
+            "for the spare and remember: the spare well is full of her brain, and there's no jack on "
+            "board. You are not changing this on the shoulder. 'Well. THAT'S inconvenient. Call a tow, "
+            "ace — flatbed to a tire shop. I'll wait. It's not like I can walk.' (LIMP; you need a "
+            "'tow' to a town, or 'rewind' if you'd rather not have pushed it.)"]
 
 
 def resolve_knock(s: GameState, push: bool) -> list:
@@ -186,6 +182,7 @@ def resolve_knock(s: GameState, push: bool) -> list:
     sev = 0.18 * (n - 1) * (1.6 if push else 1.0)
     if roll(s, 71) < min(0.75, sev):
         s.flags["broken_down"] = True
+        s.flags["breakdown_cause"] = "knock"
         _bond.adjust(s, -4.0, "flogged me on regular until something let go", "deep")
         return ["KNOCK: a sharp BANG and a sudden loss of power — you held it on the regular too long and "
                 "she's holed a piston, detonation finally winning. She's making smoke and barely runs "

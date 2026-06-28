@@ -2564,15 +2564,13 @@ def test_body_shop_needs_a_town():
     assert "no body shop out here" in " ".join(r["events"]).lower()
 
 
-def test_puncture_with_spare_changes_it_without_a_spare_limps():
+def test_flat_is_catastrophic_tow_only_no_jack():
     from engine import luck, inventory
-    s = fresh()
-    inventory.add(s, "spare", 1)
-    ev = luck.resolve_puncture(s, push=False)
-    assert not inventory.has(s, "spare") and not s.flags.get("limp")   # spare used, rolling
-    s2 = fresh()
-    ev2 = luck.resolve_puncture(s2, push=False)
-    assert s2.flags.get("limp")                                        # no spare → on the rim, LIMP
+    s = fresh(); inventory.add(s, "spare", 1)        # a spare doesn't help — there's no jack
+    luck.resolve_puncture(s, push=False)
+    assert s.flags.get("broken_down") and s.flags.get("limp")
+    assert s.flags.get("breakdown_cause") == "flat"
+    assert inventory.has(s, "spare")                 # not consumed — it's useless
 
 
 def test_drowsy_only_fires_when_exhausted():

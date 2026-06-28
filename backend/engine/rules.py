@@ -555,13 +555,18 @@ def tow(state: GameState, prefer=None) -> list:
     state.fatigue = min(140.0, state.fatigue + 10.0)
     _register_arrival(state, dest, events)
     if broke_down:
+        cause = state.flags.pop("breakdown_cause", "knock")
         state.flags.pop("broken_down", None)
         state.flags.pop("limp", None)
+        if cause == "flat":
+            tail = ("A tire shop mounts a fresh one on the rim — back on four good tires. (Buy yourself "
+                    "a slower right foot; there's still no jack on board.)")
+        else:
+            tail = ("A shop welds her back together — but she's STILL got 87 in the rail, so she'll "
+                    "knock again the moment you drive off. Fill her with PREMIUM here before you go.")
         events.append(
             f"TOW: a flatbed hauls you {dist:.0f} mi to {dest.name} for ${cost:.0f} ({paid['method']}). "
-            "A shop welds her back together — but she's STILL got 87 in the rail, so she'll knock again "
-            "the moment you drive off. Fill her with PREMIUM here before you go. "
-            f"{_clock_str(state)}.")
+            f"{tail} {_clock_str(state)}.")
     else:
         events.append(
             f"TOW: a flatbed hauls you {dist:.0f} mi to {dest.name} for ${cost:.0f} ({paid['method']}). "

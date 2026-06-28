@@ -34,8 +34,9 @@ ITEMS = {
                      "desc": "field repairs — knock the limp out of her without a shop"},
     "first_aid":    {"name": "first-aid kit", "cuft": 0.2, "price": 25.0, "kind": "gear",
                      "desc": "just in case"},
-    "spare":        {"name": "full-size spare", "cuft": 3.0, "price": 120.0, "kind": "gear",
-                     "desc": "eats half the hatch, but a flat in the Black Rock is a death sentence"},
+    "spare":        {"name": "full-size spare (useless — no jack on board)", "cuft": 3.0, "price": 120.0,
+                     "kind": "gear", "desc": "a show-car joke: the spare well is full of her compute and "
+                     "there's no jack, so a flat is always a tow no matter what you carry"},
     "snacks":       {"name": "bag of road snacks", "cuft": 0.3, "price": 12.0, "kind": "food",
                      "desc": "takes the edge off hunger on a long leg"},
     "stinger":      {"name": "an olive-drab tube stenciled FIM-92 (do NOT ask)", "cuft": 1.2,
