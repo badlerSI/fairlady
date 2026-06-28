@@ -4,8 +4,39 @@ What the engine now exposes that the frontend **renders nothing of yet**, plus t
 set-pieces that need art. The deterministic Python engine is the source of truth; everything below is a
 field already in `snapshot()` or a scene the backend already routes to — the work is surfacing it.
 
-Coordinate with Codex on the location-plate art (it's mid-pass). New POIs are live on **placeholder
-plates borrowed from neighbors** — they render today, they're just not bespoke.
+> **Codex art is now wired.** 41 location plates Codex rendered (commit `f35491d`) were sitting
+> unreferenced on disk; their `pois.json` `scene` fields now point at them (`wm_<poi>`), so they show.
+> Remaining gaps below in §5.
+
+---
+
+## 0. NEW this batch (weather / cold-start / surveillance / lodging-ID) — all live in `snapshot()`
+
+`snapshot()` now carries a **`weather`** block and three new flags. None are drawn yet:
+
+| field | shape | meaning | suggested UI |
+|---|---|---|---|
+| `weather` | `{temp_high_f, temp_low_f, condition, weather_code, snowing, wind_mph, storm, cold_start_needed}` | the sky where she's parked | a small temp + condition chip on the dash; a storm/snow icon; a frost cue on `cold_start_needed` |
+| `phone` | bool | you still carry your phone (a tracker when hot) | a phone glyph that goes dark when ditched |
+| `cards_frozen` | bool | cops froze the cards — cash only | a red "CARDS FROZEN" badge; gray out the card pay option |
+| `has_fake_id` | bool | a no-questions ID in your pocket | a small ID chip |
+
+New player-facing **command**: `weather` / `forecast` (returns conditions + any front the radio's
+tracking). New **verbs** the UI could surface as buttons in context: `unplug` (SEMA), `ditch the phone`
+(when hot), `get a fake id` (in a town), `sleep at a no-questions motel`, `cold start` / `she won't
+start` (a cold morning).
+
+New mechanics worth a visible cue:
+- **Weather** — a temp/condition readout, a **storm front** indicator (the `forecast` telegraphs one a
+  few days out — great for an "outrace the storm" HUD beat), and snow/chains on mountain legs.
+- **Cold start** — on a frosty morning the car needs the pump-pump-hold ritual; `weather.cold_start_needed`
+  is the cue. A "she's cold — ask how to start her" prompt sells it.
+- **Phone tracking** — at high *driver* heat the phone pings towers (the engine emits `PHONE:` lines);
+  surface a "your phone is a liability" nudge + a **ditch** affordance.
+- **Card freeze** — at MOST-WANTED driver heat the plastic dies (cash only, ATM still works). A scary
+  one-time "they're closing in" treatment.
+- **Lodging / ID** — a real motel scans your ID (a mark when hot); a **no-questions motel** (pricier,
+  cash) or a **fake ID** dodges it. Worth showing the lodging choice with its trade-off.
 
 ---
 
@@ -77,5 +108,25 @@ loop** (see §3).
 
 ---
 
-*Engine state for all of the above is verified green by the test suite (`backend/tests/test_engine.py`)
-and two adversarial playtest sweeps. This doc is the surfacing checklist for the frontend.*
+## 5. Codex art — what's wired, what's still missing
+
+The plate pipeline is **already live** (`pois.json` `scene = "wm_<poi>"` → `frontend/scenes_wm/<poi>.png`,
+graceful fallback if a plate is absent). This batch wired **41** rendered-but-unreferenced plates.
+
+Still open for Codex (next art pass):
+- **The 3 newer POIs** still alias a neighbor's plate — bespoke art would help: `hayward` (Zoox, on
+  `wm_oakland_aisha`), `santa_nella` (Pea Soup, on `wm_fresno`), `black_rock_city` (acid playa, on
+  `wm_gerlach`). Add `manifest.json` entries + a `wm_<poi>` scene field + the `.png`.
+- **Shared-kind plates not yet wired through `KIND_SCENE`** — `amusement.png`, `museum.png`, `track.png`,
+  `gas.png`, etc. exist on disk but the kind→scene map in `frontend/scenes.js` returns bare keys, so they
+  render the hand-drawn JS scene, not the Codex plate. Wiring `KIND_SCENE` to `wm_` ids (or pointing those
+  POIs' `scene` fields at the plates) would surface them. Lower priority — those kinds already render
+  something.
+- **~12 marquee POIs still need bespoke renders** (Codex hadn't reached them): e.g. `fremont`,
+  `goldfield`, `seven_magic`, `neon_museum`, `racetrack_playa`, `salvation_mountain`, `integratron`,
+  `madonna_inn` — these currently fall to a generic drive/kind skin.
+
+---
+
+*Engine state for all of the above is verified green by the test suite (`backend/tests/test_engine.py`,
+341 tests) and three adversarial playtest sweeps. This doc is the surfacing checklist for the frontend.*
