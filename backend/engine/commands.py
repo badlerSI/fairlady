@@ -27,6 +27,15 @@ def parse(raw: str) -> Tuple[str, dict]:
                "what's around here", "whats around here", "what can i see", "have a look around"):
         return ("look", {})
 
+    # charge a flat battery with the trickle charger (the SEMA one, now in the hatch)
+    if (low in ("charge the battery", "charge battery", "charge her", "charge her up", "trickle charge",
+                "use the trickle charger", "use the charger", "hook up the charger", "hook up the trickle charger",
+                "jump the battery", "jump her", "charge the car", "recharge the battery", "recharge her",
+                "use trickle charger", "plug in the charger", "wait for the battery")
+            or ("charge" in low and any(w in low for w in ("battery", "her", "car", "trickle")))
+            or ("trickle" in low and "charg" in low)):
+        return ("charge", {})
+
     # ditch your phone — it's a tracker when the heat's on you
     if (low in ("ditch the phone", "ditch my phone", "ditch phone", "ditch the cell", "toss the phone",
                 "toss my phone", "throw out my phone", "throw away my phone", "destroy my phone",

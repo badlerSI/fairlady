@@ -84,6 +84,17 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 .d-row.cooling .d-k { color: var(--orange); }
 .d-row.snow .d-k { color: var(--cyan); }
 .d-row.snow .d-v { color: var(--paper); }
+/* weather/surveillance/car batch rows */
+.d-row.wx .d-k { color: var(--cyan); }
+.d-row.cold .d-k, .d-row.cold .d-v { color: var(--cyan); }
+.d-row.alert { color: var(--red); text-shadow: 0 0 7px rgba(226,59,46,.5); animation: despFlick 2.4s steps(1) infinite; }
+.d-row.alert .d-k, .d-row.alert .d-v { color: var(--red); }
+.d-row.warn .d-k, .d-row.warn .d-v { color: var(--orange); }
+.d-row.bolo .d-k, .d-row.bolo .d-v { color: var(--orange); }
+.d-row.dark { color: var(--cyan-dim); opacity: .8; }
+.d-row.dark .d-k, .d-row.dark .d-v { color: var(--cyan-dim); }
+.d-row.bob .d-k, .d-row.bob .d-v { color: var(--paper); }
+.d-row.dog .d-k { color: var(--cyan); }
 .d-k { color: var(--cyan-dim); min-width: 48px; letter-spacing: 1px; }
 .d-v { color: var(--paper); overflow: hidden; text-overflow: ellipsis; }
 .gauge { display: inline-flex; gap: 1px; align-items: center; }

@@ -240,9 +240,34 @@ def _unplug_charger(s: GameState) -> list:
             "7.5 cubic feet — pack smart for the empty quarter.)"]
 
 
+def _charge_battery(s: GameState) -> list:
+    """Clip the SEMA trickle charger to a flat battery and wait it out — a few hours gone, but the
+    battery comes back AND the morning warms up, so she fires clean afterward. No charger? No dice."""
+    if not weather.battery_dead(s) and not s.flags.get("battery_low"):
+        return ["BATTERY: she's got plenty of crank in her right now — no need to sit on the charger."]
+    if not inventory.has(s, "trickle_charger"):
+        return ["BATTERY: you don't have the trickle charger — it's a dead battery and no way to feed "
+                "it. (You pulled one off her at SEMA; if you dropped it, you'll need a jump from a "
+                "passing good Samaritan, or 'rewind'.)"]
+    rules.advance_clock(s, 3.0)                            # a few hours on the charger…
+    s.flags.pop("battery_dead", None)
+    s.flags.pop("battery_low", None)
+    s.flags["crank_count"] = 0
+    weather.mark_started(s)                                # by now the sun's up and she's warm-blooded
+    from engine import survival
+    body = survival.drain(s)                               # sitting around still costs you bladder/hunger
+    return ["BATTERY: you clip the trickle charger across the terminals and settle in to wait. Three "
+            "hours of nothing — coffee, the radio, the cold burning off as the sun climbs. When you "
+            "thumb the key again she spins up strong and CATCHES, warm air finally moving through the "
+            "carbs. Topped off and thawed out. (~3 hrs gone; she starts clean now.)"] + body
+
+
 def _cold_start(s: GameState) -> list:
     """The pump-pump-hold ritual. The FIRST cold morning you have to ask her how (she teaches it); after
     that you know it. Starting her marks the engine warm for the day so the next drive just goes."""
+    if weather.battery_dead(s):
+        return ["COLD-START: no point in the pump-pump-hold — there's no crank left in her. You flattened "
+                "the battery. Hook up the trickle charger and wait it out ('charge the battery')."]
     if not weather.cold_start_needed(s):
         if weather.daily(s)["low_f"] <= 45:
             return ["START: she's cool but not stone-cold — turns over on the first crank. No ritual "
@@ -1240,6 +1265,10 @@ def handle(s: GameState, raw: str) -> dict:
         events = _cold_start(s)
         scene, voice, audio = _narrate(s, events, raw)
         return _result(s, events, scene, voice=audio)
+    if verb == "charge" and not prologue.active(s):
+        events = _charge_battery(s)
+        scene, voice, audio = _narrate(s, events, raw)
+        return _result(s, events, scene, voice=audio)
     if verb == "weather":            # the sky here, plus any front the radio's tracking
         return _result(s, [], "", info="\n".join(weather.report(s)))
     if verb == "closures":           # the mountain-pass / season report
@@ -1937,7 +1966,10 @@ def handle(s: GameState, raw: str) -> dict:
                       "when the trail runs hot enough — keep moving through the cities."]
         player_text = ""
     elif verb == "turnkey":                     # she's already running by now — unless it's a cold start
-        if weather.cold_start_needed(s):
+        if weather.battery_dead(s):
+            events = ["IGNITION: nothing but a click — the battery's flat from cranking. 'charge the "
+                      "battery' with the trickle charger and wait it out."]
+        elif weather.cold_start_needed(s):
             events = _cold_start(s)
         else:
             events = ["IGNITION: she's already turned over and idling, ace — we're past that."]

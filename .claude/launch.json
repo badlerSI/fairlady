@@ -1,11 +1,6 @@
 {
   "version": "0.0.1",
   "configurations": [
-    {
-      "name": "fairlady",
-      "runtimeExecutable": ".venv/bin/python",
-      "runtimeArgs": ["-m", "uvicorn", "app:app", "--app-dir", "backend", "--host", "127.0.0.1", "--port", "8739"],
-      "port": 8739
-    }
+    { "name": "fairlady", "runtimeExecutable": "bash", "runtimeArgs": ["run.sh"], "port": 8739 }
   ]
 }

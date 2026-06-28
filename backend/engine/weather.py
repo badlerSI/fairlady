@@ -183,6 +183,29 @@ def cold_start_needed(s: GameState) -> bool:
 
 def mark_started(s: GameState) -> None:
     s.flags[f"cold_started_{s.clock.date().isoformat()}"] = True
+    s.flags["crank_count"] = 0                             # a clean start clears the cranking strain
+
+
+# ------------------------------------------------------------------ the battery (over-cranking kills it)
+CRANK_LIMIT = 4                                            # this many fruitless cold cranks flattens her
+
+
+def crank(s: GameState) -> bool:
+    """Count one fruitless cold crank. Returns True if THIS one flattened the battery."""
+    n = s.flags.get("crank_count", 0) + 1
+    s.flags["crank_count"] = n
+    if n >= CRANK_LIMIT and not s.flags.get("battery_dead"):
+        s.flags["battery_dead"] = True
+        return True
+    return False
+
+
+def battery_dead(s: GameState) -> bool:
+    return bool(s.flags.get("battery_dead"))
+
+
+def cranks_left(s: GameState) -> int:
+    return max(0, CRANK_LIMIT - s.flags.get("crank_count", 0))
 
 
 # ------------------------------------------------------------------ storms vs chain controls
@@ -266,4 +289,5 @@ def snapshot(s: GameState) -> dict:
         "temp_high_f": w["high_f"], "temp_low_f": w["low_f"], "condition": w["condition"],
         "weather_code": w["code"], "snowing": w["snow"], "wind_mph": w["wind_mph"],
         "storm": w["storm"], "cold_start_needed": cold_start_needed(s),
+        "battery_dead": battery_dead(s),
     }

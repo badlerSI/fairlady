@@ -3521,3 +3521,31 @@ def test_bob_and_owned_skip_the_cold_start():
     s.flags["bob_mode"] = True;  assert not weather.cold_start_needed(s)   # the loaner is a modern automatic
     s.flags.pop("bob_mode"); s.flags["no_heat"] = True
     assert not weather.cold_start_needed(s)                      # a car that's legally yours, maintained
+
+
+# ================================================================== trickle charger / dead battery
+def test_overcranking_kills_the_battery_and_the_charger_revives_it():
+    from engine import world, weather, inventory
+    from datetime import datetime
+    s = fresh(); s.place = world.get_poi("reno"); s.fuel_l = 40.0; s.flags["favor_filled"] = True
+    s.clock = datetime.fromisoformat("2025-12-01T07:30:00")          # a cold morning
+    inventory.add(s, "trickle_charger", 1)                           # pulled it at SEMA
+    assert weather.cold_start_needed(s)
+    for _ in range(weather.CRANK_LIMIT):                             # brute-force crank instead of asking
+        game.handle(s, "drive to carson city")
+    assert s.flags.get("battery_dead")                              # flattened
+    assert s.place.poi_id == "reno"                                 # didn't move
+    # the ask won't help a dead battery
+    assert any("no crank left" in e or "no point" in e for e in game.handle(s, "she won't start")["events"])
+    # charge it: a few hours pass, the day warms, she starts
+    t0 = s.clock
+    r = game.handle(s, "charge the battery")
+    assert any("BATTERY" in e for e in r["events"])
+    assert not s.flags.get("battery_dead") and (s.clock - t0).total_seconds() >= 3 * 3600
+    assert not weather.cold_start_needed(s)                          # warmed up + started
+
+def test_dead_battery_needs_the_charger():
+    from engine import world
+    s = fresh(); s.place = world.get_poi("reno"); s.flags["battery_dead"] = True
+    r = game.handle(s, "charge the battery")
+    assert any("don't have the trickle charger" in e for e in r["events"])   # no charger, no dice

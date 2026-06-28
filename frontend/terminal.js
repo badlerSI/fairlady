@@ -112,7 +112,65 @@ function updateDash(s) {
       : (s.bond_band === 'COOL'
         ? `<div class="d-row cooling"><span class="d-k">♡</span><span class="d-v">COOLING</span><span class="d-v dim">she's pulling away · warm her back</span></div>` : ``)) +
     (s.snow_line != null && s.snow_line <= 1.25
-      ? `<div class="d-row snow"><span class="d-k">❄</span><span class="d-v">WINTER</span><span class="d-v dim">passes closing · 'passes'</span></div>` : ``);
+      ? `<div class="d-row snow"><span class="d-k">❄</span><span class="d-v">WINTER</span><span class="d-v dim">passes closing · 'passes'</span></div>` : ``) +
+    weatherRows(s) + carRows(s) + surveillanceRows(s) + companionRows(s);
+}
+
+// ---- the sky: a temp readout + cold-start / dead-battery cues -------------------------
+const WX_GLYPH = { snow: "❄", storm: "🌧", rain: "🌧", wind: "🌬", clear: "☀", cloudy: "☁" };
+function weatherRows(s) {
+  const w = s.weather; if (!w) return "";
+  const g = WX_GLYPH[w.weather_code] || "·";
+  let out = `<div class="d-row wx"><span class="d-k">${g}</span><span class="d-v">${Math.round(w.temp_high_f)}°/${Math.round(w.temp_low_f)}°</span><span class="d-v dim">${esc(w.condition)}${w.wind_mph >= 25 ? " · wind " + Math.round(w.wind_mph) : ""} · 'weather'</span></div>`;
+  if (w.battery_dead)
+    out += `<div class="d-row alert"><span class="d-k">🔋</span><span class="d-v">DEAD BATTERY</span><span class="d-v dim">cranked her flat · 'charge the battery'</span></div>`;
+  else if (w.cold_start_needed)
+    out += `<div class="d-row cold"><span class="d-k">❄</span><span class="d-v">COLD START</span><span class="d-v dim">she won't catch cold · 'cold start'</span></div>`;
+  if (w.storm)
+    out += `<div class="d-row snow"><span class="d-k">⚠</span><span class="d-v">STORM</span><span class="d-v dim">chains / closures ahead · 'forecast'</span></div>`;
+  return out;
+}
+
+// ---- the car: knock, breakdown, fuel grade, stick skill, the loaner ------------------
+function carRows(s) {
+  let out = "";
+  if (s.active_car === "bob")
+    out += `<div class="d-row bob"><span class="d-k">🚙</span><span class="d-v">${esc(s.car_name || "BOB")}</span><span class="d-v dim">the loaner${s.bob_days_left != null ? " · " + s.bob_days_left + "d left" : ""}</span></div>`;
+  if (s.broken_down)
+    out += `<div class="d-row alert"><span class="d-k">✖</span><span class="d-v">BROKEN</span><span class="d-v dim">${s.breakdown_cause === "flat" ? "flat, no jack" : "holed a piston"} · 'tow'</span></div>`;
+  else if (s.knocking)
+    out += `<div class="d-row warn"><span class="d-k">⚠</span><span class="d-v">KNOCK</span><span class="d-v dim">running ${esc(s.fuel_grade || "regular")} · fill PREMIUM</span></div>`;
+  else if (s.fuel_grade)
+    out += `<div class="d-row"><span class="d-k">⛽</span><span class="d-v">${s.fuel_grade === "premium" ? "PREMIUM" : "REGULAR"}</span><span class="d-v dim">${s.fuel_grade === "premium" ? "the good stuff" : "she takes 91+ · knock risk"}</span></div>`;
+  if (s.stick_skill != null && s.stick_skill < 100)
+    out += `<div class="d-row"><span class="d-k">⚙</span><span class="d-v">STICK ${s.stick_skill}%</span><span class="d-v dim">green clutch · stalls in town/SF</span></div>`;
+  if (s.damage && s.damage !== "clean")
+    out += `<div class="d-row warn"><span class="d-k">▤</span><span class="d-v">${esc(s.damage.toUpperCase())}</span><span class="d-v dim">body damage ${s.damage_pct || 0}% · body shop</span></div>`;
+  return out;
+}
+
+// ---- surveillance: the BOLO floor, your phone, frozen cards, a fake ID ----------------
+function surveillanceRows(s) {
+  let out = "";
+  if (s.bolo_floor > 0 && !s.bought)
+    out += `<div class="d-row bolo"><span class="d-k">▣</span><span class="d-v">BOLO FLOOR ${s.bolo_floor}</span><span class="d-v dim">heat can't fade below it · change the car</span></div>`;
+  if (s.cards_frozen)
+    out += `<div class="d-row alert"><span class="d-k">🚫</span><span class="d-v">CARDS FROZEN</span><span class="d-v dim">cash only · they're closing in</span></div>`;
+  if (s.phone === false)
+    out += `<div class="d-row dark"><span class="d-k">📵</span><span class="d-v">DARK</span><span class="d-v dim">phone ditched · off the cell net</span></div>`;
+  if (s.has_fake_id)
+    out += `<div class="d-row"><span class="d-k">🪪</span><span class="d-v">FAKE ID</span><span class="d-v dim">no-questions check-ins</span></div>`;
+  return out;
+}
+
+// ---- what's riding with you: finds + Lucky the dog -----------------------------------
+function companionRows(s) {
+  let out = "";
+  if (s.find_score > 0)
+    out += `<div class="d-row"><span class="d-k">★</span><span class="d-v">${s.find_score} finds</span><span class="d-v dim">roadside haul · 'inventory'</span></div>`;
+  if (s.has_dog)
+    out += `<div class="d-row dog"><span class="d-k">🐕</span><span class="d-v">LUCKY</span><span class="d-v dim">road dog, asleep on the tunnel</span></div>`;
+  return out;
 }
 
 // the one big diegetic button: after you agree, she waits for you to turn the key all the way

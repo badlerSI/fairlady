@@ -232,7 +232,14 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
 
     # the road's open — but a COLD MORNING won't catch on the first crank. She needs the pump-pump-hold.
     # The first time you have to ASK her how (she teaches it); after that it's just a beat of friction.
+    # And keep cranking her blindly and you'll FLATTEN the battery — then it's the trickle charger or a wait.
     from engine import weather
+    if weather.battery_dead(state) and not selfdrive and not state.flags.get("self_driving"):
+        events.append("DEAD BATTERY: you turn the key and get a single tired click, then nothing — you "
+                      "cranked her flat on the cold. She's not going anywhere on her own. Clip the trickle "
+                      "charger you pulled at SEMA onto the battery and give her a few hours ('charge the "
+                      "battery') — the sun'll be well up by then, too.")
+        return events
     if weather.cold_start_needed(state) and not selfdrive and not state.flags.get("self_driving"):
         if state.flags.get("cold_start_known"):
             weather.mark_started(state)
@@ -240,10 +247,17 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
                           "cold, coughs, then catches on the second turn, like you've done it a hundred "
                           "times. (Cold morning — but you know her now.)")
         else:
-            events.append("COLD-START: you turn the key and she just cranks — rrr-rrr-rrr — and won't "
-                          "catch. It's freezing, the carbs are bone dry, and she's a carbureted classic, "
-                          "not a key-fob crossover. She knows the trick cold. ASK her how to start her "
-                          "('cold start' / 'she won't start').")
+            if weather.crank(state):                       # this blind crank flattened her
+                events.append("DEAD BATTERY: rrr — rrr — rr… click. That's it — you cranked her flat "
+                              "trying to brute-force a cold carbureted engine, and now there's not enough "
+                              "juice to turn her over at all. Hook up the trickle charger from the hatch "
+                              "and wait it out ('charge the battery').")
+            else:
+                events.append(f"COLD-START: you turn the key and she just cranks — rrr-rrr-rrr — and "
+                              f"won't catch. Freezing, carbs bone dry, a carbureted classic, not a "
+                              f"key-fob crossover. She knows the trick cold — ASK her ('cold start' / "
+                              f"'she won't start'). (Keep blindly cranking and you'll flatten the "
+                              f"battery: {weather.cranks_left(state)} left.)")
             return events
 
     from engine import survival as _surv
