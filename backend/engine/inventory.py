@@ -39,6 +39,8 @@ ITEMS = {
                      "there's no jack, so a flat is always a tow no matter what you carry"},
     "snacks":       {"name": "bag of road snacks", "cuft": 0.3, "price": 12.0, "kind": "food",
                      "desc": "takes the edge off hunger on a long leg"},
+    "tire_chains":  {"name": "set of tire chains", "cuft": 0.5, "price": 70.0, "kind": "gear",
+                     "desc": "the ONLY way past a chain-control checkpoint when it's snowing on a grade"},
     "stinger":      {"name": "an olive-drab tube stenciled FIM-92 (do NOT ask)", "cuft": 1.2,
                      "price": None, "kind": "ordnance",
                      "desc": "it was not here this morning. it is here now. one shot of pure bad idea"},
@@ -54,6 +56,8 @@ ALIASES = {
     "first aid kit": "first_aid", "medkit": "first_aid", "spare": "spare", "spare tire": "spare",
     "snacks": "snacks", "snack": "snacks", "food": "snacks", "stinger": "stinger", "missile": "stinger",
     "launcher": "stinger", "rocket": "stinger",
+    "chains": "tire_chains", "tire chains": "tire_chains", "tire_chains": "tire_chains",
+    "snow chains": "tire_chains", "set of chains": "tire_chains",
 }
 
 

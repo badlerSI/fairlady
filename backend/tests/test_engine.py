@@ -3000,3 +3000,21 @@ def test_plate_swap_resets_the_bolo_floor():
     assert heat.bolo_floor(s) > 30
     garage.swap_plate(s)
     assert heat.bolo_floor(s) == 0.0                      # the swap gave the BOLO a stale plate
+
+
+def test_chain_controls_block_without_chains_pass_with():
+    from engine import season, inventory
+    from datetime import datetime
+    s = fresh(); s.clock = datetime.fromisoformat("2025-12-15T12:00:00")
+    # find a chain-controlled snow-zone dest right now
+    dest = None
+    for pid in ("truckee", "south_lake_tahoe", "park_city", "flagstaff", "bishop"):
+        d = world.get_poi(pid)
+        if d and season.chain_controlled(s, d) and not season.pass_closed(s, d):
+            dest = d; break
+    assert dest is not None, "expected a chain-controlled snow town in mid-December"
+    assert season.chain_block(s, dest)                       # no chains → turned back
+    inventory.add(s, "tire_chains", 1)
+    assert season.chain_block(s, dest) is None               # chains → pass
+    # desert/coastal high-terrain is never chain-controlled
+    assert not season.chain_controlled(s, world.get_poi("death_valley"))

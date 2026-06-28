@@ -60,6 +60,48 @@ def pass_closed(s: GameState, dest) -> str | None:
             f"to it next time.")
 
 
+# CHAIN CONTROLS — the rung BELOW a full closure. As the snow line drops onto a mountain route, Caltrans
+# and UDOT post chain controls (R1/R2): you may pass ONLY with chains. No chains = turned back at the
+# checkpoint. A high-terrain dest within CHAIN_BAND of the snow line (snowy, but not yet gated shut) is
+# chain-controlled. (Ben: "chain controls will get you good.")
+CHAIN_BAND = 0.10           # terrain within this much BELOW the snow line = chains required
+# real chain-control country in Nov-Dec: the Sierra/Tahoe corridor, the eastern Sierra, the Wasatch,
+# the high Colorado Plateau, the northern CA volcanoes — NOT desert/coastal high terrain (Death Valley,
+# Big Sur, the wine-country road courses), which the snow set already excludes.
+CHAIN_ZONES = {
+    "south_lake_tahoe", "truckee", "kingvale", "donner", "tahoe_city", "kirkwood", "heavenly",
+    "mammoth_lakes", "lee_vining", "bishop", "june_lake", "mount_shasta_city", "mount_shasta",
+    "park_city", "alta", "brighton", "sundance", "deer_valley", "heber", "midway",
+    "flagstaff", "snowbowl", "big_bear", "wrightwood", "yosemite", "sequoia", "kings_canyon",
+    "great_basin", "bryce", "capitol_reef", "cedar_city", "brian_head", "grand_canyon_north", "bodie",
+}
+
+
+def chain_controlled(s: GameState, dest) -> bool:
+    """True if the road to `dest` is under a chain control right now (snowing on a mountain grade, not
+    yet fully closed). Restricted to real snow country; independent of whether YOU carry chains."""
+    pid = getattr(dest, "poi_id", None)
+    if pid not in CHAIN_ZONES and pid not in SNOW_PASSES:
+        return False
+    terr = float(getattr(dest, "terrain", 1.0))
+    line = snow_line(s)
+    return (line - CHAIN_BAND) <= terr < line        # snowy band, below the full-closure threshold
+
+
+def chain_block(s: GameState, dest) -> str | None:
+    """A player-facing refusal if the route is chain-controlled and you don't have tire chains; None
+    otherwise (open, or you're carrying chains)."""
+    from engine import inventory
+    if not chain_controlled(s, dest):
+        return None
+    if inventory.has(s, "tire_chains"):
+        return None
+    return (f"CHAINS: a Caltrans chain-control checkpoint stops you short of {dest.name} — it's snowing "
+            "on the grade and it's R2: chains REQUIRED, no exceptions, and you don't have any. The "
+            "trooper waves you back. (Buy TIRE CHAINS at a mountain town first — 'buy chains' — take a "
+            "lower road, or 'rewind' and route around the white stuff.)")
+
+
 # --------------------------------------------------------------------- the dated set-pieces
 def check_calendar(s: GameState, events: list) -> None:
     """Two dated events ride on top of the snow line, checked on every arrival/clock advance:

@@ -228,7 +228,8 @@ def parse(raw: str) -> Tuple[str, dict]:
             or ("reserve" in low and any(w in low for w in ("use", "pour", "add", "tank")))):
         return ("pourjerry", {})
     _GEAR = ("jerry", "gas can", "fuel can", "water", "cooler", "ice chest", "tent", "sleeping bag",
-             "tool", "first aid", "first-aid", "medkit", "spare tire", "spare", "snack")
+             "tool", "first aid", "first-aid", "medkit", "spare tire", "spare", "snack", "chain",
+             "chains", "snow chain")
     if (low.startswith(("buy", "get", "grab", "pick up", "purchase", "i need", "i want", "stock up"))
             and any(g in low for g in _GEAR)):
         return ("invbuy", {"text": raw})

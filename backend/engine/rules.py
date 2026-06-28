@@ -150,6 +150,12 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
     if closed:
         events.append(closed)
         return events
+    # the rung below closure: a CHAIN CONTROL. No chains, no pass — turned back at the checkpoint.
+    chained = season.chain_block(state, dest)
+    if chained:
+        events.append(chained)
+        return events
+    chains_on = season.chain_controlled(state, dest)   # you have chains and the grade's controlled
 
     from engine import survival as _surv
     eff_awake = hours_awake(state) - _surv.caffeine_offset(state)   # coffee buys you a few more hours
@@ -240,6 +246,11 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
             f"({rt['source']}). Burned {need_l:.1f} L. Tank {state.fuel_l:.1f}/{state.tank_l:.0f} L "
             f"(~{state.range_mi:.0f} mi left). {_clock_str(state)}."
         )
+        if chains_on:
+            advance_clock(state, 0.5)            # chains mean 30 mph and a white-knuckle crawl
+            events.append("CHAINS: you stop at the control and wrap the chains on — clink, clink, frozen "
+                          "fingers — then crawl the white grade at 30, snow ticking off the spade. 'Slow "
+                          "is smooth, ace. Smooth is alive.' (chains on — slower, but you made it through.)")
         if push:
             events.append("DRIVE: you pushed hard. Faster, thirstier, and more eyes on you.")
         if selfdrive:
