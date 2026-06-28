@@ -2225,9 +2225,12 @@ def test_long_legs_open_a_conversation_and_music_fast_forwards():
         s = fresh(); s.fuel_l = 40.0
         r = game.handle(s, "drive to beatty")              # ~120 mi, reachable, > 30 min
         assert s.flags.get("transit") and s.place.poi_id == "sema_chevron"   # talking, not there yet
-        game.handle(s, "tell me something true")           # a chat turn — still rolling
+        game.handle(s, "ok, put on music")                 # too soon — she wants a real conversation first
+        assert s.flags.get("transit") and s.place.poi_id == "sema_chevron"   # FF refused, still rolling
+        for i in range(game.MIN_DRIVE_TALK):               # at least 5 exchanges before you can skip
+            game.handle(s, f"tell me something true, take {i}")
         assert s.flags.get("transit")
-        game.handle(s, "ok, put on music")                 # fast-forward
+        game.handle(s, "ok, put on music")                 # NOW the fast-forward lands
         assert not s.flags.get("transit") and s.place.poi_id == "beatty"
     finally:
         config.DRIVE_CONVERSATIONS = old

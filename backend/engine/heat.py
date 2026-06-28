@@ -351,18 +351,29 @@ def social_fuel(s: GameState) -> dict | None:
                                 "gone. One selfie and we're his story."]}}
 
 
-def clerk_charm(s: GameState) -> list:
+def clerk_charm(s: GameState, riz: float = 5.0) -> list:
     """The skill move at a curious pump: instead of hiding the car or showing it off, you TALK to
     the kid about it — the real build, gracious and generous. He stops filming and starts listening.
-    A fan is not a witness. Earns Riz and costs no heat. (The opposite of getting posted.)"""
+    A fan is not a witness. Earns Riz (scaled by how WELL you sold it) and costs no heat. This is also
+    the RIZ TUTORIAL — the first clean clerk charm explains what Riz is and why it matters."""
     s.flags.pop("clerk_curious", None)
-    riz = 5.0
+    riz = round(max(1.0, riz), 1)
     s.riz = round(s.riz + riz, 1)
     s.flags["fans"] = s.flags.get("fans", 0) + 1
-    return [f"CLERK: you crouch by the fender and actually talk to him — the 3.1 L28 stroker, the "
-            f"triple Mikunis, why the wheels are what they are. He lowers the phone and just listens, "
-            f"then shakes your hand like you taught him something. A fan, not a witness. "
-            f"Riz +{riz:.0f} → {s.riz:.0f}. (No heat — charm beats a cover story every time.)"]
+    quality = ("He lowers the phone, riveted." if riz >= 6 else
+               "He lowers the phone and listens." if riz >= 3 else
+               "He half-listens, but he stops filming.")
+    out = [f"CLERK: you crouch by the fender and actually talk to him — the 3.1 L28 stroker, the triple "
+           f"Mikunis, why the wheels are what they are. {quality} A fan, not a witness. "
+           f"Riz +{riz:.0f} → {s.riz:.0f}. (No heat — charm beats a cover story every time.)"]
+    if not s.flags.get("riz_tutorial_done"):
+        s.flags["riz_tutorial_done"] = True
+        out.append("ACE: 'That — what you just did — is RIZZ, ace. The whole game runs on it. Talk to "
+                   "people right and you get more of it, and Riz is the currency for everything that "
+                   "matters out here: talking past a cop, winning over a stranger, even pulling off "
+                   "things that shouldn't be possible. The better you read the room, the more you bank. "
+                   "Welcome to it.'")
+    return out
 
 
 def clerk_resolve(s: GameState, humble: bool) -> list:

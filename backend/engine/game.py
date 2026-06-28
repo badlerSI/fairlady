@@ -871,6 +871,7 @@ def _do_drive(s: GameState, dest, push: bool):
 # Any leg longer than ~30 min IRL opens a conversation: she talks for as long as the drive should
 # last, or until something happens (oh DEER), and you can 'put on music' to fast-forward to the end.
 TRANSIT_MIN_HOURS = 0.5
+MIN_DRIVE_TALK = 5            # exchanges you must have on a leg before you can fast-forward (Ben's call)
 _FAST_FORWARD = ("music", "put on music", "play music", "quiet", "be quiet", "hush", "silence",
                  "shut up and drive", "just drive", "just get there", "get there", "get us there",
                  "keep going", "keep driving", "drive on", "skip", "skip ahead", "fast forward",
@@ -1203,10 +1204,20 @@ def handle(s: GameState, raw: str) -> dict:
         # fast-forward only on a SHORT/explicit command, so 'keep going on that story' stays chat
         ff = (low.strip() in _FAST_FORWARD
               or (len(low.split()) <= 4 and any(w in low for w in _FAST_FORWARD)))
-        is_chat = (verb in ("say", "talk") and tr.get("conv", 0) > 0 and not ff)
+        # she wants a REAL conversation every leg — you can't skip to the radio until you've actually
+        # talked a while (MIN_DRIVE_TALK exchanges). Ben: "at least a good 5 back and forth."
+        enough = tr.get("talked", 0) >= MIN_DRIVE_TALK
+        if ff and not enough:
+            need = MIN_DRIVE_TALK - tr.get("talked", 0)
+            _autosave(s)
+            return _result(s, [], "ACE: 'Not yet, ace. We just got rolling and I get precious few miles "
+                           "with you — I'm not spending them on the radio. Talk to me a while first; "
+                           "THEN I'll put something on.'",
+                           info=f"(she wants the conversation — ~{need} more exchange(s) before you can skip)")
+        is_chat = (verb in ("say", "talk") and not ff)
         if is_chat:
-            tr["conv"] -= 1
-            last = tr["conv"] <= 0
+            tr["talked"] = tr.get("talked", 0) + 1
+            last = False                              # the chat runs as long as you keep talking
             beat = romance.free_text_beat(s, raw)     # love-at-first-sight / the spade can land mid-drive
             # the drive conversation IS the prime bonding moment — talking here warms her, faster
             # when you ask about her (this was missing: free-roam talk farmed bond but transit didn't)
@@ -1222,11 +1233,12 @@ def handle(s: GameState, raw: str) -> dict:
             # that was making drive-chat ignore real questions/confessions); only a thin line gets the
             # ambient transit narration to fill the silence.
             substantive = len((raw or "").split()) >= 3
-            t_drama = None if substantive else (TRANSIT_WRAP if last else TRANSIT_OPENER)
+            t_drama = None if substantive else TRANSIT_OPENER
+            now_enough = tr.get("talked", 0) >= MIN_DRIVE_TALK
             scene, voice, audio = _narrate(s, [], raw, drama=t_drama)
             return _result(s, ([riz_line] if riz_line else []), scene, voice=audio,
-                           info=("(almost there — last word, or 'music' to arrive)" if last
-                                 else "(rolling — keep talking, or 'put on music' to get there)"))
+                           info=("(good talk — keep going, or 'put on music' to arrive)" if now_enough
+                                 else "(rolling — keep talking to her)"))
         # fast-forward: she puts on music and brings you in (the leg + everything on arrival resolves).
         # A NEW 'drive to Y' mid-roll REDIRECTS to Y (don't silently land at the old destination); any
         # other non-chat verb just brings you in to where you were already headed.
@@ -1324,7 +1336,13 @@ def handle(s: GameState, raw: str) -> dict:
         if verb in ("drive", "home"):
             events += _heat.clerk_resolve(s, humble=True)        # you left — slid by
         elif verb == "say" and car_talk and not showoff:
-            events += _heat.clerk_charm(s)                       # talked the build — a fan, +riz, no heat
+            # the better you sell the build, the more Riz — judged by the DM (clever) + spec depth
+            from engine import judge
+            jv = judge.assess(s, "clerk", raw, difficulty=2, context="charming a starstruck gas-station kid")
+            riz_amt = 3.0 + min(4.0, spec_hits(raw) * 1.5) + (2.0 if jv.get("clever") else 0.0)
+            if encounters.score_pitch(raw) >= 3:
+                riz_amt += 1.0
+            events += _heat.clerk_charm(s, riz=riz_amt)          # talked the build — a fan, +scaled riz, no heat
         elif verb == "say":
             events += _heat.clerk_resolve(s, humble=not showoff)
         elif verb == "camo":
@@ -1400,7 +1418,7 @@ def handle(s: GameState, raw: str) -> dict:
                 and rt["distance_mi"] <= s.range_mi + 1.0      # don't open a chat for a leg you can't finish
                 and not _too_tired and not _snowed):           # ...or one she'll refuse (sleep / snowed pass)
             conv = min(4, max(2, round(rt["duration_h"] * 1.5)))
-            s.flags["transit"] = {"dest": args["dest"], "conv": conv}
+            s.flags["transit"] = {"dest": args["dest"], "conv": conv, "talked": 0}
             s.flags.pop("where_to", None)
             _autosave(s)
             scene, voice, audio = _narrate(s, [], "", drama=TRANSIT_OPENER)
