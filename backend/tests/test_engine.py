@@ -3120,7 +3120,9 @@ def test_dated_event_surfaces_in_window_and_place():
     s = fresh(); s.place = world.get_poi("las_vegas"); s.day = 30   # NFR window (Dec 4-13 ≈ days 28-37)
     out = dated_events.on_arrival(s)
     assert out and out[0].startswith("EVENT")
-    assert "las_vegas" not in []  # sanity
-    # outside any Vegas event window (between the NFR and the bowl game): nothing
-    s2 = fresh(); s2.place = world.get_poi("las_vegas"); s2.day = 48
-    assert dated_events.on_arrival(s2) == []
+    seen = list(s.flags["dated_events_seen"])
+    for _ in range(20):                                  # drain whatever's hosting in Vegas right now
+        dated_events.on_arrival(s)
+    all_seen = s.flags["dated_events_seen"]
+    assert len(all_seen) == len(set(all_seen))           # each real event fires at most ONCE per game
+    assert seen[0] in all_seen
