@@ -49,9 +49,10 @@ class AceNarrator(Narrator):
         # stateless CLI harness AND across web requests — the in-process dict couldn't (a fresh narrator
         # per request never had history). game._narrate records the chosen line back into s.flags.
         recent = list(snapshot.get("recent_replies") or [])
+        tank_ok = (snapshot.get("tank_pct", 100) or 0) >= 22 and snapshot.get("status") == "playing"
         try:
             reply, audio = self._ask(prompt, persona, session_id)
-            text = self._clean(reply)
+            text = self._clean(reply, tank_ok=tank_ok)
             # the ace8 endpoint collapses onto one near-fixed line on 'vibe' prompts; a FUZZY match against
             # recent replies triggers escalating retries, and a persistent collapse falls back to the
             # deterministic stub narrator so the player never sees a literal repeat.
@@ -62,9 +63,9 @@ class AceNarrator(Narrator):
                          "earlier line. Answer what they just said with a COMPLETELY different sentence — "
                          "new image, new angle. " * tries)
                 reply, audio = self._ask(prompt + nudge, persona, session_id)
-                text = self._clean(reply)
-            if not text:
-                raise ValueError("empty reply")
+                text = self._clean(reply, tank_ok=tank_ok)
+            if not text:                         # empty (e.g. an all-gas-pitch reply) → deterministic stub
+                return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
             # a still-repeating OR still-malformed reply → deterministic stub (never show the player junk)
             if self._norm(text) in recent or self._looks_malformed(text):
                 return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
@@ -137,24 +138,61 @@ class AceNarrator(Narrator):
         """Residual JSON/serialization debris after cleaning → treat as a bad reply (fall back to stub)."""
         return bool(re.search(r'(["\']?\w+["\']?\s*:\s*["\'])|(\}\s*\]|\]\s*\})|(\\["\'])', text))
 
+    # the weak rop1 model fabricates specs NOT on the sheet (a 0-60, a compression ratio, a turbo on a
+    # naturally-aspirated triple-carb engine) — instructions alone don't stop it, so we GUARD THE OUTPUT.
+    _FABRICATED_SPEC = re.compile(
+        r"\b(0\s*[-–to]{1,3}\s*60|zero to sixty|quarter[\s-]?mile|trap speed|"
+        r"compression(?:\s+ratio)?|\d+(?:\.\d+)?\s*:\s*1|redline|rev[\s-]?limit(?:er)?|"
+        r"\d+\s*psi|boost|turbo|supercharg|blower|forced induction|wastegate|intercool|"
+        r"dyno|mahle|wiseco|carrillo|cp pistons?|je pistons?|i-?beam|h-?beam)\b", re.I)
+    _FORCED_INDUCTION = re.compile(r"\b(boost|turbo|supercharg|blower|forced induction|\d+\s*psi|wastegate|intercool)\b", re.I)
+
     @classmethod
-    def _clean(cls, text: str) -> str:
+    def _guard_specs(cls, text: str) -> str:
+        """If the reply invents an off-sheet spec, replace it with an in-character deflection (the spec
+        sheet is the source of truth; she may NOT make up a number that isn't on it)."""
+        if not cls._FABRICATED_SPEC.search(text):
+            return text
+        if cls._FORCED_INDUCTION.search(text):
+            return ("Boost? There's no turbo on me, ace — triple Mikuni 50 PHH sidedrafts, naturally "
+                    "aspirated, and that's the whole song. The 3.1 stroker pulls hard past five grand "
+                    "on carbs alone.")
+        variants = [
+            "Honestly? That's one I'd have to pop the hood to answer — he degreed it in at 3am and never "
+            "wrote it on me. I know what's on the badge; the rest you'd have to ask the man who built me.",
+            "Couldn't tell you that number off the top of my head — I run what I run, I don't carry the "
+            "whole spec sheet in my head. Ask me about the carbs or the gearbox, those I know cold.",
+            "That's not a figure I keep close, ace. He built me; I just drive me. What I'll tell you for "
+            "sure is 300-plus horses, 270 of torque, and a stroker that doesn't quit.",
+        ]
+        return variants[int(hashlib.sha1(text.encode("utf-8")).hexdigest(), 16) % len(variants)]
+
+    # the model gets gas-obsessed and pushes fueling even on a healthy tank — strip those sentences when
+    # the tank is fine (the engine telegraphs real low-fuel through its own pressure cues, not her riffing)
+    _GAS_PUSH = ("find a gas station", "find a station", "get to a gas station", "let's get gas",
+                 "we need gas", "need to fuel", "fuel up", "top off", "run on gasoline", "run on gas",
+                 "gas station", "fill the tank", "get some gas", "find fuel", "running low on gas",
+                 "i run on gasoline", "low on fuel")
+
+    @classmethod
+    def _clean(cls, text: str, tank_ok: bool = False) -> str:
         if not text:
             return text
         text = cls._strip_artifacts(text)
         # drop any whole SENTENCE that carries a leaked gas-favor on-ramp (the game owns the real favor
-        # via its own prologue beats; the endpoint's on-ramp is always noise). The fail-safe below keeps
-        # the raw line if stripping would empty it (e.g. a genuine pure-pitch opening reply).
+        # via its own prologue beats; the endpoint's on-ramp is always noise). When the tank is fine,
+        # ALSO drop the model's spontaneous gas-pushing ("let's find a gas station") — the engine
+        # telegraphs real low-fuel through its own pressure cues, she shouldn't invent the urgency.
+        bad = cls._LEAK_PHRASES + (cls._GAS_PUSH if tank_ok else ())
         sentences = re.split(r"(?<=[.!?…])\s+", text)
-        kept = [snt for snt in sentences if not any(p in snt.lower() for p in cls._LEAK_PHRASES)]
-        if kept:
-            text = " ".join(kept).strip()
+        kept = [snt for snt in sentences if not any(p in snt.lower() for p in bad)]
+        text = " ".join(kept).strip()        # may be empty → narrate() falls back to the stub
         # trim a runaway dangling half-sentence the model sometimes tacks on
         if text and text[-1] not in ".!?\"'…)":
             parts = re.split(r"(?<=[.!?…])\s+", text)
             if len(parts) > 1:
                 text = " ".join(parts[:-1]).strip()
-        return text or "…"  # never return empty
+        return cls._guard_specs(text) if text else ""
 
     def _frame(self, persona, s, events, player_text, extra=None):
         cues = self._cues(events, s)

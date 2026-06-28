@@ -2785,8 +2785,8 @@ def test_gas_favor_leak_and_artifacts_stripped():
     assert "favor" not in A._clean("So, the desert. Do me a favor though — help a girl get gas?").lower()
     # JSON/list bracket artifacts off both ends
     assert A._clean('["Brown suits you, stranger."]').startswith("Brown")
-    # fail-safe: a pure-pitch line never empties to nothing
-    assert A._clean("Help me get gas, two blocks.").strip() not in ("", "…")
+    # an all-pitch line now empties (narrate falls back to the stub rather than show a pure gas pitch)
+    assert A._clean("Help me get gas, two blocks.") == ""
 
 
 def test_alma_backstory_reveals_once_when_aboard():
@@ -2888,3 +2888,20 @@ def test_endpoint_session_is_fresh_per_prompt():
     nar._ask("PROMPT-A", "persona", "game1"); a = seen["sid"]
     nar._ask("PROMPT-B", "persona", "game1"); b = seen["sid"]
     assert a != b                              # different prompts → different endpoint sessions
+
+
+def test_spec_fabrication_output_guard():
+    from adapters.ace import AceNarrator as A
+    # off-sheet fabrications get deflected
+    assert "10.5" not in A._clean("My static compression is 10.5:1, forged Mahle pistons.")
+    assert "5.2" not in A._clean("I'll do 0-60 in 5.2 seconds, trap 118 in the quarter.")
+    assert "turbo" in A._clean("The turbo sees full song at 12 psi.").lower()  # NA-deflection mentions no turbo
+    assert "naturally aspirated" in A._clean("The turbo sees 12 psi of boost.").lower()
+    # on-sheet specs pass through untouched
+    assert A._clean("Triple Mikuni 50 PHH carbs, 270 lb-ft — I pull hard.") == \
+        "Triple Mikuni 50 PHH carbs, 270 lb-ft — I pull hard."
+
+def test_gas_push_stripped_only_when_tank_ok():
+    from adapters.ace import AceNarrator as A
+    assert A._clean("Stars are nice, but let's find a gas station.", tank_ok=True) == ""   # → stub fallback
+    assert "gas station" in A._clean("Stars are nice, but let's find a gas station.", tank_ok=False)
