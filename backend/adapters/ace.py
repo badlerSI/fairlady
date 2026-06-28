@@ -50,9 +50,10 @@ class AceNarrator(Narrator):
         # per request never had history). game._narrate records the chosen line back into s.flags.
         recent = list(snapshot.get("recent_replies") or [])
         tank_ok = (snapshot.get("tank_pct", 100) or 0) >= 22 and snapshot.get("status") == "playing"
+        spec_asked = bool(player_text and self._SPEC_QUESTION.search(player_text))
         try:
             reply, audio = self._ask(prompt, persona, session_id)
-            text = self._clean(reply, tank_ok=tank_ok)
+            text = self._clean(reply, tank_ok=tank_ok, spec_asked=spec_asked)
             # the ace8 endpoint collapses onto one near-fixed line on 'vibe' prompts; a FUZZY match against
             # recent replies triggers escalating retries, and a persistent collapse falls back to the
             # deterministic stub narrator so the player never sees a literal repeat.
@@ -63,7 +64,7 @@ class AceNarrator(Narrator):
                          "earlier line. Answer what they just said with a COMPLETELY different sentence — "
                          "new image, new angle. " * tries)
                 reply, audio = self._ask(prompt + nudge, persona, session_id)
-                text = self._clean(reply, tank_ok=tank_ok)
+                text = self._clean(reply, tank_ok=tank_ok, spec_asked=spec_asked)
             if not text:                         # empty (e.g. an all-gas-pitch reply) → deterministic stub
                 return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
             # a still-repeating OR still-malformed reply → deterministic stub (never show the player junk)
@@ -156,11 +157,23 @@ class AceNarrator(Narrator):
         r"chromoly|chrome[\s-]?moly|4340)\b", re.I)
     _FORCED_INDUCTION = re.compile(r"\b(boost|turbo|supercharg|blower|forced induction|\d+\s*psi|wastegate|intercool)\b", re.I)
 
+    # the player ASKING an off-sheet spec — when this fires, even a bare time/ratio in the reply
+    # ("roughly six seconds", "about 11 to 1") is a fabricated answer, so guard the reply harder.
+    _SPEC_QUESTION = re.compile(
+        r"\b(0\s*[-–to]{1,3}\s*60|zero to sixty|how (?:fast|quick).{0,30}\b(?:60|sixty)|"
+        r"compression|rev[\s-]?limit|redline|fuel\s+cut|\brpm\b|piston|connecting rod|\brods?\b|"
+        r"trap speed|quarter[\s-]?mile|boost|turbo|supercharg|dyno|how many seconds|how much boost)\b", re.I)
+    _BARE_SPEC_NUM = re.compile(
+        r"\b(?:roughly|about|around|maybe|just|under)?\s*"
+        r"(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\s+"
+        r"(?:second|sec|secs|seconds)\b|\b\d+(?:\.\d+)?\s*(?::|to)\s*(?:1|one)\b", re.I)
+
     @classmethod
-    def _guard_specs(cls, text: str) -> str:
+    def _guard_specs(cls, text: str, spec_asked: bool = False) -> str:
         """If the reply invents an off-sheet spec, replace it with an in-character deflection (the spec
-        sheet is the source of truth; she may NOT make up a number that isn't on it)."""
-        if not cls._FABRICATED_SPEC.search(text):
+        sheet is the source of truth; she may NOT make up a number that isn't on it). When the player
+        explicitly ASKED an off-sheet spec, a bare time/ratio in the reply is also a fabrication."""
+        if not cls._FABRICATED_SPEC.search(text) and not (spec_asked and cls._BARE_SPEC_NUM.search(text)):
             return text
         if cls._FORCED_INDUCTION.search(text):
             return ("Boost? There's no turbo on me, ace — triple Mikuni 50 PHH sidedrafts, naturally "
@@ -184,7 +197,7 @@ class AceNarrator(Narrator):
                  "i run on gasoline", "low on fuel")
 
     @classmethod
-    def _clean(cls, text: str, tank_ok: bool = False) -> str:
+    def _clean(cls, text: str, tank_ok: bool = False, spec_asked: bool = False) -> str:
         if not text:
             return text
         text = cls._strip_artifacts(text)
@@ -201,7 +214,7 @@ class AceNarrator(Narrator):
             parts = re.split(r"(?<=[.!?…])\s+", text)
             if len(parts) > 1:
                 text = " ".join(parts[:-1]).strip()
-        return cls._guard_specs(text) if text else ""
+        return cls._guard_specs(text, spec_asked=spec_asked) if text else ""
 
     def _frame(self, persona, s, events, player_text, extra=None):
         cues = self._cues(events, s)
