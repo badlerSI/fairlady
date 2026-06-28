@@ -87,10 +87,12 @@ def _e_owner(s, rng):
 def _e_recognized(s, rng):
     good = rng.random() < 0.5
     if good:
-        gift = round(20 + rng.random() * 40)
+        gift = round(10 + rng.random() * 20)        # a friendlier, smaller drip — not a faucet
         s.cash = round(s.cash + gift, 2)
+        _heat.add(s, 3, "a fan recognized the car — friendly, but still a witness", "mark", axis="car")
         return {"tag": "DRAMA", "id": "recognized_good",
-                "lines": [f"DRAMA: someone knew the car — a fan of the build pressed ${gift} on you 'for fuel.'"],
+                "lines": [f"DRAMA: a fan of the build pressed ${gift} on you 'for fuel' — and got a good "
+                          f"look at the car. (heat {s.heat:.0f})"],
                 "cue": f"a stranger recognized the car from photos of the build and, half-starstruck, pushed "
                        f"${gift} into your hand 'for gas' before you could say no",
                 "stub": [f"That kid knew exactly what I am. Slipped you ${gift} 'for fuel' and walked off "
