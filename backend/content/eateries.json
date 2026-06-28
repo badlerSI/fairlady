@@ -1,0 +1,408 @@
+[
+  {
+    "town": "Tonopah",
+    "state": "NV",
+    "name": "Clown Motel",
+    "type": "lodging",
+    "note": "Famously billed 'America's Scariest Motel' \u2014 clown-themed rooms next to the historic Tonopah cemetery. The iconic must-stop oddity of the route."
+  },
+  {
+    "town": "Tonopah",
+    "state": "NV",
+    "name": "Mizpah Hotel",
+    "type": "lodging",
+    "note": "1907 silver-boom grande dame, restored by the Cline family in 2011; member of Historic Hotels of America. Reputedly haunted by the 'Lady in Red.'"
+  },
+  {
+    "town": "Tonopah",
+    "state": "NV",
+    "name": "Tonopah Brewing Company",
+    "type": "drink",
+    "note": "Local craft brewery and BBQ spot; the Mizpah even sells a brewery package with beer coupons. Best craft beer for miles."
+  },
+  {
+    "town": "Tonopah",
+    "state": "NV",
+    "name": "Tonopah Liquor Company",
+    "type": "drink",
+    "note": "Family-owned bar in a 1907 building \u2014 atmospheric old-Nevada watering hole downtown."
+  },
+  {
+    "town": "Tonopah",
+    "state": "NV",
+    "name": "Jack Dempsey Room",
+    "type": "drink",
+    "note": "Bar/restaurant inside the Mizpah named for the boxer, who once worked here as a bouncer/saloon man."
+  },
+  {
+    "town": "Beatty",
+    "state": "NV",
+    "name": "Happy Burro Chili & Beer",
+    "type": "food",
+    "note": "Beatty's most famous spot \u2014 award-winning chili verde, chili burgers, ice-cold beer, western patio. A genuine desert institution."
+  },
+  {
+    "town": "Beatty",
+    "state": "NV",
+    "name": "Sourdough Saloon",
+    "type": "drink",
+    "note": "Laid-back western bar with dollar bills covering the walls and ceiling; burgers, cocktails, and gateway-to-Death-Valley character."
+  },
+  {
+    "town": "Beatty",
+    "state": "NV",
+    "name": "Mel's Diner",
+    "type": "food",
+    "note": "Voted 'Best Dive in Nevada'; known for chicken fried steak. Classic roadside diner energy."
+  },
+  {
+    "town": "Beatty",
+    "state": "NV",
+    "name": "Exchange Club Motel",
+    "type": "lodging",
+    "note": "Pet-friendly motel built in 1906 \u2014 a long-running historic stop on the edge of Death Valley."
+  },
+  {
+    "town": "Baker",
+    "state": "CA",
+    "name": "Mad Greek Cafe",
+    "type": "food",
+    "note": "Eye-catching blue-and-white Greek roadside cafe famous for gyros and date shakes; featured on Diners, Drive-Ins and Dives. The Baker landmark eatery."
+  },
+  {
+    "town": "Baker",
+    "state": "CA",
+    "name": "Alien Fresh Jerky",
+    "type": "food",
+    "note": "UFO-themed roadside shop with a 'crashed' flying saucer facade and hundreds of jerky flavors. Pure desert kitsch on I-15."
+  },
+  {
+    "town": "Austin",
+    "state": "NV",
+    "name": "International Cafe & Bar",
+    "type": "food",
+    "note": "Genuinely Nevadan bar inside a building built in Virginia City in 1859 and moved to Austin in 1863 \u2014 said to be the oldest structure in Nevada. Burgers and Indian tacos."
+  },
+  {
+    "town": "Austin",
+    "state": "NV",
+    "name": "Pony Canyon Motel",
+    "type": "lodging",
+    "note": "Budget-friendly motel on Highway 50 'the Loneliest Road'; clean rooms with A/C, fridge, free parking."
+  },
+  {
+    "town": "Ely",
+    "state": "NV",
+    "name": "Cellblock Steakhouse",
+    "type": "food",
+    "note": "Ely's only fine dining, set in a former jail \u2014 you can dine inside an actual barred cell. Best cuts of meat in White Pine County."
+  },
+  {
+    "town": "Ely",
+    "state": "NV",
+    "name": "Jailhouse Motel & Casino",
+    "type": "lodging",
+    "note": "Jail-themed motel/casino in historic downtown Ely; home to the Cellblock Steakhouse and Smash N Grab burgers."
+  },
+  {
+    "town": "Ely",
+    "state": "NV",
+    "name": "Hotel Nevada & Gambling Hall",
+    "type": "lodging",
+    "note": "Historic 1929 hotel-casino, once the tallest building in Nevada; downtown Ely landmark with vintage neon."
+  },
+  {
+    "town": "Ely",
+    "state": "NV",
+    "name": "Juanita y Chava",
+    "type": "food",
+    "note": "Authentic Mexican \u2014 street tacos, burritos, and a well-loved salsa bar. Local favorite."
+  },
+  {
+    "town": "Bishop",
+    "state": "CA",
+    "name": "Erick Schat's Bakkery",
+    "type": "food",
+    "note": "Eastern Sierra landmark since 1938, famous for its original Sheepherder Bread. The essential Bishop pilgrimage stop."
+  },
+  {
+    "town": "Bishop",
+    "state": "CA",
+    "name": "Mountain Rambler Brewery",
+    "type": "drink",
+    "note": "Downtown brewpub with handcrafted beers and New American food; favorite of climbers and hikers off Highway 395."
+  },
+  {
+    "town": "Bishop",
+    "state": "CA",
+    "name": "Holy Smoke Texas Style BBQ",
+    "type": "food",
+    "note": "Dry-rubbed brisket and Texas-style smoked meats; a strong Bishop BBQ pick."
+  },
+  {
+    "town": "Bishop",
+    "state": "CA",
+    "name": "WayFinder Bishop",
+    "type": "lodging",
+    "note": "Boutique downtown inn on Bishop Creek \u2014 design-forward base for Eastern Sierra adventures."
+  },
+  {
+    "town": "Lone Pine",
+    "state": "CA",
+    "name": "Alabama Hills Cafe & Bakery",
+    "type": "food",
+    "note": "#1-ranked Lone Pine restaurant; hearty breakfast/lunch with daily fresh-baked breads. Named for the nearby movie-backdrop Alabama Hills."
+  },
+  {
+    "town": "Lone Pine",
+    "state": "CA",
+    "name": "Mt. Whitney Restaurant",
+    "type": "food",
+    "note": "Family spot at Highway 395 & Whitney Portal Rd serving the best burgers in town \u2014 beef, buffalo, or elk. Three meals a day."
+  },
+  {
+    "town": "Lone Pine",
+    "state": "CA",
+    "name": "Dow Villa Motel",
+    "type": "lodging",
+    "note": "Historic 1923 motel-and-hotel that hosted Hollywood Western stars (John Wayne et al.) shooting in the Alabama Hills."
+  },
+  {
+    "town": "Kanab",
+    "state": "UT",
+    "name": "Rocking V Cafe",
+    "type": "food",
+    "note": "Kanab's best-regarded restaurant \u2014 art-filled slow-food eatery in an 1892 mercantile building; meats to vegan. Open daily."
+  },
+  {
+    "town": "Kanab",
+    "state": "UT",
+    "name": "Vermillion 45",
+    "type": "food",
+    "note": "Casual bistro with French, Belgian and Italian dishes plus fresh seafood and steaks. Top date-night/gourmet pick in Kanab."
+  },
+  {
+    "town": "Kanab",
+    "state": "UT",
+    "name": "Parry Lodge",
+    "type": "lodging",
+    "note": "Historic 1931 motor lodge on the National Register; hosted golden-age Hollywood stars. Heated pool, on-site dining, Old Barn Theater."
+  },
+  {
+    "town": "Kanab",
+    "state": "UT",
+    "name": "Best Friends Roadhouse and Mercantile",
+    "type": "lodging",
+    "note": "Pet-centric inn tied to the famous Best Friends Animal Sanctuary; unusually welcoming to road-trippers traveling with animals."
+  },
+  {
+    "town": "Moab",
+    "state": "UT",
+    "name": "Milt's Stop & Eat",
+    "type": "food",
+    "note": "Beloved Moab landmark since 1954 \u2014 classic burgers, fries, and hand-spun shakes from a vintage roadside stand."
+  },
+  {
+    "town": "Moab",
+    "state": "UT",
+    "name": "Moab Brewery",
+    "type": "drink",
+    "note": "Moab's original microbrewery (since 1996); home of Dead Horse Ale. Big family-friendly menu after red-rock adventures."
+  },
+  {
+    "town": "Moab",
+    "state": "UT",
+    "name": "Desert Bistro",
+    "type": "food",
+    "note": "Casual-upscale bistro in a historic building \u2014 elk tenderloin, bacon-wrapped dates. Reservations recommended in peak season."
+  },
+  {
+    "town": "Moab",
+    "state": "UT",
+    "name": "Sorrel River Ranch",
+    "type": "lodging",
+    "note": "Riverfront ranch resort on Highway 128 along the Colorado River outside town; with on-site dining and dramatic canyon setting."
+  },
+  {
+    "town": "Tropic",
+    "state": "UT",
+    "name": "Stone Hearth Grille",
+    "type": "food",
+    "note": "Scratch-made all-natural dining with hilltop Bryce Canyon views; seasonal (spring through fall). Best fine-ish dining near Bryce."
+  },
+  {
+    "town": "Tropic",
+    "state": "UT",
+    "name": "IDK Barbecue",
+    "type": "food",
+    "note": "Small-town smoked-meats joint near Bryce Canyon with a cult following for its brisket and sauce."
+  },
+  {
+    "town": "Tropic",
+    "state": "UT",
+    "name": "Stone Canyon Inn",
+    "type": "lodging",
+    "note": "Started as a 2000 B&B, now cabins, bungalows and treehouses just outside Bryce Canyon \u2014 a standout boutique stay."
+  },
+  {
+    "town": "Tropic",
+    "state": "UT",
+    "name": "Bryce Canyon Coffee Company",
+    "type": "drink",
+    "note": "Local coffee, hot chocolate and fresh baked goods \u2014 the morning stop before sunrise at the hoodoos."
+  },
+  {
+    "town": "Williams",
+    "state": "AZ",
+    "name": "Cruiser's Cafe 66",
+    "type": "food",
+    "note": "1930s filling-station-turned-cafe in downtown Williams with restored gas pumps, smoked BBQ, full bar and patio. Quintessential Route 66."
+  },
+  {
+    "town": "Williams",
+    "state": "AZ",
+    "name": "Pine Country Restaurant",
+    "type": "food",
+    "note": "Williams comfort-food institution famous for its homemade pies. At 107 N Grand Canyon Blvd."
+  },
+  {
+    "town": "Williams",
+    "state": "AZ",
+    "name": "Grand Canyon Railway Hotel",
+    "type": "lodging",
+    "note": "298-room hotel beside the 1908 depot where the Grand Canyon Railway departs; Spenser's Pub has an 1800s bar. AAA 3-diamond."
+  },
+  {
+    "town": "Sedona",
+    "state": "AZ",
+    "name": "Elote Cafe",
+    "type": "food",
+    "note": "Sedona's most celebrated restaurant \u2014 chef Jeff Smedstad's Mexican/Southwestern; the namesake elote and smoked-brisket enchiladas. Reservations essential."
+  },
+  {
+    "town": "Sedona",
+    "state": "AZ",
+    "name": "Mariposa Latin Inspired Grill",
+    "type": "food",
+    "note": "Upscale South-American-inspired grill with floor-to-ceiling red-rock views; spectacular at sunset. Resort-casual dress code, reservations required."
+  },
+  {
+    "town": "Sedona",
+    "state": "AZ",
+    "name": "Coffee Pot Restaurant",
+    "type": "food",
+    "note": "Sedona breakfast institution beneath Coffee Pot Rock \u2014 famous for '101 omelettes.'"
+  },
+  {
+    "town": "Sedona",
+    "state": "AZ",
+    "name": "L'Auberge de Sedona",
+    "type": "lodging",
+    "note": "Luxury creekside resort on Oak Creek with an acclaimed on-site restaurant; one of Sedona's signature stays."
+  },
+  {
+    "town": "Flagstaff",
+    "state": "AZ",
+    "name": "Pizzicletta",
+    "type": "food",
+    "note": "Tiny beloved pizzeria with wood-fired Neapolitan pies cooked in ~90 seconds; you can take the pizza next door to Mother Road."
+  },
+  {
+    "town": "Flagstaff",
+    "state": "AZ",
+    "name": "Mother Road Brewing Company",
+    "type": "drink",
+    "note": "Flagstaff Route 66 brewery at 7 S. Mikes Pike; relaxed taproom, often paired with Pizzicletta pies."
+  },
+  {
+    "town": "Flagstaff",
+    "state": "AZ",
+    "name": "Diablo Burger",
+    "type": "food",
+    "note": "Creative burgers on branded English muffins using 100% local grass-fed beef; a downtown Flagstaff favorite committed to regional sourcing."
+  },
+  {
+    "town": "Flagstaff",
+    "state": "AZ",
+    "name": "Tinderbox Kitchen",
+    "type": "food",
+    "note": "Upscale dinner-only comfort food (buffalo meatloaf, juniper-cured venison); the adjacent Annex is a more casual lounge."
+  },
+  {
+    "town": "Mesquite",
+    "state": "NV",
+    "name": "CasaBlanca Resort & Casino",
+    "type": "lodging",
+    "note": "450+ room tower with 24-hour casino, championship golf, spa, and Katherine's fine dining. Mesquite's flagship resort."
+  },
+  {
+    "town": "Mesquite",
+    "state": "NV",
+    "name": "Eureka Casino Resort",
+    "type": "lodging",
+    "note": "Employee-owned Mesquite casino resort known for friendly service and lavish suites with jetted tubs."
+  },
+  {
+    "town": "Mesquite",
+    "state": "NV",
+    "name": "Gregory's Mesquite Grill",
+    "type": "food",
+    "note": "Steaks and Italian fare; a go-to sit-down dinner option in Mesquite."
+  },
+  {
+    "town": "Primm",
+    "state": "NV",
+    "name": "Primm Valley Resort & Casino",
+    "type": "lodging",
+    "note": "State-line I-15 casino-hotel at the NV/CA border; as of June 2026 Terrible's signed to operate the Primm properties, keeping this desert outpost alive."
+  },
+  {
+    "town": "Primm",
+    "state": "NV",
+    "name": "Buffalo Bill's Resort & Casino",
+    "type": "lodging",
+    "note": "Home of the Desperado roller coaster on the state line. Note: shuttered as a full-time destination in 2025 \u2014 a haunting, half-empty landmark, perfect road-trip lore."
+  },
+  {
+    "town": "St George",
+    "state": "UT",
+    "name": "Painted Pony",
+    "type": "food",
+    "note": "Fine dining in Ancestor Square \u2014 modern American with a Southwestern twist and locally sourced ingredients. St. George's top special-occasion table."
+  },
+  {
+    "town": "St George",
+    "state": "UT",
+    "name": "Xetava Gardens Cafe",
+    "type": "food",
+    "note": "Calming patio cafe in the Kayenta Art Village surrounded by red rock; brunch, lunch, dinner \u2014 gyro salad and Mahi tacos."
+  },
+  {
+    "town": "St George",
+    "state": "UT",
+    "name": "Inn at Entrada",
+    "type": "lodging",
+    "note": "Premier St. George resort with luxury casitas, fireplaces, jetted tubs and private patios beneath the red cliffs."
+  },
+  {
+    "town": "Hawthorne",
+    "state": "NV",
+    "name": "El Capitan Lodge & Casino",
+    "type": "lodging",
+    "note": "Hawthorne's main casino-hotel, anchoring this Army-depot town on Walker Lake; the El Capitan Diner serves burgers and all-day breakfast."
+  },
+  {
+    "town": "Hawthorne",
+    "state": "NV",
+    "name": "Maggie's Restaurant",
+    "type": "food",
+    "note": "Local Hawthorne sit-down restaurant at 785 E St \u2014 one of the town's few but valued dining spots."
+  },
+  {
+    "town": "Gerlach",
+    "state": "NV",
+    "name": "Bruno's Country Club & Motel",
+    "type": "lodging",
+    "note": "Founded 1952 by Italian immigrant Bruno Selmi on the edge of the Black Rock Desert (Burning Man's playa) \u2014 a 50-room motel, cafe and bar/casino in one. Famous meat-filled ravioli. The only real stop in Gerlach."
+  }
+]
