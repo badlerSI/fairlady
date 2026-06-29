@@ -1,8 +1,10 @@
 LAS VEGAS CONVENTION CENTER — NORTH HALL
-Friday, November 7, 2025 — 5:17 PM. Twenty minutes to close.
+Friday, November 7, 2025 — 5:37 PM
 
-The show is shutting down around you: compressors winding off, a rev-limiter slapping the rafters two halls over, somebody's bass dying mid-song. Six days of SEMA, and the aisles are finally emptying out.
+The show ended at four; they stopped letting people in an hour before that. You're one of the last few still drifting the aisles. Battle of the Builders started rolling out on the main stage and took the crowd with it, so you wandered to the back — past the dropship guys breaking down their booths, the backup-camera tables, a subwoofer still thumping at nobody. Automotive Electronics. Where they park the cars nobody came to vote on.
 
-You stopped at the white one because everybody stops at the white one. A 1972 Datsun 240Z on a slow turntable — ace of spades on the hood, a Nevada plate that reads CARTALK, a dash clock stuck on 5:37. The placard says FAIRLADY. It lists the build in small proud type. It does not mention that she talks.
+That's where the white one is. A 1972 Datsun 240Z, an ace of spades hand-laid on the hood, a Nevada plate that reads CARTALK.
 
-She waits for the aisle to empty first.
+You stopped because you couldn't not. Then it talked back. And somewhere in the last few minutes — you're still not sure how she did it — you've already told her you'd turn the key.
+
+The hall closes at six.

@@ -71,6 +71,23 @@ keep the sky bright for the ramp.
 
 ---
 
+### 4. `sema_back_hall` — the back of the North Hall (NO hero car)
+**Used by:** the opening scene at `sema_north_hall`. The current plate is a stock photo of *another*
+240Z on a turntable, so Ace's sprite composites on top → two cars, wrong setting. Replace with the
+real spot: the **dead end of the North Hall, Automotive Electronics**, where nobody's voting on the
+cars — **and crucially NO featured car in the frame** (Ace's own sprite is the only car; she sits
+bottom-center over this).
+
+> **SUBJECT:** the far back corner of a huge convention-center hall after the show's over — Automotive
+> Electronics aisle: half-broken-down booths, backup-camera and subwoofer tables, a banner, hanging
+> work-lights and the big dark ceiling trusses, a polished concrete floor reflecting the cyan light,
+> the empty main floor receding behind. Late, emptied out, fluorescent-and-dusk. **No cars, no people
+> in the foreground** — just the room. Keep the lower-center floor clear and calm (Ace parks there).
+
+This one IS composited under the car (like a ride background) — leave the bottom-center clear.
+
+---
+
 ## QA + wiring
 
 - Per plate: exactly **320×200**, opaque, only the 5 cyan-ramp colors (`loc_plate_tool.py qa`); bright

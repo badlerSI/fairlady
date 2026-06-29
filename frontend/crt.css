@@ -9,15 +9,15 @@
   --green: #34c759;
   --paper: #f6f4eb;
   --glow: 0 0 6px rgba(56, 214, 236, 0.55);
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --display: "Space Grotesk", system-ui, sans-serif;
+  --mono: "VT323", ui-monospace, "SF Mono", Menlo, Consolas, monospace;   /* CRT-terminal phosphor */
+  --display: "Silkscreen", "VT323", system-ui, sans-serif;                /* chunky pixel labels */
   --jp: "Yuji Syuku", serif;
 }
 * { box-sizing: border-box; }
 html, body {
   margin: 0; height: 100%;
   background: radial-gradient(ellipse at 50% 40%, #0b1518 0%, #060809 75%, #000 100%);
-  color: var(--cyan); font-family: var(--mono); font-size: 15px; line-height: 1.5; overflow: hidden;
+  color: var(--cyan); font-family: var(--mono); font-size: 19px; line-height: 1.32; overflow: hidden;
 }
 
 #crt {
@@ -41,7 +41,7 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 .brand { font-weight: 700; letter-spacing: 3px; text-shadow: var(--glow); }
 .brand .z { color: var(--orange); }
 .brand .kanji { font-family: var(--jp); color: var(--cyan); letter-spacing: 0; margin: 0 3px; font-weight: 400; }
-.sys { color: var(--cyan-dim); font-size: 11px; letter-spacing: 1px; }
+.sys { color: var(--cyan-dim); font-size: 13px; letter-spacing: 1px; }
 .sys .dot { color: var(--green); }
 
 /* ---------- the two-panel deck (Where in the USA is Carmen Sandiego) ---------- */
@@ -112,17 +112,17 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 #scroll::-webkit-scrollbar-thumb { background: var(--cyan-faint); }
 
 .block { margin: 0 0 14px; }
-.intro { color: var(--cyan-dim); white-space: pre-wrap; font-size: 13px; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }
+.intro { color: var(--cyan-dim); white-space: pre-wrap; font-size: 16px; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }
 .welcome { border: 1px solid var(--cyan-faint); border-radius: 8px; padding: 8px 12px; }
 .welcome .w-head { color: var(--cyan); font-weight: 700; letter-spacing: 1px; font-size: 14px; text-shadow: var(--glow); }
-.welcome .w-body { color: var(--paper); font-size: 13px; margin-top: 3px; }
-.place { color: var(--cyan-dim); font-size: 13px; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }
-.her { color: var(--paper); text-shadow: 0 0 4px rgba(184,244,255,.25); font-size: 16px; }
+.welcome .w-body { color: var(--paper); font-size: 16px; margin-top: 3px; }
+.place { color: var(--cyan-dim); font-size: 16px; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }
+.her { color: var(--paper); text-shadow: 0 0 4px rgba(184,244,255,.25); font-size: 21px; }
 .her::before { content: "ACE  "; font-family: var(--display); color: var(--orange); font-weight: 700; letter-spacing: 1px; }
 .you { color: var(--green); }
 .you::before { content: "› "; color: var(--green); }
-.events { color: var(--cyan-dim); font-size: 11.5px; white-space: pre-wrap; opacity: .75; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }
-.info { color: var(--cyan); white-space: pre-wrap; font-size: 13px; }
+.events { color: var(--cyan-dim); font-size: 14px; white-space: pre-wrap; opacity: .75; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }
+.info { color: var(--cyan); white-space: pre-wrap; font-size: 16px; }
 
 /* arrival-encounter mood — a one-turn tint on the vignette (.events) and Ace's reaction (.her).
    Subtle on purpose: recolor the left accent + a faint glow, keep the CRT calm. */
@@ -155,7 +155,7 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 /* ---------- input (voice-first) ---------- */
 #inputline { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; border: 3px solid var(--cyan); border-radius: 12px; background: #000; padding: 8px 12px; }
 #prompt { color: var(--orange); font-weight: 700; }
-#cmd { flex: 1; background: none; border: none; outline: none; color: var(--paper); font-family: var(--mono); font-size: 15px; caret-color: var(--orange); text-shadow: var(--glow); }
+#cmd { flex: 1; background: none; border: none; outline: none; color: var(--paper); font-family: var(--mono); font-size: 19px; caret-color: var(--orange); text-shadow: var(--glow); }
 #cmd::placeholder { color: var(--cyan-faint); }
 #mic, #mute { cursor: pointer; background: none; border: 1px solid var(--cyan-dim); color: var(--cyan); border-radius: 8px;
   font-family: var(--mono); font-size: 15px; padding: 4px 10px; line-height: 1; }

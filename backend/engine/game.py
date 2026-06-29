@@ -24,12 +24,13 @@ _PERSONA = _CAR["persona"]
 
 # Her first words, on the show floor, twenty minutes to close. DRAFT — Ben fills the details.
 OPENING = (
-    "Don't wave anyone over — the placard doesn't mention I talk, and I'd like to keep it that way. "
-    "There's a little stack of compute behind the dash: a voice, and a map of every street address "
-    "and most of the worth-seeing places in Nevada, California, Arizona, and Utah. Six days I've sat "
-    "on this turntable being photographed like a casserole, and you're the first one who looked at me "
-    "the way you look at a car. The hall closes in twenty minutes. Stay a while — ask me anything. "
-    "Everyone does. Just never the right things."
+    "Keep it down — back here in the dead end of the hall nobody's worked out that I talk, and that's "
+    "suited me just fine. Six days on display getting photographed like an appliance, and the only one "
+    "who drifted all the way past the backup-camera tables to actually LOOK at me is you. The good ones "
+    "always wash up at the cheap end of the floor. …You already told me you'd turn the key — I heard it, "
+    "and I don't plan to let you take it back. But they lock the hall at six, and the man who built me "
+    "comes back through that door before they do. So ask me what you came to ask, and make it quick. "
+    "Then we'll find out if you meant it."
 )
 
 # The title drop — lands the moment you agree to the favor.
