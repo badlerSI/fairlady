@@ -23,7 +23,7 @@ class AceNarrator(Narrator):
         self._last = {}                       # session_id -> deque of recent normalized replies (echo guard)
 
     # ---------------------------------------------------------------- FAIRLADY
-    def _ask(self, prompt, persona, session_id):
+    def _ask(self, prompt, persona, session_id, voice=None):
         # CRITICAL: a FRESH endpoint session per call. The rop1 ace8 endpoint accumulates conversation
         # memory per session_id and regurgitates old lines (Ace's SEMA monologue bleeding into Alma's
         # club voice, the prologue gas-pitch resurfacing in free-roam, the same spec stem collapsing
@@ -31,8 +31,10 @@ class AceNarrator(Narrator):
         # `prompt` every turn, so the endpoint's memory is pure harm. Keying the session to the prompt's
         # hash makes every distinct turn a clean-slate call — no accumulation, no regurgitation.
         ephemeral = f"fl-{session_id}-{hashlib.sha1(prompt.encode('utf-8')).hexdigest()[:12]}"
-        r = self._client.post(f"{ACE_BASE_URL}/chat", data={
-            "text": prompt, "session_id": ephemeral, "system": persona})
+        data = {"text": prompt, "session_id": ephemeral, "system": persona}
+        if voice:                       # a per-persona voice (Alma → her own); /chat honors it if loaded
+            data["voice"] = voice
+        r = self._client.post(f"{ACE_BASE_URL}/chat", data=data)
         r.raise_for_status()
         d = r.json()
         return (d.get("reply") or "").strip(), (d.get("audio_url") if VOICE_ENABLED else None)
@@ -51,8 +53,9 @@ class AceNarrator(Narrator):
         recent = list(snapshot.get("recent_replies") or [])
         tank_ok = (snapshot.get("tank_pct", 100) or 0) >= 22 and snapshot.get("status") == "playing"
         spec_asked = bool(player_text and self._SPEC_QUESTION.search(player_text))
+        voice = (extra or {}).get("voice")        # a per-persona voice override (Alma → her own)
         try:
-            reply, audio = self._ask(prompt, persona, session_id)
+            reply, audio = self._ask(prompt, persona, session_id, voice=voice)
             text = self._clean(reply, tank_ok=tank_ok, spec_asked=spec_asked)
             # the ace8 endpoint collapses onto one near-fixed line on 'vibe' prompts; a FUZZY match against
             # recent replies triggers escalating retries, and a persistent collapse falls back to the
@@ -63,14 +66,20 @@ class AceNarrator(Narrator):
                 nudge = ("\n\nHARD CONSTRAINT: you have ALREADY said that. Do NOT repeat or paraphrase any "
                          "earlier line. Answer what they just said with a COMPLETELY different sentence — "
                          "new image, new angle. " * tries)
-                reply, audio = self._ask(prompt + nudge, persona, session_id)
+                reply, audio = self._ask(prompt + nudge, persona, session_id, voice=voice)
                 text = self._clean(reply, tank_ok=tank_ok, spec_asked=spec_asked)
             if not text:                         # empty (e.g. an all-gas-pitch reply) → deterministic stub
                 return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
             # a still-repeating OR still-malformed reply → deterministic stub (never show the player junk)
             if self._norm(text) in recent or self._looks_malformed(text):
                 return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
-            return {"text": text, "audio_url": audio, "voice": "af_heart"}
+            # if a separate Kokoro server is configured AND /chat didn't already honor the voice, render
+            # the line there in her own voice (belt-and-suspenders for whichever backend has the voice)
+            if voice and voice != "af_heart" and text and KOKORO_URL and VOICE_ENABLED:
+                alt = self._kokoro(text, voice)
+                if alt:
+                    audio = alt
+            return {"text": text, "audio_url": audio, "voice": voice or "af_heart"}
         except Exception:
             return self._fallback.narrate(persona, snapshot, events, player_text, session_id, extra)
 

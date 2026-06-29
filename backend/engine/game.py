@@ -849,6 +849,8 @@ def _narrate(s, events, player_text, drama=None, persona_override=None):
         persona = _PERSONA
     elif drama and drama.get("persona") == "alma":
         persona = alma.PERSONA
+        if extra is not None:
+            extra["voice"] = alma.VOICE          # Alma speaks in her own Kokoro voice (Dora, EN/ES)
     out = nar.narrate(persona, snapshot(s), events, player_text, s.flags.get("sid", "x"), extra=extra)
     text = out.get("text", "")
     # Alma is a WOMAN, not the car — if the model bled car-self vocab into her mouth ("my engine", "my
