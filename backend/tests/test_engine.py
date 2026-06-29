@@ -2278,6 +2278,26 @@ def test_long_legs_open_a_conversation_and_music_fast_forwards():
         config.DRIVE_CONVERSATIONS = old
 
 
+def test_improv_action_mid_drive_is_chat_not_a_teleport():
+    """A freeform 'attempt' line spoken during a drive conversation must be treated as chat — NOT fall
+    through to the arrival branch and silently teleport you to the destination (the transit-downgrade bug)."""
+    import config
+    old = config.DRIVE_CONVERSATIONS
+    config.DRIVE_CONVERSATIONS = True
+    try:
+        assert parse("do a burnout in the next pullout")[0] == "attempt"   # really an improv action
+        s = fresh(); s.fuel_l = 40.0
+        r = game.handle(s, "drive to beatty")
+        assert s.flags.get("transit")                      # rolling, talking
+        before = s.flags["transit"]["talked"]
+        game.handle(s, "do a burnout in the next pullout")  # improv mid-drive
+        assert s.flags.get("transit"), "improv line teleported out of transit"
+        assert s.place.poi_id == "sema_chevron"            # did NOT arrive
+        assert s.flags["transit"]["talked"] == before + 1  # counted as a real exchange
+    finally:
+        config.DRIVE_CONVERSATIONS = old
+
+
 def test_short_legs_and_pushing_skip_the_conversation():
     import config
     old = config.DRIVE_CONVERSATIONS

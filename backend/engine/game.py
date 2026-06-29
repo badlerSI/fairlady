@@ -1081,11 +1081,14 @@ def handle(s: GameState, raw: str) -> dict:
     verb, args = parse(raw)
 
     # an IMPROV 'attempt' only stands alone in free-roam; inside any moment that already wants a freeform
-    # line (the prologue, onboarding, the stick question, a stop/standoff/clerk/owner) it's that line.
+    # line (the prologue, onboarding, the stick question, a stop/standoff/clerk/owner — or a drive
+    # conversation) it's that line. Without the transit guard an improv line mid-drive would fall through
+    # to the arrival branch and silently teleport you to the destination.
     if verb == "attempt" and (prologue.active(s) or onboarding.pending(s)
                               or romance.ask_stick_pending(s) or s.flags.get("clerk_curious")
                               or s.flags.get("pending_turnkey") or encounters.stop_active(s)
-                              or encounters.standoff_active(s) or encounters.owner_active(s)):
+                              or encounters.standoff_active(s) or encounters.owner_active(s)
+                              or s.flags.get("transit")):
         verb, args = "say", {"text": args.get("text", raw)}
 
     # ---- pure console verbs, available everywhere ----
