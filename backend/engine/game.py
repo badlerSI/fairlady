@@ -780,11 +780,11 @@ def choices(s: GameState) -> list:
 
 
 # --------------------------------------------------------------------- turn
-def _result(s, events, scene, *, voice=None, npc=None, info=None, welcome=None):
+def _result(s, events, scene, *, voice=None, npc=None, info=None, welcome=None, map=None):
     return {
         "ok": True, "events": events, "scene": scene, "voice": voice, "npc": npc,
         "info": info, "welcome": welcome, "snapshot": snapshot(s), "choices": choices(s),
-        "status": s.status, "ending": s.ending, "sid": s.flags.get("sid", ""),
+        "status": s.status, "ending": s.ending, "sid": s.flags.get("sid", ""), "map": map,
     }
 
 
@@ -1255,7 +1255,8 @@ def handle(s: GameState, raw: str) -> dict:
 
     # ---- meta verbs (no LLM) ----
     if verb == "map":
-        return _result(s, [], "", info=_map_text(s, args.get("service")))
+        svc = args.get("service")
+        return _result(s, [], "", info=_map_text(s, svc), map=_map_data(s, svc))
     if verb == "range":
         return _result(s, [], "", info=_range_text(s))
     if verb == "heatreport":
@@ -2337,6 +2338,31 @@ def _range_text(s: GameState) -> str:
             lines.append(fmt(d, q))
     lines.append("  (mountain legs burn more — Zion, Tioga, Bryce eat the margin; G=gas L=lodging F=food)")
     return "\n".join(lines)
+
+
+def _map_poi(s: GameState, q, road_mi: float) -> dict:
+    return {"id": q.poi_id, "name": q.name, "region": q.region, "kind": q.kind,
+            "dist_mi": round(road_mi), "reachable": bool(road_mi <= s.range_mi + 1.0),
+            "services": [c for c in ("gas", "lodging", "food") if c in q.services]}
+
+
+def _map_data(s: GameState, service: str | None = None) -> dict:
+    """Structured nearby-POI list for the visual map overlay — each carries its plate id (the frontend
+    shows scenes_wm/<id>.png, swaps to <id>_4c.png on hover, and 'drive to <id>' on click)."""
+    p = s.place
+    pois = []
+    if service:
+        for d, q in world.nearest_with_service(p, service, limit=14):
+            pois.append(_map_poi(s, q, d * ROAD_WINDING_FACTOR))
+    else:
+        rows = sorted(((world.haversine_mi(p.lat, p.lon, q.lat, q.lon), q)
+                       for q in world.all_pois()
+                       if q.poi_id != p.poi_id and not world.is_hidden(q.poi_id)),
+                      key=lambda t: t[0])[:16]
+        for d, q in rows:
+            pois.append(_map_poi(s, q, d * 1.22))
+    return {"here": p.poi_id, "here_name": p.name, "range_mi": round(s.range_mi),
+            "service": service, "pois": pois}
 
 
 def _map_text(s: GameState, service: str | None) -> str:

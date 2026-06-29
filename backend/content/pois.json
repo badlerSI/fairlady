@@ -10,7 +10,7 @@
   "services": [],
   "blurb": "The show floor at twenty minutes to close. Compressors, a rev-limiter slapping the rafters, ten thousand people who all think they know cars. She's on the turntable, white under the lights — and the placard doesn't mention she talks.",
   "heat_zone": true,
-  "scene": "sema_hall"
+  "scene": "wm_sema_north_hall"
  },
  "pois": [
   {
@@ -26,7 +26,7 @@
    ],
    "blurb": "Neon on wet asphalt. The show is still roaring two blocks back. The pump island is empty and the needle is near E.",
    "gas_price": 4.39,
-   "scene": "gas"
+   "scene": "wm_sema_chevron"
   },
   {
    "id": "las_vegas",
@@ -42,7 +42,7 @@
    ],
    "blurb": "The Strip, the convention halls, ten thousand cameras. A bright place to be a car nobody can quite account for.",
    "heat_zone": true,
-   "scene": "vegas_strip"
+   "scene": "wm_las_vegas"
   },
   {
    "id": "lv_motor_speedway",
@@ -54,7 +54,8 @@
    "services": [
     "food"
    ],
-   "blurb": "A 1.5-mile tri-oval and a dragstrip out in the desert north of town."
+   "blurb": "A 1.5-mile tri-oval and a dragstrip out in the desert north of town.",
+   "scene": "wm_lv_motor_speedway"
   },
   {
    "id": "spring_mountain",
@@ -67,7 +68,8 @@
     "food"
    ],
    "blurb": "Members' road course out past the Spring Mountains. Close enough to taste, far enough to strand you on a bad tank.",
-   "terrain": 1.1
+   "terrain": 1.1,
+   "scene": "wm_spring_mountain"
   },
   {
    "id": "pahrump",
@@ -124,7 +126,8 @@
     "food"
    ],
    "blurb": "An off-ramp, a truck stop, a reservation smoke shop. Fuel on the I-15 run.",
-   "gas_price": 4.25
+   "gas_price": 4.25,
+   "scene": "wm_moapa"
   },
   {
    "id": "beatty",
@@ -156,7 +159,7 @@
    ],
    "blurb": "A border casino with a roller coaster, straddling the California line on I-15.",
    "gas_price": 4.35,
-   "scene": "amusement"
+   "scene": "wm_primm"
   },
   {
    "id": "laughlin",
@@ -170,7 +173,8 @@
     "lodging",
     "food"
    ],
-   "blurb": "Riverboat casinos on the Colorado, cheaper than Vegas, hot as a griddle."
+   "blurb": "Riverboat casinos on the Colorado, cheaper than Vegas, hot as a griddle.",
+   "scene": "wm_laughlin"
   },
   {
    "id": "hoover_dam",
@@ -199,7 +203,7 @@
    ],
    "blurb": "Old silver town, the darkest skies in the lower 48, halfway up the middle of nowhere.",
    "gas_price": 4.55,
-   "scene": "wm_great_basin"
+   "scene": "wm_tonopah"
   },
   {
    "id": "rachel",
@@ -212,7 +216,7 @@
     "food"
    ],
    "blurb": "The Little A'Le'Inn and 98 miles of empty SR-375. Top off before you commit; there is nothing out here.",
-   "scene": "area51"
+   "scene": "wm_rachel"
   },
   {
    "id": "ely",
@@ -299,7 +303,7 @@
    ],
    "blurb": "The world's tallest thermometer and a Greek diner. Gateway to Death Valley from I-15.",
    "gas_price": 5.19,
-   "scene": "wm_death_valley"
+   "scene": "wm_baker_ca"
   },
   {
    "id": "barstow",
@@ -405,7 +409,8 @@
    "services": [
     "food"
    ],
-   "blurb": "'The Fastest Road in the West.' Nine turns of old California tarmac near Rosamond."
+   "blurb": "'The Fastest Road in the West.' Nine turns of old California tarmac near Rosamond.",
+   "scene": "wm_willow_springs"
   },
   {
    "id": "buttonwillow",
@@ -417,7 +422,8 @@
    "services": [
     "food"
    ],
-   "blurb": "Flat, technical club track in the cotton fields west of Bakersfield."
+   "blurb": "Flat, technical club track in the cotton fields west of Bakersfield.",
+   "scene": "wm_buttonwillow"
   },
   {
    "id": "auto_club",
@@ -429,7 +435,8 @@
    "services": [
     "food"
    ],
-   "blurb": "A two-mile D-oval in the Inland Empire smog, on borrowed time."
+   "blurb": "A two-mile D-oval in the Inland Empire smog, on borrowed time.",
+   "scene": "wm_auto_club"
   },
   {
    "id": "chuckwalla",
@@ -466,7 +473,8 @@
    "services": [
     "food"
    ],
-   "blurb": "Five miles of track in the rice country near Willows, home of the 25-hour race."
+   "blurb": "Five miles of track in the rice country near Willows, home of the 25-hour race.",
+   "scene": "wm_thunderhill"
   },
   {
    "id": "sonoma",
@@ -479,7 +487,8 @@
     "food"
    ],
    "blurb": "Wine-country hills folded into a road course at the top of the bay.",
-   "terrain": 1.1
+   "terrain": 1.1,
+   "scene": "wm_sonoma"
   },
   {
    "id": "joshua_tree",
@@ -534,7 +543,7 @@
    ],
    "blurb": "A glacial gorge deeper than the Grand Canyon, and far emptier.",
    "terrain": 1.2,
-   "scene": "wm_canyonlands"
+   "scene": "wm_kings_canyon"
   },
   {
    "id": "disneyland",
@@ -561,7 +570,7 @@
     "food"
    ],
    "blurb": "The boysenberry kingdom. Wooden coasters and a ghost town that owns Calico.",
-   "scene": "amusement"
+   "scene": "wm_knotts"
   },
   {
    "id": "magic_mountain",
@@ -574,7 +583,7 @@
     "food"
    ],
    "blurb": "Nineteen coasters stacked on a hill above the 5. The thrill-ride capital of the world.",
-   "scene": "amusement"
+   "scene": "wm_magic_mountain"
   },
   {
    "id": "universal",
@@ -588,7 +597,7 @@
     "food"
    ],
    "blurb": "A working backlot you can ride through, perched above the 101.",
-   "scene": "amusement"
+   "scene": "wm_universal"
   },
   {
    "id": "santa_cruz_boardwalk",
@@ -601,7 +610,7 @@
     "food"
    ],
    "blurb": "The Giant Dipper, salt air, and 1907 still running on the sand.",
-   "scene": "wm_santa_monica"
+   "scene": "wm_santa_cruz_boardwalk"
   },
   {
    "id": "seaworld_sd",
@@ -614,7 +623,7 @@
     "food"
    ],
    "blurb": "Mission Bay, coasters, and the smell of the cold Pacific.",
-   "scene": "amusement"
+   "scene": "wm_seaworld_sd"
   },
   {
    "id": "santa_monica",
@@ -644,7 +653,7 @@
    "blurb": "Twelve million people and a freeway for every one of them.",
    "gas_price": 5.09,
    "heat_zone": true,
-   "scene": "hollywood"
+   "scene": "wm_los_angeles"
   },
   {
    "id": "little_tokyo",
@@ -660,7 +669,7 @@
    "language": "ja",
    "voice": "jf_alpha",
    "npc": "the okamisan at a Little Tokyo counter",
-   "scene": "wm_sf_japantown"
+   "scene": "wm_little_tokyo"
   },
   {
    "id": "east_la",
@@ -725,7 +734,7 @@
    "blurb": "Forty-three hills and the fog coming in over them. Park facing the curb or lose your tires.",
    "gas_price": 5.29,
    "terrain": 1.1,
-   "scene": "bay_bridge"
+   "scene": "wm_san_francisco"
   },
   {
    "id": "sf_japantown",
@@ -870,7 +879,7 @@
    "blurb": "Mono Lake's tufa towers and the eastern gate to Yosemite, 9,943 feet up when it's open.",
    "gas_price": 5.39,
    "terrain": 1.3,
-   "scene": "wm_yosemite"
+   "scene": "wm_lee_vining"
   },
   {
    "id": "palm_springs",
@@ -902,7 +911,7 @@
    ],
    "blurb": "A mile straight down and ten miles across. Gas and rooms at the village, if you booked.",
    "gas_price": 4.69,
-   "scene": "grand_canyon"
+   "scene": "wm_grand_canyon_south"
   },
   {
    "id": "grand_canyon_north",
@@ -917,7 +926,7 @@
    ],
    "blurb": "A thousand feet higher, far emptier, closed once the snow comes.",
    "terrain": 1.2,
-   "scene": "grand_canyon"
+   "scene": "wm_grand_canyon_north"
   },
   {
    "id": "flagstaff",
@@ -1044,7 +1053,7 @@
     "food"
    ],
    "blurb": "Arizona's last big amusement park: four mini-golf courses and the Desert Storm coaster.",
-   "scene": "amusement"
+   "scene": "wm_castles_coasters"
   },
   {
    "id": "tucson",
@@ -1188,7 +1197,8 @@
     "food"
    ],
    "blurb": "Festival town below the high plateaus, the turnoff for Bryce and Cedar Breaks.",
-   "gas_price": 3.89
+   "gas_price": 3.89,
+   "scene": "wm_cedar_city"
   },
   {
    "id": "kanab",
@@ -1299,7 +1309,7 @@
    "blurb": "The grid laid out from a temple, the Wasatch hard against the eastern edge.",
    "gas_price": 3.79,
    "terrain": 1.05,
-   "scene": "salt_lake"
+   "scene": "wm_salt_lake_city"
   },
   {
    "id": "lagoon",
@@ -1312,7 +1322,7 @@
     "food"
    ],
    "blurb": "Utah's own park since 1886: a wooden coaster from 1921 still rattling north of Salt Lake.",
-   "scene": "amusement"
+   "scene": "wm_lagoon"
   },
   {
    "id": "park_city",
@@ -1384,7 +1394,7 @@
     "lodging",
     "food"
    ],
-   "scene": "vegas_strip",
+   "scene": "wm_fremont",
    "heat_zone": true,
    "gas_price": 4.39,
    "blurb": "Old downtown under a canopy of a billion bulbs, a zipline screaming overhead, a cowboy made of neon."
@@ -1419,7 +1429,7 @@
    "lat": 36.6814,
    "lon": -117.563,
    "services": [],
-   "scene": "wm_death_valley",
+   "scene": "wm_racetrack_playa",
    "terrain": 1.2,
    "blurb": "The sailing stones. Rocks that move themselves across the mud and leave trails, and no one watching."
   },
@@ -1444,7 +1454,7 @@
    "services": [
     "lodging"
    ],
-   "scene": "wm_death_valley",
+   "scene": "wm_amargosa",
    "blurb": "A lone opera house in the empty desert where a dancer painted herself an audience on the walls."
   },
   {
@@ -1459,7 +1469,7 @@
     "food"
    ],
    "gas_price": 4.59,
-   "scene": "wm_great_basin",
+   "scene": "wm_goldfield",
    "blurb": "Once the biggest city in Nevada, now a few hundred souls, a haunted hotel, and a yard of welded art cars."
   },
   {
@@ -1470,7 +1480,7 @@
    "lat": 34.2961,
    "lon": -116.4044,
    "services": [],
-   "scene": "wm_joshua_tree",
+   "scene": "wm_integratron",
    "blurb": "A white dome built from alien instructions for rejuvenation and time travel. Sound baths now. Sure."
   },
   {
@@ -1484,7 +1494,7 @@
     "lodging",
     "food"
    ],
-   "scene": "motel",
+   "scene": "wm_madonna_inn",
    "blurb": "110 rooms, no two alike, pink as a wound, a urinal that's a waterfall. You have to stay somewhere."
   },
   {
@@ -1509,7 +1519,7 @@
    "lat": 37.235,
    "lon": -115.8111,
    "services": [],
-   "scene": "area51",
+   "scene": "wm_area51_gate",
    "blurb": "A cattle guard, a white truck on a hill, cameras on poles, and a sign that promises deadly force."
   },
   {
@@ -1522,7 +1532,7 @@
    "services": [
     "food"
    ],
-   "scene": "koinoya",
+   "scene": "wm_richmond_koinoya",
    "language": "ja",
    "voice": "jf_alpha",
    "npc": "the old dealer at koiNOya",
@@ -1553,7 +1563,7 @@
    "services": [
     "food"
    ],
-   "scene": "museum",
+   "scene": "wm_petersen",
    "blurb": "A red ribbon of steel wrapped around four floors of cars. She asks to idle out front a while."
   },
   {
@@ -1566,7 +1576,7 @@
    "services": [
     "food"
    ],
-   "scene": "museum",
+   "scene": "wm_neon_museum",
    "heat_zone": true,
    "blurb": "The Boneyard: dead casino signs laid out under the desert sky, still glowing if you squint."
   },
@@ -1580,7 +1590,7 @@
    "services": [
     "food"
    ],
-   "scene": "museum",
+   "scene": "wm_getty",
    "blurb": "Travertine and a tram up the hill — art, gardens, and the whole basin laid out below."
   },
   {
@@ -1593,7 +1603,7 @@
    "services": [
     "food"
    ],
-   "scene": "museum",
+   "scene": "wm_heard",
    "blurb": "The finest collection of Native American art in the Southwest, in a quiet Spanish-revival courtyard."
   },
   {
@@ -1606,7 +1616,7 @@
    "services": [
     "food"
    ],
-   "scene": "museum",
+   "scene": "wm_nhmu",
    "blurb": "A copper-skinned ark built into the Wasatch foothills, full of dinosaurs and deep time."
   },
   {
@@ -1619,7 +1629,7 @@
    "services": [
     "food"
    ],
-   "scene": "museum",
+   "scene": "wm_pinball",
    "heat_zone": true,
    "blurb": "A warehouse of playable machines back to the 1950s. Bring quarters; leave the heat outside."
   },
@@ -1636,7 +1646,7 @@
     "food"
    ],
    "blurb": "Cannery Row, the kelp tanks, 17-Mile Drive. The cypress lean into the fog like they're listening.",
-   "scene": "aquarium",
+   "scene": "wm_monterey",
    "story": true
   },
   {
@@ -1652,7 +1662,7 @@
     "food"
    ],
    "blurb": "The Queen Mary at anchor, the port cranes like grazing dinosaurs, the salvage yards inland.",
-   "scene": "drive_city",
+   "scene": "wm_long_beach",
    "heat_zone": true,
    "story": true
   },
@@ -1668,7 +1678,7 @@
     "food"
    ],
    "blurb": "Wine country gone to office parks and self-storage. A row of roll-up doors keeps more secrets than any vault.",
-   "scene": "storage",
+   "scene": "wm_livermore",
    "story": true
   },
   {
@@ -2796,7 +2806,8 @@
    ],
    "blurb": "Mount Shasta is a city in Siskiyou County, California, United States, at approximately 3,600 feet (1,100 m) above sea level on the flanks of Mount Shasta, a prominent northern Cal…",
    "terrain": 1.15,
-   "beat": "Mount Shasta, the city — nine miles from the summit of the volcano it answers to, which makes the mountain less a view than a landlord. The air runs thin up here; my carburetors noticed before I did."
+   "beat": "Mount Shasta, the city — nine miles from the summit of the volcano it answers to, which makes the mountain less a view than a landlord. The air runs thin up here; my carburetors noticed before I did.",
+   "scene": "wm_mount_shasta_city"
   },
   {
    "id": "yreka",
@@ -3301,7 +3312,8 @@
     "food"
    ],
    "blurb": "Kayenta is a U.S.",
-   "beat": "Kayenta. The only township under Navajo Nation law — a legal category with exactly one member, established 1986 and never duplicated. I have a weakness for things that exist in editions of one."
+   "beat": "Kayenta. The only township under Navajo Nation law — a legal category with exactly one member, established 1986 and never duplicated. I have a weakness for things that exist in editions of one.",
+   "scene": "wm_kayenta"
   },
   {
    "id": "tuba_city",
@@ -3573,7 +3585,8 @@
     "food"
    ],
    "blurb": "Price is a city in the U.S.",
-   "beat": "Price. There's a prehistoric museum here, USU Eastern's — a town that keeps its oldest residents on display and doesn't blink. Against that scale, fifty-four years of steel is a rumor. Refreshing."
+   "beat": "Price. There's a prehistoric museum here, USU Eastern's — a town that keeps its oldest residents on display and doesn't blink. Against that scale, fifty-four years of steel is a rumor. Refreshing.",
+   "scene": "wm_price_ut"
   },
   {
    "id": "helper_ut",

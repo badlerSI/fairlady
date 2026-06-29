@@ -201,6 +201,42 @@ function setMute(m) {
 }
 
 // ----------------------------------------------------------------- flow
+// ----------------------------------------------------------------- the visual map (Codex plates)
+function closeMap() {
+  const o = document.getElementById("mapOverlay");
+  if (o) o.remove();
+  document.removeEventListener("keydown", _mapEsc);
+}
+function _mapEsc(e) { if (e.key === "Escape") closeMap(); }
+function openMap(map) {
+  closeMap();
+  if (!map || !map.pois || !map.pois.length) return;
+  const tiles = map.pois.map((p) => {
+    const svc = (p.services || []).map((c) => c[0].toUpperCase()).join("");
+    const meta = `${p.dist_mi} mi · ${esc(p.region)}${svc ? " · " + svc : ""}${p.reachable ? "" : " · ⛽"}`;
+    return `<button class="maptile${p.reachable ? "" : " mt-far"}" data-dest="${esc(p.id)}"
+        style="--cy:url('scenes_wm/${esc(p.id)}.png');--hv:url('scenes_wm/${esc(p.id)}_4c.png')"
+        title="drive to ${esc(p.name)}">
+        <span class="mt-grad"></span>
+        <span class="mt-name">${esc(p.name)}</span>
+        <span class="mt-meta">${meta}</span></button>`;
+  }).join("");
+  const o = document.createElement("div");
+  o.id = "mapOverlay";
+  o.innerHTML = `<div id="mapPanel">
+      <div id="mapHead"><span>◇ THE MAP — around ${esc(map.here_name || "here")}</span>
+        <span class="mh-range">range ~${map.range_mi} mi · ⛽ beyond it · hover for detail · click to drive</span>
+        <button id="mapClose" title="close (Esc)">✕</button></div>
+      <div id="mapGrid">${tiles}</div></div>`;
+  ($("#deck") || document.body).appendChild(o);
+  o.addEventListener("click", (e) => {
+    if (e.target.id === "mapOverlay" || e.target.id === "mapClose") { closeMap(); return; }
+    const btn = e.target.closest(".maptile");
+    if (btn) { const dest = btn.getAttribute("data-dest"); closeMap(); submit("drive to " + dest); }
+  });
+  document.addEventListener("keydown", _mapEsc);
+}
+
 async function render(res) {
   if (res.intro) add("intro", esc(res.intro));
   updateDash(res.snapshot);
@@ -211,6 +247,7 @@ async function render(res) {
   if (res.scene) { await her(res.scene); playVoice(res); }
   npcBlock(res.npc);
   info(res.info);
+  if (res.map) openMap(res.map);           // the 'map' command → a visual overlay of nearby plates
   turnKeyButton(res.snapshot);
   if (res.status && res.status !== "playing") ending(res.ending);
   setSys(res);

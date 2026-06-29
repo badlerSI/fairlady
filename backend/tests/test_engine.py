@@ -203,8 +203,8 @@ def test_origin_questions_reveal_lore_and_destinations():
     res2 = game.handle(s, "where did you grow up")
     assert "oakland" in res2["scene"].lower()
     assert "oakland_aisha" in s.flags.get("revealed", [])
-    # both lore POIs exist with bespoke scenes (oakland_aisha now wired to its Codex plate)
-    for pid, scene in (("richmond_koinoya", "koinoya"), ("oakland_aisha", "wm_oakland_aisha")):
+    # both lore POIs exist with bespoke scenes (now wired to their Codex plates)
+    for pid, scene in (("richmond_koinoya", "wm_richmond_koinoya"), ("oakland_aisha", "wm_oakland_aisha")):
         poi = world.get_poi(pid)
         assert poi is not None and poi.scene == scene
 
