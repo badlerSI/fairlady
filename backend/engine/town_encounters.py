@@ -21,25 +21,40 @@ def has(poi_id) -> bool:
     return poi_id in _ENC
 
 
+def _beats(enc) -> list:
+    """Normalize an entry to a list of beats. A modern entry has `beats:[{vignette, ace?, find?, tone?}]`;
+    a legacy entry has the single vignette/ace/find at the top — treat it as a one-beat list."""
+    if enc.get("beats"):
+        return enc["beats"]
+    return [{"vignette": enc.get("vignette", ""), "ace": enc.get("ace"),
+             "find": enc.get("find"), "tone": enc.get("tone")}]
+
+
 def surface(s: GameState) -> list:
-    """If the current town has an unseen encounter, fire it once and return its event lines (arming a
-    findable item if it carries one). Returns [] otherwise."""
+    """Fire the next UNSEEN beat for the current town (a town with several beats gives you a different
+    little thing each time you roll back through). Returns [] once they're all spent. Arms a find if the
+    beat carries one."""
     pid = getattr(s.place, "poi_id", None)
     enc = _ENC.get(pid)
     if not enc:
         return []
-    seen = s.flags.setdefault("town_enc_seen", [])
-    if pid in seen:
-        return []
-    seen.append(pid)
-    out = [f"· {enc['vignette']}"]
-    if enc.get("ace"):
-        out.append(f"ACE: {enc['ace']}")
-    # a town encounter can offer a roadside-find item to pick up here
-    fid = enc.get("find")
+    beats = _beats(enc)
+    done = s.flags.setdefault("town_enc_beats", {}).setdefault(pid, [])
+    nxt = next((i for i in range(len(beats)) if i not in done), None)
+    if nxt is None:
+        return []                                          # every beat for this town has played
+    done.append(nxt)
+    seen = s.flags.setdefault("town_enc_seen", [])         # legacy 'has this town fired at all' flag
+    if pid not in seen:
+        seen.append(pid)
+    b = beats[nxt]
+    out = [f"· {b['vignette']}"]
+    if b.get("ace"):
+        out.append(f"ACE: {b['ace']}")
+    fid = b.get("find")
     if fid and not s.flags.get("pending_find"):
         from engine import finds
-        if fid in finds._BY_ID and not (enc.get("find") in s.flags.get("found_items", [])):
+        if fid in finds._BY_ID and fid not in s.flags.get("found_items", []):
             s.flags["pending_find"] = fid
             out.append("  (something here's worth grabbing — 'take it')")
     return out

@@ -124,7 +124,7 @@ tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (fron
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
 deploy/               rop1 production kit: systemd unit, Caddy/cloudflared proxy, env, README
-backend/tests/        343 tests (engine + web)
+backend/tests/        354 tests (engine + web)
 ```
 
 ### The one rule that makes it work
@@ -328,9 +328,15 @@ wedding loop you only break by leaving the way you came (he remembers each loop;
 in **Vegas on Grand Prix weekend**, bust onto the F1 street circuit and you're arrested. Drive to
 **Hayward** once she's yours and rizz Zoox into making her self-driving. Out at **Black Rock City**,
 take the acid that blows onto the windshield and come back at max affection. **Pea Soup Andersen's** in
-Santa Nella keeps you full — bring Alma. And every town, even the ones without a set-piece, has its own
-odd little encounter, with the four states' **real Nov–Dec 2025 events** (the NFR, holiday light shows,
-rivalry games) surfacing on the day they actually happen.
+Santa Nella keeps you full — bring Alma. And **251 places carry their own hand- and AI-authored
+encounters** — most with two or three beats that rotate as you roll back through, each tuned to a
+**tone**: the ghost towns and the Clown Motel go *spooky* (Bodie's curse, Goldfield's waiting ghost),
+border towns and demolition-site speedways go *sketchy*, the parks and the salt flats go *awe*, and the
+rest land *charming* or flat-out *weird* (the Integratron's alien acoustics, Seven Magic Mountains, the
+sailing stones of Racetrack Playa). Many drop **junk for the trunk** — a Canyon Diablo meteorite off the
+crater rim, a still-warm fortune cookie from a Ross Alley press, a resin Allosaurus tooth, a chip of the
+actual London Bridge. On top of that, the four states' **real Nov–Dec 2025 events** (the NFR, holiday
+light shows, rivalry games) surface on the day they actually happen.
 
 ### Her gadgets — and the self-driving secret
 

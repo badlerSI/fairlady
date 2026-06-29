@@ -1669,6 +1669,19 @@ def handle(s: GameState, raw: str) -> dict:
         events, npc, drama_ev, story_beat = _do_drive(s, dest, args.get("push", False))
         if _loop_break_events:           # the Palm Springs escape line, preserved across _do_drive
             events = _loop_break_events + events
+        # a leg refused for RANGE leaves no arrival cue — without one the narrator free-associates
+        # into a spec recitation. Hand her a contextual "too far on this tank" line instead.
+        if drama_ev is None and story_beat is None and any(
+                "won't start for a guaranteed shoulder" in e for e in events):
+            drama_ev = {
+                "cue": f"the driver asked to drive to {dest.name}, but it's farther than this tank can "
+                       "reach; she refuses gently but firmly — too far on the fuel she's got, she'd quit "
+                       "on them out on the shoulder; she tells them to gas up first or pick somewhere "
+                       "closer, and the wrong call folds back with 'rewind'",
+                "stub": [f"That's too much road for what's in me, ace — I'd die on you in the dark before "
+                         f"{dest.name}. Top off first, or pick somewhere closer.",
+                         f"Not on this tank. {dest.name}'s past my range and I won't strand us to make a "
+                         "point. Gas, then we run."]}
         player_text = ""
     elif verb == "autodrive":            # the self-driving secret — she takes the wheel
         if not gadgets.can_autodrive(s):

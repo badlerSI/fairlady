@@ -220,7 +220,13 @@ def parse(raw: str) -> Tuple[str, dict]:
     if low in ("home", "drive home", "go home", "homeward", "take us home"):
         return ("home", {})
 
-    if low.startswith(("map", "nearby", "where")):
+    # the map: "map", "nearby", "where can we get gas", and natural framings — "show me the map",
+    # "see the map", "open/pull up/check the map", "what's nearby"
+    _wants_map = (low.startswith(("map", "nearby", "where")) or
+                  re.search(r"\b(show|see|open|view|check|pull up|bring up|look at|got|gimme|give me)\b"
+                            r"[\w\s'.]*\bmap\b", low) or
+                  low.rstrip(" ?.!") in ("the map", "map please", "let me see the map", "lemme see the map"))
+    if _wants_map:
         svc = None
         if "gas" in low or "fuel" in low or "pump" in low:
             svc = "gas"

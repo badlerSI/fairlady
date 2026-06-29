@@ -528,10 +528,33 @@ def test_berlin_nv_exists_and_tells_its_story():
     ("how far can we go on one tank", "range"),
     ("where can we get to on this tank?", "range"),
     ("where can we get gas", "map"),
+    ("show me the map", "map"),                 # natural framings open the map overlay, not just "map"
+    ("see the map", "map"),
+    ("pull up the map", "map"),
+    ("the map", "map"),
+    ("I'll map out my feelings", "say"),        # ...but "map" without a map-framing verb is not the map
     ("how much torque do you make?", "say"),
 ])
 def test_parse_new_verbs(raw, verb):
     assert parse(raw)[0] == verb
+
+
+def test_too_far_drive_gives_a_contextual_refusal_not_a_spec_dump():
+    """A leg past the tank's range is refused — and Ace says something ABOUT that, not a free-associated
+    recitation of her own spec sheet (the live-play bug)."""
+    import config
+    old = config.DRIVE_CONVERSATIONS; config.DRIVE_CONVERSATIONS = False
+    try:
+        s = fresh(); s.fuel_l = 6.0                      # ~24 mi of range
+        s.place = world.get_poi("las_vegas"); s.flags["favor_filled"] = True
+        r = game.handle(s, "drive to salt lake city")
+        assert any("won't start for a guaranteed shoulder" in e for e in r["events"])
+        scene = (r["scene"] or "").lower()
+        assert scene, "she should still say something"
+        # the contextual refusal mentions the range/tank, NOT her engine internals
+        assert not any(w in scene for w in ("l28", "mikuni", "stroker", "240z", "horsepower", "lb-ft"))
+    finally:
+        config.DRIVE_CONVERSATIONS = old
 
 
 def test_riz_is_in_the_snapshot():
@@ -1140,18 +1163,22 @@ def test_gazetteer_towns_are_valid_and_beats_fire_once():
         assert REGION_BBOX["min_lat"] <= p["lat"] <= REGION_BBOX["max_lat"]
         assert REGION_BBOX["min_lon"] <= p["lon"] <= REGION_BBOX["max_lon"]
         assert 40 < len(p["beat"]) < 520
-    # a beat fires verbatim on first arrival, once — use a town with a beat but NO richer vignette
-    # (a vignette town intentionally DEFERS its gazetteer beat; see below). Test the gazetteer path
-    # directly so a random drama event on the drive can't shadow the arrival.
+    # a beat fires verbatim on first arrival, once, when nothing richer owns the moment. Encounter
+    # coverage is now near-total, so isolate the gazetteer path by lifting the encounter off one
+    # beat-town for the duration of the check (then restore it).
     from engine import town_encounters
-    plain = next(p["id"] for p in towns
-                 if not town_encounters.has(p["id"]) and p["id"] not in game.STORIES)
-    s = fresh()
-    s.place = world.get_poi(plain)
-    beat1 = game._story_on_arrival(s)
-    assert beat1 and beat1 == world.beat_for(plain)        # the gazetteer beat, verbatim
-    assert plain in s.flags.get("beats_seen", [])
-    assert game._story_on_arrival(s) is None               # told once
+    plain = next(p["id"] for p in towns if p["id"] not in game.STORIES)
+    saved = town_encounters._ENC.pop(plain, None)          # temporarily make it a plain town
+    try:
+        s = fresh()
+        s.place = world.get_poi(plain)
+        beat1 = game._story_on_arrival(s)
+        assert beat1 and beat1 == world.beat_for(plain)    # the gazetteer beat, verbatim
+        assert plain in s.flags.get("beats_seen", [])
+        assert game._story_on_arrival(s) is None           # told once
+    finally:
+        if saved is not None:
+            town_encounters._ENC[plain] = saved
 
     # a town that DOES have a vignette defers its gazetteer beat to the encounter (no double-arrival)
     vig = next((p["id"] for p in towns
@@ -3134,6 +3161,32 @@ def test_town_encounters_catalog_covers_cities():
     cities = [p["id"] for p in json.load(open("content/pois.json"))["pois"] if p.get("kind") == "city"]
     covered = sum(1 for c in cities if town_encounters.has(c))
     assert covered >= len(cities) * 0.95                  # ~every city has an odd little encounter
+
+
+def test_every_encounter_is_well_formed_and_finds_resolve():
+    """Content integrity: every encounter points at a real POI, every beat has a vignette and a legal
+    tone, and any 'find' a beat arms is a real item in finds.json. Guards hand-written AND agent-authored
+    batches from typos that would silently never fire."""
+    import json
+    from engine import finds
+    enc = json.load(open("content/town_encounters.json"))["encounters"]
+    pois = {p["id"] for p in json.load(open("content/pois.json"))["pois"]}
+    legal_tones = {"charming", "spooky", "sketchy", "weird", "awe"}
+    problems = []
+    for e in enc:
+        pid = e["poi_id"]
+        if pid not in pois:
+            problems.append(f"{pid}: not a real POI")
+        beats = e.get("beats") or [{"vignette": e.get("vignette", ""), "find": e.get("find"), "tone": e.get("tone")}]
+        for i, b in enumerate(beats):
+            if not (b.get("vignette") or "").strip():
+                problems.append(f"{pid}[{i}]: empty vignette")
+            if b.get("tone") and b["tone"] not in legal_tones:
+                problems.append(f"{pid}[{i}]: illegal tone {b['tone']!r}")
+            fid = b.get("find")
+            if fid and fid not in finds._BY_ID:
+                problems.append(f"{pid}[{i}]: find {fid!r} not in finds.json")
+    assert not problems, "encounter content problems:\n  " + "\n  ".join(problems)
 
 
 def test_dated_event_surfaces_in_window_and_place():
