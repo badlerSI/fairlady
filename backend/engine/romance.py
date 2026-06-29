@@ -157,6 +157,18 @@ _DREAM_STUBS = [
 ]
 
 
+# A DIFFERENT dream, once: the cyan woman dissolves and it isn't Alma at all — it's ACE, with a face
+# and a tattoo curling up her neck you've never seen on any badge. The "who is Ace, really" beat,
+# tied to her one real fear (being sold). One-shot, on the 4th real-bed night, between the Alma dreams.
+_ACE_DREAM_NIGHT = 3
+_ACE_DREAM = (
+    "DREAM (ACE): the cyan woman turns and the light swims and it isn't Alma at all — it's HER. Ace, "
+    "with a face, a real one, and a tattoo curling up the side of her neck you've never seen on any "
+    "badge. 'You don't have to know what I am yet,' she says, close enough to touch. 'Just don't sell "
+    "me. Promise me that much.' You wake with your hand already on the gearshift."
+)
+
+
 def dream_on_sleep(s: GameState) -> str | None:
     """Fire the recurring dream on a real bed (not a rough night). Escalating, content reserved.
     Returns a beat string or None. Only on motel/lodge/airbnb sleep."""
@@ -167,6 +179,13 @@ def dream_on_sleep(s: GameState) -> str | None:
         s.flags["dream_nights"] = n + 1
         s.flags["saw_cyan_dream"] = True
         return beat
+    # the singular cyan-Ace / neck-tattoo dream, once, on an off-night between the Alma dreams
+    if n == _ACE_DREAM_NIGHT and not s.flags.get("dream_ace_shown"):
+        s.flags["dream_nights"] = n + 1
+        s.flags["dream_ace_shown"] = True
+        s.flags["saw_dream_ace"] = True
+        s.flags["dream_scene"] = "ace"        # the frontend swaps to the dream-Ace portrait if it exists
+        return _ACE_DREAM
     s.flags["dream_nights"] = n + 1
     return None
 

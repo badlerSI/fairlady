@@ -959,6 +959,8 @@ def _after_arrival(s: GameState, events: list):
         ev_beat = places.event_beat(s)
         if ev_beat:
             events.append(ev_beat)
+    from engine import fullmoon as _fullmoon          # the full-moon werewolf on Virginia City's Main St
+    events += _fullmoon.werewolf_on_arrival(s)
     hint = alma.vegas_hint(s)                # the faint déjà-vu nudge, first night in Vegas
     if hint:
         events.append(hint)

@@ -2230,6 +2230,31 @@ def test_motel_nights_bring_the_recurring_cyan_dream():
     assert saw and s.flags.get("saw_cyan_dream")
 
 
+def test_the_cyan_ace_neck_tattoo_dream_fires_once():
+    from engine import romance
+    s = fresh()
+    beats = [romance.dream_on_sleep(s) for _ in range(8)]      # eight real-bed nights
+    ace_dreams = [b for b in beats if b and "DREAM (ACE)" in b]
+    assert len(ace_dreams) == 1                                 # the neck-tattoo reveal is singular
+    assert "tattoo" in ace_dreams[0].lower() and s.flags.get("saw_dream_ace")
+    assert s.flags.get("dream_scene") == "ace"
+
+
+def test_full_moon_werewolf_fires_once_at_virginia_city_at_night():
+    from engine import fullmoon, sky
+    s = fresh(); s.place = world.get_poi("virginia_city"); s.clock_iso = "2025-12-04T22:30:00"
+    assert sky.is_full_moon(s)                                  # the Cold Moon, game day 28
+    out = fullmoon.werewolf_on_arrival(s)
+    assert out and any("Virginia City" in e for e in out)
+    assert s.flags.get("arrival_tone") == "spooky" and s.flags.get("werewolf_seen")
+    assert fullmoon.werewolf_on_arrival(s) == []                # once per game
+    # not on a non-full-moon night, not by day, not elsewhere
+    s2 = fresh(); s2.place = world.get_poi("virginia_city"); s2.clock_iso = "2025-11-20T22:00:00"  # new moon
+    assert fullmoon.werewolf_on_arrival(s2) == []
+    s3 = fresh(); s3.place = world.get_poi("virginia_city"); s3.clock_iso = "2025-12-04T14:00:00"  # daytime
+    assert fullmoon.werewolf_on_arrival(s3) == []
+
+
 # ------------------------------------------------------------------ the mountain chase (Edge of Tomorrow)
 def test_a_skilled_run_shakes_the_chase_for_riz():
     from engine import encounters
