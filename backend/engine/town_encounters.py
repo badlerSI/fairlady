@@ -48,6 +48,8 @@ def surface(s: GameState) -> list:
     if pid not in seen:
         seen.append(pid)
     b = beats[nxt]
+    if b.get("tone"):
+        s.flags["arrival_tone"] = b["tone"]    # let the CRT tint this arrival (spooky/sketchy/awe/…)
     out = [f"· {b['vignette']}"]
     if b.get("ace"):
         out.append(f"ACE: {b['ace']}")

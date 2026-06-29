@@ -3188,6 +3188,24 @@ def test_town_encounter_fires_once_on_arrival():
     finally:
         config.DRIVE_CONVERSATIONS = old; drama.maybe_event = _md
 
+def test_arrival_encounter_surfaces_its_tone_for_one_turn():
+    """An arrival encounter's tone rides out on the result so the CRT can tint it, then clears — it must
+    not bleed into the next turn."""
+    import config
+    from engine import drama
+    old = config.DRIVE_CONVERSATIONS; config.DRIVE_CONVERSATIONS = False
+    _md = drama.maybe_event; drama.maybe_event = lambda s: None
+    try:
+        s = fresh(); s.fuel_l = 40.0; s.flags["favor_filled"] = True
+        s.place = world.get_poi("tonopah")
+        r = game.handle(s, "drive to bodie")               # Bodie = a spooky-tagged encounter
+        assert r.get("tone") == "spooky"
+        r2 = game.handle(s, "look")
+        assert r2.get("tone") is None                      # one-shot — gone next turn
+    finally:
+        config.DRIVE_CONVERSATIONS = old; drama.maybe_event = _md
+
+
 def test_town_encounters_catalog_covers_cities():
     from engine import town_encounters
     import json

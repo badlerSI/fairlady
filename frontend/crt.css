@@ -123,6 +123,19 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 .you::before { content: "› "; color: var(--green); }
 .events { color: var(--cyan-dim); font-size: 11.5px; white-space: pre-wrap; opacity: .75; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }
 .info { color: var(--cyan); white-space: pre-wrap; font-size: 13px; }
+
+/* arrival-encounter mood — a one-turn tint on the vignette (.events) and Ace's reaction (.her).
+   Subtle on purpose: recolor the left accent + a faint glow, keep the CRT calm. */
+.tone-spooky.events  { border-left-color: #6a7b9c; color: #8a96ad; opacity: .82; }
+.tone-spooky.her     { text-shadow: 0 0 7px rgba(120,140,180,.45); }
+.tone-sketchy.events { border-left-color: #d8a23a; color: #c79a52; }
+.tone-sketchy.her    { text-shadow: 0 0 7px rgba(216,162,58,.40); }
+.tone-weird.events   { border-left-color: #b06cd6; color: #b58fd0; }
+.tone-weird.her      { text-shadow: 0 0 8px rgba(176,108,214,.45); }
+.tone-awe.events     { border-left-color: var(--cyan); color: var(--cyan); opacity: .9; }
+.tone-awe.her        { text-shadow: 0 0 12px rgba(56,214,236,.55); }
+.tone-charming.events{ border-left-color: #6fd6a0; color: #79c7a6; }
+.tone-charming.her   { text-shadow: 0 0 7px rgba(111,214,160,.38); }
 .ending { color: var(--red); border: 1px solid var(--red); border-radius: 8px; padding: 12px 16px; text-shadow: 0 0 6px rgba(226,59,46,.5); }
 .keybtn { display: block; width: 100%; cursor: pointer; font-family: var(--mono); font-weight: 700;
   font-size: 16px; letter-spacing: .5px; color: #04150d; padding: 14px 18px; border: 0; border-radius: 12px;

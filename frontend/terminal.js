@@ -52,9 +52,12 @@ function typeOn(el, text) {
     const timer = setInterval(() => { i += 2; el.textContent = full.slice(0, i); scroll.scrollTop = scroll.scrollHeight; if (i >= full.length) finish(); }, 14);
   });
 }
-async function her(text) { const el = add("her", ""); await typeOn(el, text || ""); }
+async function her(text, tone) { const el = add("her" + toneCls(tone), ""); await typeOn(el, text || ""); }
+// an arrival encounter carries a mood (spooky/sketchy/weird/awe/charming) — tint that turn's block
+const _TONES = { spooky: 1, sketchy: 1, weird: 1, awe: 1, charming: 1 };
+function toneCls(t) { return (t && _TONES[t]) ? " tone-" + t : ""; }
 function you(text) { add("you", esc(text)); }
-function events(list) { if (list && list.length) add("events", list.map(esc).join("\n")); }
+function events(list, tone) { if (list && list.length) add("events" + toneCls(tone), list.map(esc).join("\n")); }
 function info(text) { if (text) add("info", esc(text)); }
 function ending(text) { if (text) add("ending", esc(text)); }
 
@@ -243,8 +246,8 @@ async function render(res) {
   showScene(res.snapshot);
   welcomeBlock(res.welcome);
   placeCard(res.snapshot);
-  if (res.events && res.events.length) events(res.events);
-  if (res.scene) { await her(res.scene); playVoice(res); }
+  if (res.events && res.events.length) events(res.events, res.tone);
+  if (res.scene) { await her(res.scene, res.tone); playVoice(res); }
   npcBlock(res.npc);
   info(res.info);
   if (res.map) openMap(res.map);           // the 'map' command → a visual overlay of nearby plates

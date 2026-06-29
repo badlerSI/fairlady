@@ -785,6 +785,9 @@ def _result(s, events, scene, *, voice=None, npc=None, info=None, welcome=None, 
         "ok": True, "events": events, "scene": scene, "voice": voice, "npc": npc,
         "info": info, "welcome": welcome, "snapshot": snapshot(s), "choices": choices(s),
         "status": s.status, "ending": s.ending, "sid": s.flags.get("sid", ""), "map": map,
+        # a one-shot mood for THIS turn — the tone of an arrival encounter, so the CRT can tint it
+        # (spooky/sketchy/weird/awe/charming). Read-and-cleared so it never bleeds into the next turn.
+        "tone": s.flags.pop("arrival_tone", None),
     }
 
 

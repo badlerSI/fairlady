@@ -333,7 +333,9 @@ encounters** — most with two or three beats that rotate as you roll back throu
 **tone**: the ghost towns and the Clown Motel go *spooky* (Bodie's curse, Goldfield's waiting ghost),
 border towns and demolition-site speedways go *sketchy*, the parks and the salt flats go *awe*, and the
 rest land *charming* or flat-out *weird* (the Integratron's alien acoustics, Seven Magic Mountains, the
-sailing stones of Racetrack Playa). Many drop **junk for the trunk** — a Canyon Diablo meteorite off the
+sailing stones of Racetrack Playa). The tone isn't just for the writers — the CRT **tints the arrival
+line by mood** (cold steel-blue for spooky, amber for sketchy, violet for weird, bright cyan for awe,
+soft mint for charming), one turn only. Many drop **junk for the trunk** — a Canyon Diablo meteorite off the
 crater rim, a still-warm fortune cookie from a Ross Alley press, a resin Allosaurus tooth, a chip of the
 actual London Bridge. On top of that, the four states' **real Nov–Dec 2025 events** (the NFR, holiday
 light shows, rivalry games) surface on the day they actually happen.
