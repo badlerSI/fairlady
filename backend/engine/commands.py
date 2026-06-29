@@ -364,8 +364,10 @@ def parse(raw: str) -> Tuple[str, dict]:
         return ("explore", {})
 
     # ATM / withdraw — match the ATM/withdraw signal ANYWHERE ("let me hit the ATM for $5000")
-    if ("atm" in low or "cash machine" in low or "bank machine" in low or "withdraw" in low
-            or low.startswith("take out") or low in ("find a bank", "hit the bank")):
+    if (("atm" in low or "cash machine" in low or "bank machine" in low or "withdraw" in low
+            or low.startswith("take out") or low in ("find a bank", "hit the bank"))
+            and not any(v in low for v in ("hotwire", "smash", "break", "rob", "steal", "pry", "blow up",
+                                           "crack the", "jackhammer"))):    # 'hotwire the atm' is improv, not a withdrawal
         return ("atm", {"amount": _money(low) or _bare_number(low)})   # accept 'withdraw 200'
 
     # claim what you're carrying — accept '$300' AND a bare '300'; only ZERO it on an explicit broke
@@ -740,8 +742,41 @@ def parse(raw: str) -> Tuple[str, dict]:
         push = any(w in low for w in ("fast", "floor", "push", "hard", "haul", "book it", "step on"))
         return ("drive", {"dest": dest, "push": push})
 
+    # IMPROV: a freeform ACTION the engine has no verb for ("climb the tower", "let me hotwire the ATM",
+    # "I jump on the hood and sing") → the DM rules on it and Ace narrates a yes-and / no-but. Matched
+    # LAST, so every real command wins first; pure conversation/questions still fall through to 'say'.
+    _frame = any((" " + low).find(" " + f) == 0 or low.startswith(f) for f in _PROPOSE_FRAMES)
+    _talky = any(w in low for w in _PROPOSE_TALK)
+    if (not _talky) and (_frame or any(a in low for a in _IMPROV_ACTIONS)):
+        return ("attempt", {"text": t})
+
     # otherwise: talk to FAIRLADY
     return ("say", {"text": t})
+
+
+# the "I'm proposing an action, rule on it" frames; followed by a talky verb it's just conversation
+_PROPOSE_FRAMES = ("can i ", "could i ", "may i ", "is it possible", "is there a way", "what if i ",
+                   "let me ", "i want to ", "i wanna ", "i'd like to ", "id like to ", "i would like to ",
+                   "i'm going to ", "im going to ", "i'm gonna ", "im gonna ", "i am going to ",
+                   "i try to ", "i attempt", "i'll try to ", "ill try to ", "i think i'll ")
+_PROPOSE_TALK = ("ask you", "ask her", "tell you", "tell her", "tell me", "talk to you", "let me think",
+                 "let me know", "i want to know", "i wanna know", "i'd like to know", "want to hear",
+                 "wanna hear", "ask a question", "let me guess", "i want to say", "i wanna say")
+# physical / cinematic action verbs that aren't existing commands — the heart of the improv layer
+_IMPROV_ACTIONS = ("climb", "scale the", "jump on", "jump off", "jump in", "leap", "vault", "smash",
+                   "kick ", "punch", "headbutt", "pry ", "hotwire", "sneak", "trespass", "rummage",
+                   "scrounge", "graffiti", "spray paint", "spray-paint", "vandal", "streak", "moon the",
+                   "skinny dip", "skinny-dip", "go swimming", "serenade", "whistle", "juggle", "cartwheel",
+                   "backflip", "parkour", "busk", "panhandle", "arm wrestle", "arm-wrestle", "wrestle",
+                   "prank", "tip over", "flip the", "ride the", "climb on", "stand on", "break into",
+                   "break in", "bust into", "rob the", "loot ", "torch ", "set fire", "set it on fire",
+                   "light it up", "scream", "holler", "do a donut", "do donuts", "do a burnout", "drift ",
+                   "peel out", "i dare", "throw a", "kiss the", "pet the", "feed the", "spy on", "hide in",
+                   "bury ", "dance with", "propose to", "search the", "look in the", "look inside",
+                   "look under", "dig ", "rifle through", "go through the", "check under", "poke around",
+                   # the world-breakers, so they route here and get a proper "no, but"
+                   "teleport", "fly to", "fly into", "fly over", "fly up", "time travel", "time-travel",
+                   "go back in time", "summon", "levitate", "cast a spell", "turn into a", "become a")
 
 
 # Her build sheet, as conversation. A "coherent question about her build or specs" warms her

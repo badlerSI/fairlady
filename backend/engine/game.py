@@ -13,7 +13,7 @@ from config import (
 from engine.state import GameState
 from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
                     endings, gadgets, season, bond, heat, cameras, survival, inventory, luck, romance,
-                    places, onboarding, rizzbreaker, alma, bobmode, weather)
+                    places, onboarding, rizzbreaker, alma, bobmode, weather, improv)
 from engine.commands import parse, _bare_number, _money, spec_hits as _spec_hits
 from adapters import get_narrator
 from adapters.base import voices
@@ -1080,6 +1080,14 @@ def _example_dest(s: GameState) -> str:
 def handle(s: GameState, raw: str) -> dict:
     verb, args = parse(raw)
 
+    # an IMPROV 'attempt' only stands alone in free-roam; inside any moment that already wants a freeform
+    # line (the prologue, onboarding, the stick question, a stop/standoff/clerk/owner) it's that line.
+    if verb == "attempt" and (prologue.active(s) or onboarding.pending(s)
+                              or romance.ask_stick_pending(s) or s.flags.get("clerk_curious")
+                              or s.flags.get("pending_turnkey") or encounters.stop_active(s)
+                              or encounters.standoff_active(s) or encounters.owner_active(s)):
+        verb, args = "say", {"text": args.get("text", raw)}
+
     # ---- pure console verbs, available everywhere ----
     if verb == "help":
         return _result(s, [], "", info=_help_text())
@@ -1269,6 +1277,13 @@ def handle(s: GameState, raw: str) -> dict:
     if verb == "charge" and not prologue.active(s):
         events = _charge_battery(s)
         scene, voice, audio = _narrate(s, events, raw)
+        return _result(s, events, scene, voice=audio)
+    if verb == "attempt":                        # freeform action → the improv DM rules, Ace narrates
+        s.turn += 1
+        out = improv.adjudicate(s, raw)
+        events = out["events"]
+        _autosave(s)
+        scene, voice, audio = _narrate(s, events, raw, drama=out["moment"])
         return _result(s, events, scene, voice=audio)
     if verb == "weather":            # the sky here, plus any front the radio's tracking
         return _result(s, [], "", info="\n".join(weather.report(s)))

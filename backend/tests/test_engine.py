@@ -3549,3 +3549,39 @@ def test_dead_battery_needs_the_charger():
     s = fresh(); s.place = world.get_poi("reno"); s.flags["battery_dead"] = True
     r = game.handle(s, "charge the battery")
     assert any("don't have the trickle charger" in e for e in r["events"])   # no charger, no dice
+
+
+# ================================================================== the improv DM ('can I do that?')
+def test_improv_routes_freeform_actions_not_conversation():
+    from engine import commands
+    p = lambda t: commands.parse(t)[0]
+    for t in ("climb the water tower", "let me hotwire the atm", "teleport to vegas", "do a donut",
+              "I jump on the hood and serenade the desert", "break into the saloon"):
+        assert p(t) == "attempt", t
+    for t in ("what kind of engine do you have", "tell me about the spade", "the desert is beautiful",
+              "withdraw 200", "can I ask you something"):
+        assert p(t) != "attempt", t                         # real questions/commands stay themselves
+
+def test_improv_possible_action_is_a_yes_and_risky_draws_heat():
+    from engine import world
+    s = fresh(); s.place = world.get_poi("goldfield"); s.fuel_l = 40.0
+    s.flags.update(favor_filled=True, cold_start_known=True)
+    h0 = s.heat
+    r = game.handle(s, "climb the water tower")            # plausible + risky → happens, a little heat
+    assert s.heat > h0                                      # a loud stunt draws an eye
+    assert s.status == "playing"                            # never breaks the run
+
+def test_improv_impossible_action_is_a_no_but_no_state_change():
+    from engine import world
+    s = fresh(); s.place = world.get_poi("goldfield"); s.fuel_l = 40.0
+    s.flags.update(favor_filled=True, cold_start_known=True)
+    h0, c0 = s.heat, s.cash
+    game.handle(s, "teleport to vegas and grab a million dollars")
+    assert s.heat == h0 and s.cash == c0 and s.place.poi_id == "goldfield"   # the DM grants NOTHING
+
+def test_improv_judge_has_an_improv_kind():
+    from engine import judge
+    v = judge.assess(None, "improv", "climb the water tower", facts="at a ghost town")
+    assert "pass" in v and "risky" in v
+    v2 = judge.assess(None, "improv", "teleport to the moon")
+    assert v2["pass"] is False                              # world-breakers fail

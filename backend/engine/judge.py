@@ -36,9 +36,10 @@ def _http():
 
 
 # ---------------------------------------------------------------- the verdict
-def _verdict(passed, score, clever=False, messing=False, reason=""):
+def _verdict(passed, score, clever=False, messing=False, reason="", risky=False):
     return {"pass": bool(passed), "score": int(max(0, min(100, score))),
-            "clever": bool(clever), "messing": bool(messing), "reason": (reason or "")[:80]}
+            "clever": bool(clever), "messing": bool(messing), "risky": bool(risky),
+            "reason": (reason or "")[:90]}
 
 
 _SYS = (
@@ -53,18 +54,43 @@ _SYS = (
 )
 
 
+_SYS_IMPROV = (
+    "You are the DM for a talking-car road-trip IMPROV game — a stolen 1972 Datsun 240Z named Ace and the "
+    "driver running her across the Southwest. The player PROPOSES an action. Decide if it's PLAUSIBLE in "
+    "the fiction and answer in STRICT JSON only. This is improv: lean 'YES, and' for anything harmless, "
+    "creative, funny, or cinematic — a stolen-car road movie says yes a lot. Say NO only for the genuinely "
+    "impossible or world-breaking (flying, teleporting, time travel, magic, instant riches, summoning, "
+    "becoming a different species) OR for anything that breaks the hard rules (no minors, no sleaze, no "
+    "meta/fourth-wall). Mark `messing`:true for trolling/nonsense/meta. `risky`:true if it's loud, "
+    "illegal, dangerous, or would draw the law. Output ONLY: "
+    "{\"pass\":true|false,\"risky\":true|false,\"messing\":true|false,\"reason\":\"<=10 words: what happens\"}"
+)
+
+
 def _llm(kind, text, difficulty, context, facts, sid):
-    # the instruction goes in the BODY (ace8 may ignore a custom system field) with a 1-shot to force JSON
-    prompt = (
-        _SYS + "\n\nEXAMPLE — input line \"lol nice tits\" -> "
-        "{\"pass\":false,\"score\":5,\"clever\":false,\"messing\":true,\"reason\":\"sleaze\"}\n\n"
-        f"CHECK: {kind}\n"
-        f"DIFFICULTY (0 trivial – 10 nearly impossible): {difficulty}\n"
-        f"WHAT'S TRUE right now: {facts or 'nothing special'}\n"
-        f"CONTEXT: {context or '—'}\n"
-        f'PLAYER SAID: "{(text or "").strip()[:400]}"\n'
-        "Now output ONLY the JSON verdict for that line."
-    )
+    improv = (kind == "improv")
+    sysp = _SYS_IMPROV if improv else _SYS
+    if improv:
+        prompt = (
+            _SYS_IMPROV + "\n\nEXAMPLES — \"climb the water tower\" -> "
+            "{\"pass\":true,\"risky\":true,\"messing\":false,\"reason\":\"you make it up; great view, bad idea\"}; "
+            "\"teleport to vegas\" -> {\"pass\":false,\"risky\":false,\"messing\":false,\"reason\":\"she's a car, not a TARDIS\"}\n\n"
+            f"WHERE: {facts or 'somewhere on the road'}\n"
+            f"SITUATION: {context or '—'}\n"
+            f'PLAYER WANTS TO: "{(text or "").strip()[:400]}"\n'
+            "Now output ONLY the JSON verdict."
+        )
+    else:
+        prompt = (
+            _SYS + "\n\nEXAMPLE — input line \"lol nice tits\" -> "
+            "{\"pass\":false,\"score\":5,\"clever\":false,\"messing\":true,\"reason\":\"sleaze\"}\n\n"
+            f"CHECK: {kind}\n"
+            f"DIFFICULTY (0 trivial – 10 nearly impossible): {difficulty}\n"
+            f"WHAT'S TRUE right now: {facts or 'nothing special'}\n"
+            f"CONTEXT: {context or '—'}\n"
+            f'PLAYER SAID: "{(text or "").strip()[:400]}"\n'
+            "Now output ONLY the JSON verdict for that line."
+        )
     try:
         # fresh endpoint session per call (the rop1 ace8 endpoint accumulates + regurgitates otherwise)
         import hashlib
@@ -77,8 +103,12 @@ def _llm(kind, text, difficulty, context, facts, sid):
         if not m:
             return None
         d = json.loads(m.group(0))
+        passed, messing = bool(d.get("pass")), bool(d.get("messing"))
+        if improv:
+            return _verdict(passed, 60 if passed else 30, clever=False, messing=messing,
+                            reason=d.get("reason", ""), risky=bool(d.get("risky")))
         score = int(d.get("score", 0) or 0)
-        passed, clever, messing = bool(d.get("pass")), bool(d.get("clever")), bool(d.get("messing"))
+        clever = bool(d.get("clever"))
         # reject DEGENERATE output (Nemotron often returns all-false/zeros) — trust the heuristic instead
         if score == 0 and not passed and not clever and not messing:
             return None
@@ -111,12 +141,34 @@ def _is_troll(low):
     return (not low.strip()) or len(low.strip()) < 2 or any(t in low for t in _TROLL)
 
 
+# improv: the world-breakers we say NO to, and the loud/illegal stuff that draws heat
+_IMPOSSIBLE = ("teleport", "time travel", "time-travel", "back in time", "summon", "cast a spell",
+               "become a", "turn into", "win the lottery", "infinite money", "god mode", "godmode",
+               "respawn", "clone myself", "raise the dead", "shoot lasers", "grow wings", "breathe under",
+               "stop time", "read minds", "phase through", "wish for", "fly to", "fly into", "fly over",
+               "fly up", "take flight", "levitate", "fairy", "wizard", "dragon", "the moon")
+_IMPROV_RISKY = ("break in", "break into", "smash", "steal", "rob", "hotwire", "kick", "punch", "fight",
+                 "shoot", "burn", "set fire", "set it on fire", "climb", "jump off", "jump on", "race",
+                 "floor it", "yell", "scream", "graffiti", "spray paint", "vandal", "trespass", "sneak",
+                 "pick the lock", "pry open", "loot", "torch", "moon ", "streak", "flash ", "brawl",
+                 "donut", "burnout", "peel out", "rev ", "speed", "drift", "drag race", "stunt", "joyride")
+
+
 def _heuristic(kind, text, difficulty):
     low = (text or "").lower()
     words = low.split()
     troll = _is_troll(low)
     sleaze = any(x in low for x in _SLEAZE)
     cliche = any(x in low for x in _CLICHE)
+
+    if kind == "improv":
+        impossible = any(w in low for w in _IMPOSSIBLE)
+        risky = any(w in low for w in _IMPROV_RISKY)
+        possible = (not impossible) and (not troll) and (not sleaze)
+        reason = ("she's a car, not a genie" if impossible
+                  else "risky, but the road's yours" if risky else "sure — why not")
+        return _verdict(possible, 60 if possible else 22, clever=False,
+                        messing=(troll or sleaze), reason=reason, risky=risky)
 
     if kind in ("traffic_stop", "clerk", "owner", "standoff"):
         from engine import encounters
