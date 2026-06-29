@@ -15,6 +15,12 @@ def parse(raw: str) -> Tuple[str, dict]:
 
     if low in ("help", "?", "commands", "h"):
         return ("help", {})
+    # trailing terminal punctuation must not defeat the exact-match verb lists below — players type
+    # "what's around?", "look around.", "map?". Strip it for MATCHING only; `t` keeps the player's real
+    # words (with punctuation) for anything that becomes Ace-facing speech.
+    low = low.rstrip(" \t?.!…,;:")
+    if not low:
+        return ("look", {})
     if low in ("new", "new game", "restart", "reset"):
         return ("new", {})
     if low in ("save",):

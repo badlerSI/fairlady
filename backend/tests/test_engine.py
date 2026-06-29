@@ -539,6 +539,19 @@ def test_parse_new_verbs(raw, verb):
     assert parse(raw)[0] == verb
 
 
+@pytest.mark.parametrize("raw,verb", [
+    ("what's around?", "look"),                 # trailing punctuation must not defeat exact-match verbs
+    ("look around.", "look"),
+    ("map?", "map"),
+    ("the map?", "map"),
+    ("take it.", "takefind"),
+    ("rewind!", "rewind"),
+    ("?", "help"),                              # ...but a bare '?' is still help
+])
+def test_trailing_punctuation_does_not_break_verb_parse(raw, verb):
+    assert parse(raw)[0] == verb
+
+
 def test_too_far_drive_gives_a_contextual_refusal_not_a_spec_dump():
     """A leg past the tank's range is refused — and Ace says something ABOUT that, not a free-associated
     recitation of her own spec sheet (the live-play bug)."""
