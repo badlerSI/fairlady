@@ -35,9 +35,10 @@ ALMA_BACKSTORY = (
 )
 # Alma's OWN voice — distinct from Ace. Where Ace is dry/loyal/literate, Alma is low, amused, dangerous,
 # economical; she's read every line and is bored of most of them; tenderness only leaks at the edges.
-# She speaks in her OWN Kokoro voice — ef_dora (the Spanish 'Dora'), which carries her English AND the
-# Spanish she drops naturally. (Ace stays af_heart; the two never sound the same.)
-VOICE = "ef_dora"
+# She speaks in her OWN Kokoro voice. ef_dora (Spanish 'Dora') is the intended voice for her bilingual
+# EN/ES, but it isn't loaded on the ace-api endpoint — af_nova IS (a distinct, warm female), so she
+# uses that for now and sounds nothing like Ace (af_heart). Swap back to ef_dora once it's loaded.
+VOICE = "af_nova"
 
 PERSONA = (
     "You are ALMA — a femme fatale the driver met clubbing in Vegas: a fixer and a grifter who has left "
