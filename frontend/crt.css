@@ -118,7 +118,7 @@ header { display: flex; align-items: baseline; justify-content: space-between; f
 .welcome .w-body { color: var(--paper); font-size: 13px; margin-top: 3px; }
 .place { color: var(--cyan-dim); font-size: 13px; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }
 .her { color: var(--paper); text-shadow: 0 0 4px rgba(184,244,255,.25); font-size: 16px; }
-.her::before { content: "FAIRLADY  "; font-family: var(--display); color: var(--orange); font-weight: 700; letter-spacing: 1px; }
+.her::before { content: "ACE  "; font-family: var(--display); color: var(--orange); font-weight: 700; letter-spacing: 1px; }
 .you { color: var(--green); }
 .you::before { content: "› "; color: var(--green); }
 .events { color: var(--cyan-dim); font-size: 11.5px; white-space: pre-wrap; opacity: .75; border-left: 2px solid var(--cyan-faint); padding-left: 12px; }

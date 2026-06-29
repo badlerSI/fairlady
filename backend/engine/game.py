@@ -614,7 +614,7 @@ def snapshot(s: GameState) -> dict:
         "damage_pct": round(garage.body_damage(s)),
         # BOB MODE — the active car the frontend should render (brown Bob vs the white Z)
         "active_car": "bob" if s.flags.get("bob_mode") else "ace",
-        "car_name": "BOB" if s.flags.get("bob_mode") else "FAIRLADY",
+        "car_name": "BOB" if s.flags.get("bob_mode") else "ACE",
         "bob_mode": bool(s.flags.get("bob_mode")),
         "bob_owned": bool(s.flags.get("bob_owned")),
         "bob_call_pending": bool(s.flags.get("bob_call_pending")),
