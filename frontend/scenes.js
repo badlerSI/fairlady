@@ -109,8 +109,21 @@ const SPR = {
     const sx = 20 + r() * 200, sy = 10 + r() * 50, len = 26;
     s.line(sx + p*120, sy + p*30, sx + p*120 - len, sy + p*30 - len*0.25, I.hot);
   },
-  moon(s, x, y, r) {
-    s.disc(x, y, r, I.f); s.disc(x + r*0.5, y - r*0.4, r*0.85, I.bg);
+  // phase-driven moon: phase 0..1 (0=new, 0.5=full, 1=new) from the in-game date (snap.moon_phase,
+  // stashed in _sky). Lit disc minus an offset shadow disc = a real lune (crescent → gibbous → full).
+  moon(s, x, y, r, phase) {
+    if (phase == null) phase = (typeof _sky !== "undefined" && _sky.phase != null) ? _sky.phase : 0.5;
+    const ill = (1 - Math.cos(2 * Math.PI * phase)) / 2;     // 0 new … 1 full
+    s.disc(x, y, r, I.f);                                     // the full lit disc
+    s.plot(x - Math.round(r * 0.30), y - Math.round(r * 0.18), I.d2);   // stable maria speckle
+    s.plot(x + Math.round(r * 0.18), y + Math.round(r * 0.22), I.d2);
+    if (ill < 0.985) {                                        // carve the shadow (skip when full)
+      const m = Math.round(2 * r * ill), dir = phase < 0.5 ? -1 : 1;   // waxing: lit on the right
+      s.disc(x + dir * m, y, r, I.bg);
+      if (ill > 0.04) s.plot(x - dir * (r - 1), y, I.hot);    // a glint on the lit limb
+    } else {
+      s.ring(x, y, r + 1, I.d3);                              // full — a soft halo ring
+    }
   },
   sun(s, x, y, r, t) {
     s.disc(x, y, r, I.f);
@@ -295,6 +308,7 @@ if (typeof CAR_PNG !== "undefined") CAR_IMG.src = CAR_PNG;
 // the latest snapshot's car state, stashed by sceneFor() so EVERY scene's car reflects it
 // without threading flags through dozens of drawAce call sites.
 let _aceState = {};
+let _sky = {};        // { phase, full } from the snapshot's moon fields — read by SPR.moon
 
 function drawAce(s, t, o = {}) {
   const moving = o.moving !== false;
@@ -333,6 +347,22 @@ function drawAce(s, t, o = {}) {
   } else {
     s.rect(x, y, w, h, I.d2);
   }
+  // rear tail lights on the 240Z's rear panel (she's a rear-3/4 view) — dull red lenses by day,
+  // lit bright with a hot bloom + glow at night
+  const night = o.night != null ? o.night : !!_aceState.night;
+  const tlw = Math.max(2, Math.round(w * 0.052)), tlh = Math.max(1, Math.round(h * 0.022));
+  const taillight = (fx, fy) => {
+    const tx = x + Math.round(w * fx) - (tlw >> 1), ty = y + Math.round(h * fy) - (tlh >> 1);
+    if (night) {
+      s.rect(tx - 1, ty - 1, tlw + 2, tlh + 2, "#5a140f");    // soft glow halo
+      s.rect(tx, ty, tlw, tlh, "#e23b2e");                     // bright lens (brand hazard red)
+      s.rect(tx + Math.round(tlw * 0.33), ty, Math.max(1, tlw - Math.round(tlw * 0.66)), tlh, "#ff7a6e"); // hot core
+    } else {
+      s.rect(tx, ty, tlw, tlh, "#7e2a22");                     // dull red, daylight
+    }
+  };
+  taillight(0.44, 0.60);   // near (driver-side) cluster
+  taillight(0.86, 0.565);  // far (passenger-side) cluster
   // Z camo — a tarp dithered over the hood/roof and road-grime low, dressing the show car down
   if (camo) {
     s.dither(x + Math.round(w * 0.15), y + Math.round(h * 0.06),
@@ -393,6 +423,17 @@ function _mod(v, m) { return ((v % m) + m) % m; }
 
 function _drawFar(s, env, hy, t) {
   const drift = (t * 7) % 48;
+  if (env === "night" || env === "fullmoon") {      // open desert at night — stars, the moon, dark dunes
+    SPR.stars(s, t, 60, 5, 0, hy - 4);
+    if (env === "fullmoon") {
+      s.dither(0, hy - 9, s.W, 11, 9, I.d2);        // a low wash of moonlight along the horizon
+      SPR.moon(s, 228, 30, 16, 0.5);                // a BIG full moon hanging low over the road
+    } else {
+      SPR.moon(s, 252, 22, 9);                      // the night's real phase, smaller
+    }
+    for (let i = -1; i < 8; i++) { const x = i * 48 - drift; SPR.mesa(s, x, hy + 2, 40, 14 + (i & 1) * 10, I.d1); }
+    return;
+  }
   if (env === "city") {                  // NIGHT skyline — rectangle bars belong here, and only here
     SPR.stars(s, t, 50, 5, 0, hy - 6);
     for (let i = -1; i < 14; i++) {
@@ -453,7 +494,10 @@ function drawHighway(s, t, env) {
 // =====================================================================
 //  SCENES  (each = a location BACKDROP; drawAce() composites the hero on top)
 // =====================================================================
-function bgNight(s, t, seed) { SPR.stars(s, t, 80, seed || 7); SPR.shootingStar(s, t, (seed||7)+1); }
+function bgNight(s, t, seed) {
+  SPR.stars(s, t, 80, seed || 7); SPR.shootingStar(s, t, (seed||7)+1);
+  SPR.moon(s, 276, 24, 10);     // the moon, upper-right sky, at tonight's real phase (new = invisible)
+}
 
 const SCENES = {
 
@@ -550,7 +594,8 @@ const SCENES = {
   drive_desert(s, t) { drawHighway(s, t, "desert"); drawAce(s, t, { moving: true }); },
   drive_city(s, t)   { drawHighway(s, t, "city");   drawAce(s, t, { moving: true }); },
   drive_mountain(s, t){ drawHighway(s, t, "mountain"); drawAce(s, t, { moving: true }); },
-  night_drive(s, t)  { drawHighway(s, t, "desert"); drawAce(s, t, { moving: true }); },
+  night_drive(s, t)  { drawHighway(s, t, "night"); drawAce(s, t, { moving: true, night: true }); },
+  full_moon_drive(s, t) { drawHighway(s, t, "fullmoon"); drawAce(s, t, { moving: true, night: true }); },
   roadside(s, t)     { drawHighway(s, t, "desert"); drawAce(s, t, { moving: true }); },
   motel(s, t) {
     bgNight(s, t, 31); SPR.ground(s, GROUND);
@@ -559,7 +604,6 @@ const SCENES = {
     SPR.neon(s, 210, 70, "MOTEL", t, 2);
     SPR.neon(s, 214, 96, "VACANCY", t, 1);
     drawAce(s, t);
-    SPR.moon(s, 40, 30, 10);
   },
 
   // ---------- national parks & nature ----------
@@ -1025,8 +1069,7 @@ const SCENES = {
   },
 
   berlin_nv(s, t) {                             // Berlin–Ichthyosaur: ghost town + sea monsters
-    bgNight(s, t, 21);
-    SPR.moon(s, 272, 26, 11);
+    bgNight(s, t, 21);                          // (moon now comes from bgNight, at tonight's phase)
     SPR.mountains(s, 112, 3, 36, I.d1, 1.1); SPR.mountains(s, 126, 8, 22, I.d2);
     SPR.ground(s, GROUND, I.d3);
     // leaning ghost-town shacks
@@ -1100,13 +1143,22 @@ function sceneIdFor(snap) {
   }
   if (snap.status === "stranded" || snap.status === "busted" || snap.status === "taken")
     return "stranded";                                     // reuse the end-of-road art (not a drive loop)
+  if (snap.in_transit) {                                   // a drive CONVERSATION → the world goes by
+    const night = snap.hour != null && (snap.hour < 6 || snap.hour >= 19);
+    if (night && snap.is_full_moon) return "full_moon_drive";   // the special full-moon night drive
+    if (night) return "night_drive";
+    return _driveEnv(snap);                                // daytime: desert / city / mountain skin
+  }
   if (snap.scene && (SCENES[snap.scene] || snap.scene.startsWith("wm_"))) return snap.scene;
   const k = KIND_SCENE[snap.kind];
   if (k && SCENES[k]) return k;
   return _driveEnv(snap);                                 // generic spots → the world goes by
 }
 function sceneFor(snap) {
-  _aceState = snap ? { camo: !!snap.camo, self_driving: !!snap.self_driving } : {};
+  const hr = snap && snap.hour != null ? snap.hour : null;
+  _aceState = snap ? { camo: !!snap.camo, self_driving: !!snap.self_driving,
+                       hour: hr, night: hr != null && (hr < 6 || hr >= 19) } : {};
+  _sky = snap ? { phase: snap.moon_phase, full: !!snap.is_full_moon } : {};
   const id = sceneIdFor(snap);
   if (id.startsWith("wm_") && _wmImage(id) !== null) return wmScene(id, snap);
   return SCENES[id] || SCENES.drive_desert;

@@ -13,7 +13,7 @@ from config import (
 from engine.state import GameState
 from engine import (world, rules, economy, save, drama, prologue, encounters, garage,
                     endings, gadgets, season, bond, heat, cameras, survival, inventory, luck, romance,
-                    places, onboarding, rizzbreaker, alma, bobmode, weather, improv)
+                    places, onboarding, rizzbreaker, alma, bobmode, weather, improv, sky)
 from engine.commands import parse, _bare_number, _money, spec_hits as _spec_hits
 from adapters import get_narrator
 from adapters.base import voices
@@ -631,6 +631,11 @@ def snapshot(s: GameState) -> dict:
         "alertness": survival.alertness(s),
         # the sky — temp, conditions, storm, and whether she needs a cold-start this morning
         "weather": weather.snapshot(s),
+        # the moon — phase 0..1 (0.5=full) for the procedural sprite, + the full-moon flag
+        **sky.snapshot(s), "date_iso": dt.date().isoformat(),
+        # mid-drive conversation → the panel shows the road going by (night / full-moon variants), not
+        # the static origin plate
+        "in_transit": bool(s.flags.get("transit")),
         "phone": bool(s.flags.get("has_phone", True)),                # your phone — a tracker when hot
         "cards_frozen": bool(s.flags.get("cards_frozen")),           # cops froze the plastic — cash only
         "has_fake_id": bool(s.flags.get("has_fake_id")),             # a no-questions ID in your pocket
