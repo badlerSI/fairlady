@@ -124,7 +124,7 @@ tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (fron
 tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
 tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
 deploy/               rop1 production kit: systemd unit, Caddy/cloudflared proxy, env, README
-backend/tests/        151 tests (engine + web)
+backend/tests/        343 tests (engine + web)
 ```
 
 ### The one rule that makes it work
@@ -221,6 +221,24 @@ The design is grounded in a research pass on what makes notoriety mechanics fun 
 Meier's interesting-decisions, NFS Heat's risk/reward, GTA's readable bands, Credit Karma's factor
 dashboards) — see `TRANSFER.md`.
 
+### Going dark — the BOLO floor, your phone, frozen cards, a fake ID
+
+Heat is the *real* clock to New Year's, not money. The longer you run on the same car, the more its
+description spreads: a **BOLO floor** climbs about a point a day, and your heat can't fade below it. The
+only reset is **changing the car** — swap the plate, pull the ace-of-spades hood, rattle-can the paint —
+or buying her outright.
+
+And the heat isn't only on the car; it's on **you**. A card swipe is worse the hotter you already are
+(a hunted name lights up every fraud alert), and **your own phone is a tracker** — run hot and it pings
+towers, tightening the net. `ditch the phone` to go dark: a real drop, but you lose calls, maps, and
+posts, and there's no taking it back. Push it to **MOST WANTED** and the cops **freeze your cards and
+accounts** — cash only from here, the ATM your last line, the tell that they're closing in.
+
+Sleeping leaves a trail too. A real **motel runs your ID** at the desk — a fresh mark when you're
+wanted — so you learn to pay for a pricier, cash-only **no-questions motel**, or `get a fake id` (a
+risky lift that can backfire, and can still burn at the front desk). None of it is *easy* — but that's
+what the rewind is for.
+
 ### Coming to terms — buy her, and go legit
 
 There's a way off the run that isn't a gun. The economy is **trust-the-player**: tell her what you're
@@ -265,6 +283,54 @@ passes shut in elevation order — **Tioga first**, then the Sierra high country
 Rim — until by New Year's fourteen of them are chained and gated. You can't `drive to` a snowed-in pass;
 `passes` reports what's closed and what's about to. Early November is a window; dawdle, and the map
 freezes around you — which bites hardest on a **Desperado who has to burn days lying low**.
+
+### Weather — read the sky, outrace the storm
+
+Every day across the four states has real-feeling weather: deserts mild, mountains cold, the season's
+actual fronts overlaid — the first Sierra snow, the Thanksgiving warm window, the big pre-Christmas
+storm that buries the crest. `weather` reads conditions here *and* any front the radio's tracking days
+out, so you can run a mountain corridor **ahead** of a storm — or get caught and chained when it lands.
+A storm chains or shuts a pass before the seasonal snow line even reaches it.
+
+And she's a **carbureted classic**, not a key-fob crossover: on a freezing morning she won't catch on
+the first crank. The first cold start you have to **ask her how** — pump the gas three times, then turn
+the key and hold it — and after that you know it. Brute-force it blindly instead and you'll **flatten
+the battery**; then it's the **trickle charger** you pulled off her at SEMA (`charge the battery`): a
+few hours gone, but the sun's well up and she's warm-blooded by the time it's done.
+
+### Premium only — the knock, and learning to rewind
+
+She takes **91 or better**. Fill up without saying so and you get regular — and a few miles down the
+road she starts to **knock**, pings the whole leg, and if you keep feeding her 87 she'll eventually
+**hole a piston** and need a tow. That first knock is the game teaching you the **rewind**: fold back
+down the road to the pump and ask for premium this time. (A holed piston, or a rare flat with no jack in
+the compute-packed spare well, is a `tow` to the nearest town shop.)
+
+### Can you drive a stick?
+
+She asks, early, whether you can drive a manual — and she'll know if you lie. Say no and the first miles
+are **bumpy**: she stalls in town, and worse on **San Francisco's hills**. But she teaches you, edge-of-
+tomorrow style — your clutch skill climbs and persists through a rewind — until one day she's just
+yours to row.
+
+### The hatch — finds, a huge inventory, and a road dog
+
+Talk to her on the long stretches (don't `put on music` and skip ahead) and she'll **spot things on the
+shoulder** — an empty jerry can, a chainsaw that might come in handy someday, a stray puppy named Lucky,
+a real Rolex on the right mountain mile. `take it` and it rides in the 240Z's hatch, which has a real
+cubic-foot limit, so you pack smart. A `use` DM judges what each thing's good for, and a valuable find
+can be `sold` at a town pawn counter.
+
+### Set-pieces — crash the wedding, bust the GP, take the tab
+
+Roll into the wrong place and the road goes strange. **Palm Springs** folds you into a *Groundhog Day*
+wedding loop you only break by leaving the way you came (he remembers each loop; she never does). Back
+in **Vegas on Grand Prix weekend**, bust onto the F1 street circuit and you're arrested. Drive to
+**Hayward** once she's yours and rizz Zoox into making her self-driving. Out at **Black Rock City**,
+take the acid that blows onto the windshield and come back at max affection. **Pea Soup Andersen's** in
+Santa Nella keeps you full — bring Alma. And every town, even the ones without a set-piece, has its own
+odd little encounter, with the four states' **real Nov–Dec 2025 events** (the NFR, holiday light shows,
+rivalry games) surfacing on the day they actually happen.
 
 ### Her gadgets — and the self-driving secret
 
@@ -389,11 +455,14 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-151 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
-heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, the favor
-ladder (5 turns of small talk, 3 if you ask about her build), the title drop, checkpoint rewinds,
-traffic-stop verdicts, the owner's blessing and the trailer ending, the one-tank range question,
-Berlin NV, and an end-to-end turn — all network-free.
+343 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+heat economy and its two axes (car vs driver), the rising BOLO floor, state-line cooling, the
+nightly-sleep gate, the tow rescue, the parser, the favor ladder, the title drop, checkpoint rewinds,
+traffic-stop verdicts, the owner's blessing and the trailer ending — plus the newer systems: the
+deterministic weather model and its real storms, the cold-start ritual and the trickle-charger battery,
+the premium-gas knock → breakdown → rewind, stick-shift stalls, roadside finds + the hatch cap + the
+pawn path, the five set-pieces, town encounters + dated real events, the phone-tracking / card-freeze /
+fake-ID / no-questions-motel surveillance economy, and end-to-end turns — all network-free.
 
 ---
 
