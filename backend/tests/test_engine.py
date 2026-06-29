@@ -2638,6 +2638,44 @@ def test_fueling_at_fresno_summons_the_painter():
     assert s.flags.get("owner_secret") and "painted that spade" in (r.get("scene") or "")
 
 
+def _hitch_state():
+    s = fresh(); s.fuel_l = 40.0; s.day = 3
+    s.place = world.get_poi("berlin_nv") or world.get_poi("beatty")   # a remote NV desert stop, not a town
+    return s
+
+
+def test_hitchhiker_only_offered_to_non_clubbers_on_a_remote_desert_stop():
+    from engine import alma
+    s = _hitch_state()
+    assert alma.can_hitch(s, s.place)                         # day 3, desert, never clubbed
+    s.flags["alma_met"] = True                                # ...went for the club instead → no hitchhiker
+    assert not alma.can_hitch(s, s.place)
+    s2 = _hitch_state(); s2.place = world.get_poi("las_vegas")  # a city (and the owner's lane) → not here
+    assert not alma.can_hitch(s2, s2.place)
+
+
+def test_hitchhiker_drive_on_leaves_her_and_pickup_then_drop_costs_nothing():
+    from engine import alma
+    s = _hitch_state(); alma.start_hitch(s)
+    out = alma.hitch_turn(s, "keep driving, don't stop")      # 'stop' inside 'don't stop' must NOT pick up
+    assert out["done"] and not s.flags.get("alma_aboard") and s.flags.get("hitch_seen")
+    s = _hitch_state(); alma.start_hitch(s)
+    alma.hitch_turn(s, "pull over and pick her up")
+    assert s.flags["hitch"]["picked"]
+    riz0 = s.riz
+    out = alma.hitch_turn(s, "I'll just drop her at the next town")
+    assert out["done"] and not s.flags.get("alma_aboard") and s.riz > riz0
+
+
+def test_hitchhiker_won_over_comes_aboard():
+    from engine import alma
+    s = _hitch_state(); alma.start_hitch(s); alma.hitch_turn(s, "pick her up")
+    s.flags["hitch"]["spark"] = alma.HITCH_WIN - 1            # one good line from staying
+    out = alma.hitch_turn(s, "stay — I stole this car for a feeling, and you're the first one that felt back")
+    assert out["done"] and s.flags.get("alma_aboard")        # reuses the same companion machinery as the club
+    assert alma.aboard(s)
+
+
 # ================================================================== punctures / damage / drowsiness
 def test_damage_states_clean_cosmetic_serious_and_showscore():
     from engine import garage

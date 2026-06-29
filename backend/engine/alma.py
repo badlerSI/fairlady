@@ -210,6 +210,182 @@ def club_turn(s: GameState, raw: str) -> dict:
             "done": False}
 
 
+# --------------------------------------------------------------- the desert hitchhiker (the OTHER way)
+# If you never went clubbing in Vegas, Alma turns up anyway — stranded on a desert two-lane beside a
+# burnt-out car that was never hers, no cell service, you the only headlights for an hour. You can just
+# run her to the next town (a kindness, then she's gone), or get to talking and win her aboard. The woo
+# is the same persuade check as the club, but it factors your RIZ and Ace's MOOD: a charismatic driver
+# lands lines that would otherwise flop, and a secure, fond Ace will vouch for you — a cold one sabotages.
+HITCH_WIN = 3
+# NOTE: drive-on is checked FIRST so a stray "stop" inside "don't stop" can't read as a pickup.
+_HITCH_DRIVE_ON = ("drive on", "keep driving", "keep going", "leave her", "don't stop", "dont stop",
+                   "won't stop", "wont stop", "drive past", "drive by", "not stopping", "roll on",
+                   "roll past", "ignore her", "leave her there", "no thanks", "pass her", "blow past")
+_HITCH_PICKUP = ("pick her up", "pick up", "pull over", "stop for her", "help her", "get in", "hop in",
+                 "give her a ride", "let her in", "climb in", "of course", "stop", "help", "sure", "yeah",
+                 "yes", "i stop", "we stop", "offer her")
+# drop = run her to town and part ways — must be explicit (a stray "next town" in a STAY line won't trip it)
+_HITCH_DROP = ("just to town", "just to the next town", "just a ride", "just the ride", "drop her",
+               "drop you", "drop off", "drop her off", "let her off", "run her to town", "take her to town",
+               "ride her to town", "just drop", "to town and that's it", "leave her at the next town")
+
+
+def can_hitch(s: GameState, dest=None) -> bool:
+    """Available only if you SKIPPED the club (never met her there), aren't already with her, and you're
+    out on a desert two-lane past the first night. One-shot."""
+    if aboard(s) or married(s) or met(s):
+        return False
+    if s.status != "playing" or s.flags.get("no_heat"):
+        return False
+    if s.day < 2 or s.flags.get("hitch_seen") or "hitch" in s.flags:
+        return False
+    place = dest or s.place
+    region = getattr(place, "region", "")
+    terrain = float(getattr(place, "terrain", 1.0))
+    # a remote, non-service stretch — NOT a town or a gas stop (which is also where the owner waits);
+    # the burnt car is out where nobody is
+    return (region in ("NV", "CA", "AZ") and terrain < 1.12
+            and getattr(place, "kind", "") not in ("city", "gas"))
+
+
+def hitch_active(s: GameState) -> bool:
+    return "hitch" in s.flags
+
+
+def start_hitch(s: GameState) -> list:
+    s.flags["hitch"] = {"spark": 0, "round": 0, "picked": False}
+    s.flags["alma_met"] = True                                  # you've met her now, club window or not
+    return [
+        "· The desert two-lane, nobody for miles, and then headlights find it: a car burned down to a "
+        "black shell on the shoulder, still ticking heat, and a woman beside it with a thumb out and "
+        "cyan dusk on her face — the exact woman from your dreams, though you've never laid eyes on her. "
+        "She doesn't wave so much as expect you.",
+        "ACE: …Out HERE? Nobody's out here, that's the whole point of out here. Burnt car, no other "
+        "soul, a woman who looks like she's been waiting on this exact bumper. Every instinct I've got "
+        "says trouble. …Your call, ace. Stop, or roll on by. (pick her up — or drive on)",
+    ]
+
+
+def _hitch_difficulty(s: GameState) -> tuple:
+    """Effective difficulty from RIZ (charisma lands lines) and Ace's MOOD (a fond Ace vouches; a cold
+    one sabotages). Returns (difficulty, ace_note)."""
+    from engine import bond as _bond
+    riz_bonus = 2 if s.riz >= 8 else (1 if s.riz >= 4 else 0)
+    bd = _bond.band(s.bond)
+    if bd in ("RIDE-OR-DIE", "STEADY"):
+        ace_mod, ace_note = -1, "Ace, secure and fond, actually vouches for you between your lines"
+    elif bd == "COLD":
+        ace_mod, ace_note = 2, "Ace, cold and jealous, undercuts you — a dry aside that costs you ground"
+    else:
+        ace_mod, ace_note = 0, "Ace watches, neutral, reserving judgment"
+    return max(3, min(9, 6 - riz_bonus + ace_mod)), ace_note
+
+
+def hitch_turn(s: GameState, raw: str) -> dict:
+    from engine import judge, bond as _bond
+    h = s.flags["hitch"]
+    low = (raw or "").lower()
+
+    # ---- the offer: pick her up, or roll on by (drive-on wins, so "don't stop" can't read as a stop) ----
+    if not h.get("picked"):
+        if any(p in low for p in _HITCH_DRIVE_ON):
+            s.flags.pop("hitch", None); s.flags["hitch_seen"] = True
+            return {"events": [
+                "HITCH: you don't slow down. In the mirror she gets small, then the dark takes her and "
+                "the burnt car both. (One-shot — she won't be on that road twice.)"],
+                "moment": {"cue": "the driver left a stranded woman alone in the desert by a burnt car; "
+                                  "Ace is quiet about it, a little haunted, doesn't push",
+                           "stub": ["…Yeah. Probably smart. Probably. …I'm going to think about her for a "
+                                    "while, though. So are you. Drive."]},
+                "done": True}
+        if any(p in low for p in _HITCH_PICKUP):
+            h["picked"] = True
+            return {"events": [
+                "HITCH: you stop. She's in the passenger seat before the dust settles, like she always "
+                "knew you would — smelling of smoke and something expensive, taking the measure of the "
+                "white Z, and of you.",
+                "ALMA ♠: 'Alma. The car was a loaner and now it's a lesson — caught fire doing eighty, "
+                "wasn't even mine to lose.' She glances at the dead phone in her hand. 'No bars out here. "
+                "So you're it, stranger — my whole rescue. Where are we going?'"],
+                "moment": {"persona": "alma",
+                           "cue": "she just got in the stranded stranger's car in the desert; wry, "
+                                  "unbothered, already running the angles, a little magnetic; she asks "
+                                  "where they're headed",
+                           "stub": ["Alma. The car was a loaner and now it's a lesson. No bars out here, "
+                                    "so you're my whole rescue, stranger. …Where are we going?"]},
+                "done": False}
+        return {"events": ["HITCH: (she's still standing there, thumb out, the desert enormous around "
+                           "her. Pick her up — or drive on.)"], "moment": None, "done": False}
+
+    # ---- picked up: just run her to town, or talk her into staying ----
+    if any(p in low for p in _HITCH_DROP):
+        s.flags.pop("hitch", None); s.flags["hitch_seen"] = True
+        s.riz = round(s.riz + 1.0, 1)
+        return {"events": [
+            "HITCH: you run her to the next town, no strings, and she's gone at the first lit corner "
+            "with a look back you'll keep. 'A decent one. They're rarer than you'd think.' (+Riz)"],
+            "moment": {"persona": "alma",
+                       "cue": "the driver gave her a no-strings ride to town and she's getting out, "
+                              "almost wishing she weren't; warm, a little wistful, gone",
+                       "stub": ["A decent one. Rarer than you'd think, stranger. …Don't go soft on me. Go."]},
+            "done": True}
+
+    h["round"] += 1
+    diff, ace_note = _hitch_difficulty(s)
+    v = judge.assess(s, "persuade", raw, difficulty=diff,
+                     context="the driver is trying to talk Alma — a wary, dangerous fixer they just "
+                             "pulled off the desert shoulder — into riding along instead of being dropped "
+                             "at the next town; she despises creeps, bores, and try-hards and is secretly "
+                             "a sucker for someone running on a romantic feeling; reward wit, nerve, "
+                             "honesty, punish sleaze and cliché. " + ace_note)
+    if v.get("messing") or (not v.get("pass") and not v.get("clever") and v.get("score", 50) < 35):
+        h["spark"] -= 1
+        mood = "COOLING — that landed wrong; she's reaching for the door handle in her mind"
+        react = "ALMA: 'Mm. The next town's fine. Really.' She watches the mile markers like an exit."
+    elif v.get("pass") or v.get("clever") or v.get("score", 50) >= 65:
+        h["spark"] += 1
+        mood = "WARMING — intrigued despite herself, settling an inch deeper into the seat"
+        react = "ALMA: a slow look, recalculating. 'Huh. You're not what the burnt car promised. Keep talking.'"
+    else:
+        mood = "UNREADABLE — not sold, not leaving yet, making you earn it"
+        react = "ALMA: 'The jury's out, stranger. Out, but listening.'"
+
+    if h["spark"] >= HITCH_WIN:
+        s.flags.pop("hitch", None)
+        s.flags["alma_aboard"] = True
+        _bond.adjust(s, -ALMA_BOND_HIT * 0.6, "picked a stranger up off the desert and kept her", "deep")
+        return {"events": [
+                "HITCH: somewhere past the third mile she stops looking for the next town. She pulls one "
+                "boot up onto the seat, gets comfortable, and the question of dropping her off just… "
+                "closes. Alma rides with you now.",
+                "ACE (very dry, from the dash): …We picked up a hitchhiker in the MIDDLE OF NOWHERE and "
+                "she's STAYING. Cool. Cool cool cool. Welcome aboard, I guess, smoke lady."],
+                "moment": {"persona": "alma",
+                           "cue": "the stranded woman just decided to stay with the driver instead of "
+                                  "being dropped in town — reckless, amused, already half in; she makes "
+                                  "it official",
+                           "stub": ["Okay. The next town can keep its front desk. I'm Alma, the white "
+                                    "one's yours, and apparently I'm yours for a while too. Drive, romantic."]},
+                "done": True}
+    if h["round"] >= 4 or h["spark"] <= -2:
+        s.flags.pop("hitch", None); s.flags["hitch_seen"] = True
+        return {"events": [react,
+                "HITCH: she has you drop her at the next lit town anyway — safe, dry, gone, a fixer who "
+                "doesn't ride with just anyone. 'You did the decent thing. Don't undo it by chasing.' "
+                "(She got her ride. The aboard door's closed for this run — 'rewind' to retry the talk.)"],
+                "moment": {"cue": "the driver couldn't talk her into staying; she takes the ride to town "
+                                  "and leaves; a real near-miss; Ace is quietly, complicatedly relieved",
+                           "stub": ["(Ace, gentle) …You got her somewhere safe. That counts, ace. That's "
+                                    "more than this desert usually allows. Eyes up. Let's roll."]},
+                "done": True}
+    return {"events": ["HITCH: (the desert rolls by; she hasn't decided. Another line — make it land.)"],
+            "moment": {"persona": "alma",
+                       "cue": f"riding shotgun off the desert shoulder, reacting to the driver's latest "
+                              f"line as they try to make her stay; she is {mood}; she has NOT decided",
+                       "stub": [react.split("ALMA: ", 1)[-1]]},
+            "done": False}
+
+
 def marry_response(s: GameState) -> dict:
     """Player invoked Alma + marriage. Fire the hack if the window's open; otherwise explain, in "
     character, why not now."""

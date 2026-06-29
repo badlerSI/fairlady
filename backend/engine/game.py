@@ -1156,7 +1156,8 @@ def handle(s: GameState, raw: str) -> dict:
     # "…full tank of fresh 91 sitting in her right now…" has to reach the officer,
     # not the range calculator.
     if ((encounters.stop_active(s) or encounters.owner_active(s) or encounters.standoff_active(s)
-            or encounters.chase_active(s) or alma.club_active(s)) and s.status == "playing"):
+            or encounters.chase_active(s) or alma.club_active(s) or alma.hitch_active(s))
+            and s.status == "playing"):
         s.turn += 1
         in_stop = encounters.stop_active(s)
         in_standoff = encounters.standoff_active(s)
@@ -1176,6 +1177,15 @@ def handle(s: GameState, raw: str) -> dict:
             scene, voice, audio = _narrate(s, out["events"], "", drama=out.get("moment"))
             return _result(s, out["events"], scene, voice=audio,
                            info="(win her over — wit and nerve, not lines; or walk away)")
+
+        if alma.hitch_active(s):             # the desert pickup owns the conversation (raw text = the move)
+            out = alma.hitch_turn(s, raw)
+            if out.get("done") and s.flags.get("alma_aboard"):
+                checkpoint(s, "picked Alma up off the desert")
+            _autosave(s)
+            scene, voice, audio = _narrate(s, out["events"], "", drama=out.get("moment"))
+            return _result(s, out["events"], scene, voice=audio,
+                           info="(pick her up or drive on — then win her over, or just run her to town)")
 
         # the RIZZBREAKER, against the law — the possessed-car exorcism bit. Intercept even when
         # under-charged, so it gives the 'gauge isn't full' refusal instead of wasting a stop round.

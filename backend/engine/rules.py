@@ -399,6 +399,12 @@ def drive(state: GameState, dest: Place, push: bool = False, selfdrive: bool = F
                 and _luck.roll(state, 61) < min(0.6, (state.heat - 40.0) / 90.0)):
             from engine import encounters
             events += encounters.start_chase(state)
+        # the desert hitchhiker — if you skipped the Vegas club, Alma turns up stranded by a burnt-out
+        # car on a lonely two-lane; you the only headlights for an hour
+        if state.status == "playing" and not state.flags.get("transit"):
+            from engine import alma as _alma
+            if _alma.can_hitch(state, dest) and _luck.roll(state, 67) < 0.55:
+                events += _alma.start_hitch(state)
         law_check(state, events)
         return events
 
