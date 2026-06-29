@@ -278,7 +278,8 @@ def _hitch_difficulty(s: GameState) -> tuple:
         ace_mod, ace_note = 2, "Ace, cold and jealous, undercuts you — a dry aside that costs you ground"
     else:
         ace_mod, ace_note = 0, "Ace watches, neutral, reserving judgment"
-    return max(3, min(9, 6 - riz_bonus + ace_mod)), ace_note
+    # base 5 (a touch kinder than the club's 6 — this is the second chance, and she's stranded with you)
+    return max(3, min(8, 5 - riz_bonus + ace_mod)), ace_note
 
 
 def hitch_turn(s: GameState, raw: str) -> dict:
@@ -367,7 +368,7 @@ def hitch_turn(s: GameState, raw: str) -> dict:
                            "stub": ["Okay. The next town can keep its front desk. I'm Alma, the white "
                                     "one's yours, and apparently I'm yours for a while too. Drive, romantic."]},
                 "done": True}
-    if h["round"] >= 4 or h["spark"] <= -2:
+    if h["round"] >= 5 or h["spark"] <= -3:                   # more rope than the club; the miles are long
         s.flags.pop("hitch", None); s.flags["hitch_seen"] = True
         return {"events": [react,
                 "HITCH: she has you drop her at the next lit town anyway — safe, dry, gone, a fixer who "
