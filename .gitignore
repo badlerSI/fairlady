@@ -7,3 +7,6 @@ data/
 *.HEIC
 /tmp/
 .DS_Store
+
+# production env (created from deploy/fairlady.env.example)
+deploy/fairlady.env

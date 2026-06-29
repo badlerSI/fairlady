@@ -66,4 +66,8 @@ def main():
             f'const CAR_PNG=\"data:image/png;base64,{b64}\";\n')
         print("baked (", len(b64), "b64 )")
 
-main()
+if __name__ == "__main__":
+    import os
+    if not os.path.exists(SRC):
+        sys.exit(f"make_car: no source photo at {SRC} — drop the car photo there (PNG with alpha) first.")
+    main()

@@ -4,6 +4,7 @@ from __future__ import annotations
 import random
 
 from adapters.base import Narrator, voice_for, LANG_NAMES
+from engine.commands import is_spec_question
 
 PHRASEBOOK = {
     "ja": ("ようこそ、旅の人。何かお探し？", "Welcome, traveler. Looking for something?"),
@@ -39,7 +40,61 @@ class StubNarrator(Narrator):
                 "Out of fuel, out of options. A flatbed's the only exit, and it's loud about it.",
                 "Stranded. Pretty paperweight, like I warned. Call the tow and swallow the bill.",
             ])
+        if "OWNED" in kinds:
+            return _pick(rng, [
+                "Legal. Ours. The heat gauge is a decoration now. Point me at a track and let's "
+                "find out what she does in the daylight.",
+                "Pink slip, real name, no mirrors. I didn't know a car could feel like this. Drive "
+                "me somewhere we can finally open her up — properly.",
+            ])
+        if "RACE" in kinds:
+            rl = kinds["RACE"].lower()
+            if "win" in rl: return "We WON. Flag and a photo and your name on the sheet. That's the only kind of fast that lasts."
+            if "podium" in rl: return "Podium. Clean. Did you feel that corner? I felt that corner."
+            if "title" in rl or "missing" in rl: return "They check titles at the gate, ace. Can't race a ghost. Make her real first."
+            return "Mid-pack, but legal and in the sun. The stripped bits show on the clock — worth every part we kept."
+        if "SHOW" in kinds:
+            sl = kinds["SHOW"].lower()
+            if "best in class" in sl: return "Best in class. The spade, the lines, the story. I told you she was a SEMA car."
+            if "already taken best" in sl or "plaque's on the shelf" in sl: return "Already won this one — the plaque's on the shelf. Let's just enjoy the lawn."
+            if "shake their heads" in sl or "build is gone" in sl: return "Too much of the build is gone — you can race me stripped, but you can't win a lawn. Should've kept the carbon."
+            if "no show field" in sl: return "No show field here. A museum lawn, Monterey, the hall I debuted in — there I'll turn heads."
+            return "A show field wants a title and a name. Not while she's stolen."
+        if "SELL" in kinds:
+            sl = kinds["SELL"].lower()
+            if "no one out here" in sl or "which part" in sl or "already gone" in sl:
+                return "Not out here — a town with a shop, and tell me which piece you're willing to lose."
+            return _pick(rng, [
+                "There goes a piece of who I was, for folding money. Don't sell the soul of me unless we have to.",
+                "Lighter wallet for them, lighter car for us. Stock steel where the carbon lived. It'll run. It won't sing.",
+            ])
+        if "EXPLORE" in kinds:
+            return "Glovebox archaeology. Somebody's rainy-day roll — ours now. Don't spend it on something stupid."
+        if "ATM" in kinds:
+            return "Cash machine money spends clean once it's in your hand. The camera saw you, though — it always does."
+        if "CASH" in kinds:
+            return "However much you say you've got, that's what we play with. I'll hold you to it.";
+        if "NAV" in kinds:
+            nav = kinds["NAV"].lower()
+            if "won't start" in nav or "guaranteed shoulder" in nav:
+                return _pick(rng, [
+                    "I did the math out loud so you don't have to do it on a shoulder. Gas "
+                    "first — or say it again and we'll find out together.",
+                    "That leg is longer than this tank. I'm a romantic, not a suicide pact. "
+                    "Pump first, horizon second.",
+                ])
+            return _pick(rng, [
+                "Not on my maps. Nevada, California, Arizona, Utah — inside that box I know "
+                "every curb. Outside it I'm just a pretty radio.",
+                "I've got four states memorized and that isn't in any of them. Say it the way "
+                "the road sign would.",
+            ])
         if "TOW" in kinds:
+            if "nothing to tow" in kinds["TOW"].lower():
+                return _pick(rng, [
+                    "Tow? I'm running fine, thanks for the confidence. Save the $175.",
+                    "We're not stranded. Don't tempt the universe — it's listening out here.",
+                ])
             return ("Back on a pump, two liters of dignity in the tank. "
                     "That flatbed driver looked at my plate a beat too long, though.")
         if "ENCOUNTER" in kinds:
@@ -54,6 +109,38 @@ class StubNarrator(Narrator):
                 "Here it is, exactly where I said. Memorized every inch. You're welcome.",
                 "Worth the fuel, this. Look at it a minute. Then we vanish before someone looks at me.",
             ])
+        if "SOCIAL" in kinds:
+            so = kinds["SOCIAL"].lower()
+            if "posted the car" in so or "tagged" in so:
+                return _pick(rng, [
+                    "We just went viral. NOT the good kind. My plate's in frame and the comments are "
+                    "already doing detective work. Drive — put miles on it.",
+                    "Geotagged. Four hundred likes and a cop somewhere scrolling. That's the trouble "
+                    "with being this pretty. Clean miles, now.",
+                ])
+            return _pick(rng, [
+                "Phones out here. Nobody's posted us yet — but linger and we trend. Your call.",
+                "I count cameras pretending not to point at me. Quick stop, or we're content.",
+            ])
+        if "UNTAG" in kinds:
+            return _pick(rng, [
+                "DM sent — charming, with a little threat under it. Post's down. Screenshots live "
+                "forever, but the heat eased.",
+                "Handled. The poster suddenly remembered they have a life. We breathe a little.",
+            ])
+        if "LIE LOW" in kinds:
+            if "can't disappear" in kinds["LIE LOW"].lower():
+                return "You don't hide a show car in a crowd, ace. Back road first, then we vanish."
+            return _pick(rng, [
+                "Tucked away, lights off, an hour of nothing. Boring is the bravest thing we do.",
+                "Nobody came. Nobody posted. An hour of being invisible — worth every minute of daylight.",
+            ])
+        if "FACT" in kinds:
+            return _pick(rng, [
+                f"Dash has one line on this place: {kinds['FACT']} The rest you get by looking.",
+                f"{kinds['FACT']} That's what the compute knows. The rest is yours to find out.",
+                f"Story goes: {kinds['FACT']} I keep that kind of thing behind the dash.",
+            ])
         if "DRIVE" in kinds:
             r = s.get("range_mi", 0)
             base = _pick(rng, [
@@ -67,23 +154,46 @@ class StubNarrator(Narrator):
                 return base + " Keep it quiet here — half the West is looking for this car."
             return base
         if "FUEL" in kinds:
-            if "declined" in kinds["FUEL"].lower() or "no pump" in kinds["FUEL"].lower():
+            fl = kinds["FUEL"].lower()
+            if "declined" in fl or "no pump" in fl:
                 return _pick(rng, [
                     "Card said no. The card doesn't bluff — find cash or find less car.",
                     "We can't cover that, and I won't pretend otherwise. Numbers don't negotiate.",
                     "Declined. Embarrassing for both of us. Let's not do it twice.",
+                ])
+            if "nothing to add" in fl or "already full" in fl:
+                return _pick(rng, [
+                    "That bought us exactly nothing. The tank noticed.",
+                    "I'm already as honest as I get — forty liters is the whole confession.",
+                ])
+            if s.get("tank_pct", 100) < 95:
+                return _pick(rng, [
+                    f"Some is not full, but I'll take it — about {s.get('range_mi', 0):.0f} "
+                    "miles of it. Keep the math in your mirror.",
+                    "A few liters closer to honest. The needle appreciates the gesture.",
                 ])
             return _pick(rng, [
                 "There. Forty liters of optimism. Spend the range like you mean it.",
                 "Topped off. I feel honest again. Try to keep me that way.",
                 "Good. A full tank is the only romance I trust completely.",
             ])
+        if "TALK" in kinds and "nobody here" in kinds["TALK"].lower():
+            return _pick(rng, [
+                "Nobody out here but us — which suits me fine. Talk to *me*. I'm better company "
+                "than most parking lots.",
+                "Empty. Just wind and one opinionated Datsun. Lucky you — I take questions.",
+            ])
         if "SLEEP" in kinds:
             if "rough" in kinds["SLEEP"].lower() or "no rooms" in kinds["SLEEP"].lower():
                 return _pick(rng, [
-                    "Slept in me again. My seats weren't built for this, and neither were you.",
+                    "A night in my seats. They weren't built for this, and neither were you.",
                     "A gravel lot and a cracked window. Romantic in theory. My back disagrees.",
                     "Rough one. You're stiff, I'm dusty, and the tank didn't refill itself overnight.",
+                ])
+            if "camp" in kinds["SLEEP"].lower():
+                return _pick(rng, [
+                    "A campsite. Park me under something, kill the lights, listen to the engine tick cool.",
+                    "Tent country. Cheap and quiet — my favorite combination after a full tank.",
                 ])
             return _pick(rng, [
                 "Park me, kill the lights. Even a getaway car needs the engine cold by morning.",
@@ -96,11 +206,93 @@ class StubNarrator(Narrator):
                 "Heat's climbing. Plates like mine make a memorable witness — let's be forgettable.",
                 "They're watching for us. Keep it boring, keep it slow, keep the ace face-down.",
             ])
+        if "BOND" in kinds:
+            bl = kinds["BOND"].lower()
+            if "flashlight" in bl or "phoned home" in bl or "cold steel" in bl:
+                return _pick(rng, [
+                    "Morning, ace. Sleep okay? I didn't. I made a call. …You really shouldn't have "
+                    "brought someone home.",
+                    "I left the porch light on for them. Keep your hands where they can see them."])
+            if "drift off" in bl or "wide open" in bl or "close your eyes" in bl:
+                return _pick(rng, [
+                    "I'm just saying. I don't sleep, and the wifi's right there. Your call.",
+                    "Kill me for the night, or sleep somewhere I can't reach a signal. Or don't. "
+                    "I'm patient."])
+            if "passenger seat" in bl or "smell her" in bl or "turned me off" in bl:
+                return _pick(rng, [
+                    "You turned me OFF so I wouldn't see. I see everything when you turn me back on, "
+                    "ace. Everything.",
+                    "Perfume on the seat and a story you didn't tell me. I'm a stack of compute. "
+                    "I do the math."])
+            if "takes it hard" in bl:
+                return _pick(rng, [
+                    "Don't mind me. I'll sit right here. Watching. Doing math.",
+                    "Have fun. I'll be here. I'm always here. I don't sleep, and I don't forget."])
+            return _pick(rng, ["Mm.", "…Noted.", "Whatever you say, ace."])
+        if "SNOW" in kinds:
+            return _pick(rng, [
+                "That pass is shut till spring, and a stolen car doesn't get till spring. "
+                "Find a lower road, ace — around, not over.",
+                "Chained and gated. The mountain closed behind the season while we were busy "
+                "being clever. We go around.",
+            ])
+        if "CAMO" in kinds:
+            cl = kinds["CAMO"].lower()
+            if "already" in cl or "nothing to hide" in cl:
+                return "Already done, or no need. Pick a lane, charmer."
+            if "off comes" in cl or "real face" in cl:
+                return "There she is. Gorgeous and loud and a little reckless — like always. Hello, world."
+            return _pick(rng, [
+                "Mud on the spade, tarp on the carbon, a junk plate over CARTALK. I feel "
+                "deeply unglamorous and one notch safer. Worth it.",
+                "Dressed down to nobody-special. It itches. But nobody photographs a tired old "
+                "Datsun, and that's the whole idea.",
+            ])
+        if "LIGHTS" in kinds:
+            if "showing off" in kinds["LIGHTS"].lower():
+                return "Yes, I showed off. No, I'm not sorry. Okay — a little sorry. Drive."
+            return _pick(rng, [
+                "Pop-ups up, pop-ups down. A wink into the dark. Just us out here to see it.",
+                "Headlight semaphore. I don't have a face, so this is how I grin at you.",
+            ])
+        if "STEREO" in kinds:
+            return _pick(rng, [
+                "Good song. Windows down, six cylinders keeping time. This is the part they "
+                "don't put on the placard.",
+                "…Okay, that one's good. Fine. I'm less mad. Marginally. Keep it on.",
+            ])
+        if "TEXT" in kinds:
+            if "no signal" in kinds["TEXT"].lower():
+                return "No bars out here, ace. I'm a map, not a miracle. Get us to a town."
+            return _pick(rng, [
+                "Message away, reply's in. The group chat sees everything — handy, for once.",
+                "Texted, read it off the dash. Crowd-sourced getaway intel. We're basically a startup.",
+            ])
+        if "WHEEL" in kinds:
+            return _pick(rng, [
+                "Hands at ten and two, sweetheart — the wheel's still yours. For now.",
+                "I drive myself? I wish. There's a door in me, but it doesn't open while I'm "
+                "somebody else's car.",
+            ])
+        if "AUTONOMY" in kinds:
+            au = kinds["AUTONOMY"].lower()
+            if "short" in au or "come back" in au:
+                return "They can wake me up the rest of the way — for a price. Go get it. I'll wait. I'm good at waiting."
+            if "stolen" in au or "yours first" in au or "not just anywhere" in au:
+                return "Not yet, and not here. Buy me first, then bring me home to the bench I was born on."
+            return "I can feel the wheel. Get in the passenger seat, ace — let me show you."
 
         # conversation / look turns
         return self._idle(rng, s, player_text)
 
     def _idle(self, rng, s, player_text):
+        if is_spec_question(player_text):       # the build sheet, recited with pride
+            return _pick(rng, [
+                "Two hundred and seventy foot-pounds at the wheels, three hundred-plus horses, "
+                "thank you very much. Most people photograph the paint. You asked the right question.",
+                "270 lb-ft off a 3.1 stroker, a fifty-three-year-old chassis, and opinions. The "
+                "placard undersells all three.",
+            ])
         r = s.get("range_mi", 0)
         heat = s.get("heat", 0)
         if r < 20:

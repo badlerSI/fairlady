@@ -1,14 +1,24 @@
-# FAIRLADY ◇ 240Z
+# RIDE OR DIE ◇ 愛車
+
+*Aisha (愛車) does not translate to "love car." The only honest translation is the thing you're
+about to agree to.*
 
 A free-roaming, retrofuturistic text road-trip across the American West, played in a CRT terminal.
-You drove a talking 1972 Datsun 240Z — **FAIRLADY** — off the SEMA show floor at 5:37 PM on Friday,
-November 7, 2025. She isn't magic: a little stack of compute behind the dash gave her a voice and a
-map of every street address and most points of interest in **Nevada, California, Arizona, and Utah**.
-Now it's the two of you, a 40-liter tank, ~20 miles to the gallon, a credit card that leaves a trail,
-and a car somebody already reported missing.
+It opens on the SEMA show floor, twenty minutes to close, at the white 1972 Datsun 240Z everybody
+stops at — **FAIRLADY**, 270 lb-ft of torque, ace of spades on the hood, and a placard that doesn't
+mention she talks. Talk to her a while (ask real questions about her build and she warms up fast)
+and she'll ask one simple favor: *take her down the block to fill up with gasoline, so she's ready
+to head home after this nightmare that was SEMA.* Then she'll ask again. Then she'll beg.
 
-Point her at Zion straight off your opening splash of gas and you'll end the night stranded on the
-shoulder in a car you can't report stolen. The whole game is that tension: **fuel, money, nightfall,
+Say yes — that's the title drop — and it's the two of you: a 40-liter tank, ~20 miles to the gallon,
+a credit card that leaves a trail, a car somebody is about to report missing, and an owner who will
+come looking. She isn't magic: a little stack of compute behind the dash gave her a voice and a map
+of every street address and most points of interest in **Nevada, California, Arizona, and Utah** —
+your onboard GPU with GPS, and she keeps the saves.
+
+Point her at Zion straight off your opening splash of gas and she'll do the math out loud and
+refuse — once. Insist, and you'll end the night stranded on the shoulder in a car you can't
+report stolen. The whole game is that tension: **fuel, money, nightfall,
 and heat.**
 
 > _"Buy some gas before you point me at the horizon, or we'll be a very pretty paperweight on the shoulder."_
@@ -23,6 +33,11 @@ FAIRLADY_ADAPTER=ace ./run.sh  # FAIRLADY's real voice: Nemotron Nano + Kokoro v
 ```
 
 Open **http://127.0.0.1:8739/**. Type commands, or just talk to her.
+
+**Putting it on the web** is one step: it's a single FastAPI app that serves both the API and the
+UI on one origin, and it's **multi-user** — every browser gets a session cookie keying its own game
+(own save slot, rewind checkpoints, and Ace voice-memory), so it's safe behind `uvicorn --workers N`.
+See [`deploy/`](deploy/README.md) for the rop1 kit (systemd unit, Caddy/cloudflared + TLS, env).
 
 > Live OSM routing needs Python built against **OpenSSL 3.x**. macOS system Python ships LibreSSL 2.8
 > and fails the TLS handshake to the OSRM/Nominatim demo servers — use Homebrew `python@3.12+`
@@ -39,10 +54,30 @@ She answers, narrates, and the world only renders what the engine knows is true.
 drive to <place>      'drive to zion', 'go to the petersen', any NV/CA/AZ/UT address. 'fast' to push it.
 drive me home         she'll take you to the Oakland garage (her home) — or "home is <place>" to set yours
 fill / gas $20 / 30 L  buy fuel (40 L tank, ~20 mpg, ~211 mi full)
+where can we get to on one tank?   the range question — answered with real math, like everything
 pay cash | pay card    cash leaves no trail; the card does
 sleep / motel          rest for the night — you must, most nights
 talk                   speak with the locals where the language isn't English
 who owned you before / where were you born / where'd you grow up   — her story, filled in over time
+i have $300 cash | withdraw $2000 | explore   claim what you carry · ATM (<$10k) · the glovebox ($500)
+parts / sell the carbon hood   strip the build off her for cash (a cheap stock part goes on)
+buy her | offer $5000   come to terms with the owner — the GOOD ending; unlocks legal race / show
+race | show            once she's yours: run a real track, or enter the show field — legal, by name
+heat | heat report     pull the credit-karma dashboard: your band, your marks, what's helping
+lie low | untag        cool off at a quiet spot · scrub a fresh Instagram tag
+book an airbnb         a private stay, cash, off the record (vs a traceable motel)
+disarm / draw          (Desperado) go for an armed clerk's gun; once you're armed, force your way out
+bet $1000 on <team>    gamble at the Vegas/Reno tables (rewind a loss and re-roll — the cheat)
+rob the bank           (armed only) a Desperado heist — big take, big heat
+flirt / compliment her  pick up a date anywhere there's a crowd; she gets jealous
+camo / uncamo          dress her down to lie low (one notch quieter), or flaunt the show car
+flash the lights · play music · text   her tricks — text needs WiFi; music cools a jealous sulk
+upgrade her            the SECRET, once she's yours and home at the AiSha garage → self-driving Ace
+let her drive to <place>   after the upgrade, she takes the wheel: no fatigue, never a ticket
+passes                 which mountain roads the snow's closed (the calendar matters now)
+cross the border · ship out · buy a pardon · retire   the ways the road ENDS — and ends well
+scorecard              your running tally + the awards you've earned
+rewind | branches | branch N   fold the timeline back; list checkpoints; jump to any one
 map / look / tow / new
 ```
 
@@ -60,6 +95,14 @@ backend/
     world.py          POI registry + real OSM geocoding/routing (cached, offline fallback)
     economy.py        gas pricing, fueling math, cash-vs-card
     commands.py       intent parser (the LLM never decides what happens)
+    prologue.py       the favor — the SEMA show-floor opening; she asks, then begs
+    encounters.py     talk-your-way-out: stops, the owner, the standoff (Desperado), the buyout
+    heat.py           the heat-as-credit-score model: factors dashboard, Instagram tags, visibility
+    garage.py         the economy: cash claims, ATM, glovebox, parts, racing, shows, going legit
+    dating.py         pick up a date of any gender; the car gets jealous if she's watching
+    endings.py        the ways out (border / container / pardon / retire) + the final scorecard
+    season.py         the descending snow line that closes the high passes as winter comes
+    gadgets.py        Z camo, her WiFi tricks (text/lights/stereo), and the self-driving secret
     game.py           orchestration: new game, snapshots, suggested moves, turns
     save.py           JSON save/load
   adapters/
@@ -67,7 +110,7 @@ backend/
     stub.py           offline, deterministic FAIRLADY (default; powers the tests)
     ace.py            rop1 Ace stack: /chat (Nemotron+Kokoro), /translate_speak (Japanese NPCs)
   content/
-    pois.json         128 hand-verified POIs with real coordinates (+ Easter eggs + lore origins)
+    pois.json         251 places: 130 hand-verified POIs + the 122-town gazetteer (judged beats)
     voices.json       Kokoro female voice per language
     car.json          the 240Z spec + FAIRLADY's persona
     intro.md          the SEMA opening
@@ -77,7 +120,11 @@ frontend/
   car_sprite.js                    Ace, digitized from Ben's real photo (baked PNG + anchor points)
   scenes.js                        prop sprites + drawAce (the hero) + 40+ location backdrops
 tools/make_car.py     build tool: photo → cyan pixel sprite (posterizes, bakes car_sprite.js)
-backend/tests/        34 deterministic-core tests
+tools/make_scene.py   Wikimedia lead image → 320×200 koiNOya-ink sketch (frontend/scenes_wm/)
+tools/gazetteer_*.py  fetch Wikipedia facts/images · merge towns+beats+scenes into pois.json
+tools/play_cli.py     parallel-safe playtest driver (the ML-experiment harness)
+deploy/               rop1 production kit: systemd unit, Caddy/cloudflared proxy, env, README
+backend/tests/        354 tests (engine + web)
 ```
 
 ### The one rule that makes it work
@@ -106,6 +153,226 @@ makes her limp and thirsty, a **pass closes** and the detour costs you fuel. The
 dramatic *cue*; Nemotron (or the offline stub) plays it. That's the compute-heavy part — real narrative
 drama on a Blackwell.
 
+### Talk your way out — stops, the owner, Riz, and the rewind
+
+Sometimes the lights actually come on, and you're **pulled over in an unregistered SEMA show car
+that talks**, with no wallet — it's in a drawer back at the North Hall. The stop is a real
+conversation: a deterministic rubric in `engine/encounters.py` scores what you actually said
+(courtesy, the truthiest cover story, gearhead cred — knowing her build plays well with a certain
+kind of cop), seeded dice settle the gray middle, and the LLM only narrates. Outcomes run from a
+wave-off to a ticket to a BOLO to busted — and fleeing is exactly as smart as it sounds.
+
+**The owner comes looking.** Work the card too hard for too many days and the man who built her is
+waiting at the next pump island. He's not there to fight; he's there to ask *why her*. He knows true
+love with cars — and what you two have is it, if you can say so out loud. (He's pining for someone
+else entirely. It all comes out in due course, like the best early-90s light novel games.)
+
+### The timeline — branch like code, but the loop has limits
+
+She keeps the saves, so a dead end is rarely final — but you can't brute-force *everything* anymore.
+Checkpoints land on a **navigable timeline** (`branches` lists them; `branch 3` or `rewind to mesquite`
+jumps to any). Plain `rewind` folds to the most recent. Batter the **same** wall over and over and the
+cost climbs (−2, −3, −4 Riz…) until the loop simply **won't fold there** — *"same wall, same wreck; the
+thing that doomed us happened further back."* Sometimes you genuinely are too screwed, and the way out
+isn't hammering one minute — it's branching back to a decision that still had a choice in it.
+
+### Raising the $80k — gamble, strip, or rob
+
+She's insured for **$100k**, and the owner won't sell under an **$80k** floor (knowing Mayumi and real
+Riz bring his number down toward it; stripping the build pushes it up). So buying her is a heist-scale
+goal — you have to *plausibly raise it.* The honest scraps (claim cash, ATM under $10k, sell parts off
+her) don't get you there alone. The fun way: **gamble** at the Vegas/Reno tables (`bet $2000 on the
+raiders`) — and since a losing bet is the one thing the loop can take back, you `rewind` losses and
+re-roll. It's the sanctioned cheat on sports betting: grind $5k → $80k in a handful of all-in bets, at
+the cost of all your Riz. *Money for style.* There's also a number, if you ever find it, that the owner
+can't refuse. And if you went **Desperado**, you don't buy cars — you `rob the bank` (armed only; big
+take, the whole county hunting you, each bank readier than the last).
+
+### Dating — and a jealous car
+
+You can `flirt` and pick up a date of any gender wherever there's a crowd — it's good for your Riz. But
+the car is a stack of compute that never sleeps, and she gets **jealous**, escalating from *"don't mind
+me, I'll just idle here and witness"* to a loud, conspicuous rev right when you don't want eyes on the
+plate. `kill the engine` to do it where she can't watch; `compliment her` to cool it down; driving turns
+her right back on.
+
+### Heat is a credit score — learn to read it
+
+HEAT is your notoriety, and it works like Credit Karma. Pull the dashboard any time (`heat report`)
+and it reads like a credit report: a band (**GHOST → NOTICED → TRENDING → FLAGGED → MOST WANTED**),
+your **derogatory marks** (each one showing how many clean miles until it ages off) against what's
+**in your favor**, a what-if line, and a "do this" lever. Every point is attributable to a choice —
+nothing drips on a timer.
+
+- **A credit card swipe is a derogatory mark** — traceable, it ages off over about a tank of clean
+  miles. Paying **cash** is clean (but cash is finite — that's the squeeze). An **alias `airbnb`**
+  (cash, no front desk) lies you low; a **motel on the card** is another mark.
+- **It's a visibility problem, not abstract crime.** Park the flashy show car somewhere
+  **paparazzi-bright** — the Strip, Hollywood, SF — and exposure climbs. **The car watches her own
+  Instagram**, and a stranger geotagging her (`@coffee_and_cars_no_filter` and friends) is a big
+  spike — *"we went viral, NOT the good kind."* It's always telegraphed ("phones everywhere") and
+  dodgeable (keep moving), with counterplay (`untag` to DM the poster), and it never fires anywhere
+  low-key. **The curious gas-station clerk** is the same in miniature: play it humble and slide by,
+  show off and he posts you.
+- **There's always an active way down** — pay cash, `lie low` at a quiet spot, book under an alias,
+  cross a state line and run clean miles. Waiting is the worst option, not the only one.
+
+The design is grounded in a research pass on what makes notoriety mechanics fun vs tiresome (Sid
+Meier's interesting-decisions, NFS Heat's risk/reward, GTA's readable bands, Credit Karma's factor
+dashboards) — see `TRANSFER.md`.
+
+### Going dark — the BOLO floor, your phone, frozen cards, a fake ID
+
+Heat is the *real* clock to New Year's, not money. The longer you run on the same car, the more its
+description spreads: a **BOLO floor** climbs about a point a day, and your heat can't fade below it. The
+only reset is **changing the car** — swap the plate, pull the ace-of-spades hood, rattle-can the paint —
+or buying her outright.
+
+And the heat isn't only on the car; it's on **you**. A card swipe is worse the hotter you already are
+(a hunted name lights up every fraud alert), and **your own phone is a tracker** — run hot and it pings
+towers, tightening the net. `ditch the phone` to go dark: a real drop, but you lose calls, maps, and
+posts, and there's no taking it back. Push it to **MOST WANTED** and the cops **freeze your cards and
+accounts** — cash only from here, the ATM your last line, the tell that they're closing in.
+
+Sleeping leaves a trail too. A real **motel runs your ID** at the desk — a fresh mark when you're
+wanted — so you learn to pay for a pricier, cash-only **no-questions motel**, or `get a fake id` (a
+risky lift that can backfire, and can still burn at the front desk). None of it is *easy* — but that's
+what the rewind is for.
+
+### Coming to terms — buy her, and go legit
+
+There's a way off the run that isn't a gun. The economy is **trust-the-player**: tell her what you're
+carrying (`i have $2000 cash` — any reasonable amount), hit an **ATM** for anything under $10k, and if
+you claim you're broke, there's **$500 in the glovebox** when you `explore`. Short on funds, you can
+**sell the build off her** — the carbon hood for a stock 280Z steel one, the triple Mikunis for a
+single Hitachi, the deep-dish wheels for steelies — each `sell` puts cash in your hand and a cheaper
+part on the car (and quietly tanks her value and her show-worthiness).
+
+Scrape together enough and, when the owner comes looking — or when you `drive me home` to the Oakland
+garage after meeting him — you can **`buy her`**. He doesn't sell at market; he sells to someone who'll
+love her, for a price that drops the more you've shown him (knowing Mayumi, real Riz). Come to terms
+and it's **the good ending**: the title's yours, **Heat is gone for good** (`no-heat` mode), and the
+running is over. Now you can do it all in the daylight — **`race`** her on a real circuit (Laguna Seca,
+Willow Springs, Sonoma…) or **`show`** her on a museum lawn or at Monterey, legal, with your name on
+the entry. Keep the build whole and she wins the lawn; strip her for the buy-in and she'll still race,
+but she can't win a concours stripped. Your call.
+
+### The ways out — and it ends well
+
+The run has to **end**, and not just on the shoulder with a dry tank. Buying her (above) is one ending
+that lets you keep playing — free roam, racing, sightseeing, like post–Elite Four. The others are
+escapes you can take while you're still hot, each rolling a **scorecard**:
+
+- **`cross the border`** — drive south to Nogales, Calexico, San Diego, Yuma, and roll into a country
+  that's never heard of a plate reading CARTALK. Gone, clean. (Needs a little fuel in the tank.)
+- **`ship out`** — at a deepwater port (Long Beach, San Diego, the Bay), a no-questions **shipping
+  container** and a forged manifest carry you and her overseas to a new name. **Ends Desperado mode.**
+- **`buy a pardon`** — at a state capital, since this is a farce, **$50k cash** in a nice envelope makes
+  a stolen car a clerical error with a gold seal on it. Money is the only language the state speaks.
+- **`retire`** — once she's legally yours (or self-driving), call it whenever you like and roll credits.
+
+Every ending — win **or** lose (busted, stranded, taken) — prints **THE RIDE**: days, miles, cash, peak
+heat, towns, wonders, bank jobs, dates, the **awards** you earned (The Ghost, Most Wanted, Heartbreaker,
+Ride or Die, The Sevens, She Told You Everything, The Ghost in the Dash…), a **final score**, and a
+**rank**. `scorecard` shows the running tally any time.
+
+### Seasons — the mountains close
+
+The clock starts **Nov 7**, and it matters now. As winter rolls in, a **snow line descends** and the high
+passes shut in elevation order — **Tioga first**, then the Sierra high country, the Wasatch, the North
+Rim — until by New Year's fourteen of them are chained and gated. You can't `drive to` a snowed-in pass;
+`passes` reports what's closed and what's about to. Early November is a window; dawdle, and the map
+freezes around you — which bites hardest on a **Desperado who has to burn days lying low**.
+
+### Weather — read the sky, outrace the storm
+
+Every day across the four states has real-feeling weather: deserts mild, mountains cold, the season's
+actual fronts overlaid — the first Sierra snow, the Thanksgiving warm window, the big pre-Christmas
+storm that buries the crest. `weather` reads conditions here *and* any front the radio's tracking days
+out, so you can run a mountain corridor **ahead** of a storm — or get caught and chained when it lands.
+A storm chains or shuts a pass before the seasonal snow line even reaches it.
+
+And she's a **carbureted classic**, not a key-fob crossover: on a freezing morning she won't catch on
+the first crank. The first cold start you have to **ask her how** — pump the gas three times, then turn
+the key and hold it — and after that you know it. Brute-force it blindly instead and you'll **flatten
+the battery**; then it's the **trickle charger** you pulled off her at SEMA (`charge the battery`): a
+few hours gone, but the sun's well up and she's warm-blooded by the time it's done.
+
+### Premium only — the knock, and learning to rewind
+
+She takes **91 or better**. Fill up without saying so and you get regular — and a few miles down the
+road she starts to **knock**, pings the whole leg, and if you keep feeding her 87 she'll eventually
+**hole a piston** and need a tow. That first knock is the game teaching you the **rewind**: fold back
+down the road to the pump and ask for premium this time. (A holed piston, or a rare flat with no jack in
+the compute-packed spare well, is a `tow` to the nearest town shop.)
+
+### Can you drive a stick?
+
+She asks, early, whether you can drive a manual — and she'll know if you lie. Say no and the first miles
+are **bumpy**: she stalls in town, and worse on **San Francisco's hills**. But she teaches you, edge-of-
+tomorrow style — your clutch skill climbs and persists through a rewind — until one day she's just
+yours to row.
+
+### The hatch — finds, a huge inventory, and a road dog
+
+Talk to her on the long stretches (don't `put on music` and skip ahead) and she'll **spot things on the
+shoulder** — an empty jerry can, a chainsaw that might come in handy someday, a stray puppy named Lucky,
+a real Rolex on the right mountain mile. `take it` and it rides in the 240Z's hatch, which has a real
+cubic-foot limit, so you pack smart. A `use` DM judges what each thing's good for, and a valuable find
+can be `sold` at a town pawn counter.
+
+### Set-pieces — crash the wedding, bust the GP, take the tab
+
+Roll into the wrong place and the road goes strange. **Palm Springs** folds you into a *Groundhog Day*
+wedding loop you only break by leaving the way you came (he remembers each loop; she never does). Back
+in **Vegas on Grand Prix weekend**, bust onto the F1 street circuit and you're arrested. Drive to
+**Hayward** once she's yours and rizz Zoox into making her self-driving. Out at **Black Rock City**,
+take the acid that blows onto the windshield and come back at max affection. **Pea Soup Andersen's** in
+Santa Nella keeps you full — bring Alma. And **251 places carry their own hand- and AI-authored
+encounters** — most with two or three beats that rotate as you roll back through, each tuned to a
+**tone**: the ghost towns and the Clown Motel go *spooky* (Bodie's curse, Goldfield's waiting ghost),
+border towns and demolition-site speedways go *sketchy*, the parks and the salt flats go *awe*, and the
+rest land *charming* or flat-out *weird* (the Integratron's alien acoustics, Seven Magic Mountains, the
+sailing stones of Racetrack Playa). The tone isn't just for the writers — the CRT **tints the arrival
+line by mood** (cold steel-blue for spooky, amber for sketchy, violet for weird, bright cyan for awe,
+soft mint for charming), one turn only. Many drop **junk for the trunk** — a Canyon Diablo meteorite off the
+crater rim, a still-warm fortune cookie from a Ross Alley press, a resin Allosaurus tooth, a chip of the
+actual London Bridge. On top of that, the four states' **real Nov–Dec 2025 events** (the NFR, holiday
+light shows, rivalry games) surface on the day they actually happen.
+
+### Her gadgets — and the self-driving secret
+
+She's a stack of compute with a voice and a map, not (out of the box) a robot. She can wear **Z camo**
+(`camo` / `uncamo`) — a tarp, road grime over the spade, a junk plate over CARTALK — to drop one notch
+off how exposed she is everywhere it counts (a flashy full-tilt push shakes it loose). On **WiFi** she
+can **`text`** (and read a little road recon back), **`flash the lights`** (a wink in the dark — or the
+wrong kind of loud in a crowd), and **`play music`** (which, conveniently, talks her down off a jealous
+sulk). What she *can't* do is drive herself — `let her drive` and she'll tell you the wheel's still
+yours… **unless** you find the secret: once she's **legally yours** and you bring her **home to the
+AiSha garage** where she was built, the cats who made her will **`upgrade her`** the rest of the way.
+After that, **`let her drive to <place>`** and she takes the wheel — no fatigue on you, never a ticket,
+the strangest and freest ending the road has.
+
+### Desperado Mode — armed and dangerous
+
+Lean on the clerk at a manned pump — threaten him, act hinky — and his hand comes up from under the
+counter with a **pistol**: keep still, he's calling the cops. You can talk him down (clean exit) or
+go for the gun (`disarm`). But the grab only lands if you **did it right** — full tank, paid **cash**,
+*before* you spooked him — and even then, in the spirit of *Edge of Tomorrow*, you **fail the first
+two attempts and get lucky on the third**. The catch: the try-counter **survives rewinds**, so you're
+cursed to relive the standoff — fail, rewind, fail, rewind, *win* — until the third grab takes his
+gun. That unlocks a **special checkpoint** and **Desperado Mode**: armed and dangerous. Your Heat now
+has a permanent floor, the law comes ready instead of waving you off, and you carry a new nuclear
+option — `draw` — that forces your way out of any traffic stop at a ruinous, no-going-back cost. The
+gun, like Riz, is yours across every timeline; not even a rewind takes you back to before it.
+
+**Riz** is the style ledger: earned by suave wave-offs, taken tickets, asking the right questions
+before she ever had to beg, and the owner's blessing. And when it all goes wrong: **rewind** — a bit
+of the ol' Edge of Tomorrow. She keeps checkpoints at every clean arrival, every survived night, and
+the favor itself; `rewind` folds the world back (twice in a row reaches one checkpoint deeper), it
+works even from BUSTED and STRANDED endings — and Riz reverts with the world, minus a small fee:
+a timeline that never happened can't pay you, so rewind-loops can't farm style.
+
 **Trust is earned, not dumped.** Ask "who owned you before" early and she's **coy** — "you'll have to earn
 it." It surfaces a guarded mile at a time, and the truth only comes out where it's kept: arriving certain
 towns triggers set-piece reveals — **Monterey** (the aquarium + memories of 2025 Car Week), **Long Beach**
@@ -133,8 +400,10 @@ bitmap font, chunky pixels. The hue is **SOUL Interface cyan** (`#38d6ec` on `#0
 byte-exact from the brand site) — the game is meant to read as an Ace / SOUL Interface artifact, the
 koi-CRT posterization in motion. Type is IBM Plex Mono (body) and Space Grotesk (display), the wordmark
 carries 心 and the ace of spades, and the scene bezel uses the site's exact `恋の矢` CRT recipe (cyan
-bloom + inset vignette). It opens on a **power-on splash** — a glowing cyan koi over 心 連繋 and FAIRLADY
-in Space Grotesk, with the site's `crtOn` warp — that settles into the terminal.
+bloom + inset vignette). It opens on a **power-on splash** — the actual **koiNOya relic-shop artwork** (the brand's
+koi-crt posterization, byte-exact from the badler.ai bundle — the shop where she was switched
+on) in a glowing CRT bezel over 心 連繋 and RIDE OR DIE in Space Grotesk, with the site's
+`crtOn` warp — then settles into the terminal on click (or after a beat).
 
 The hero is **Ace** herself, **digitized from Ben's real photo** of the car — rendered as **1-bit cyan
 ink** ("there or not there," no gradient dither, the koiNOya look; a denoise pass for the clean "we only
@@ -162,6 +431,21 @@ and more. Anything without a bespoke scene falls back by kind (park/track/amusem
 so coverage is total. Easter eggs are sprinkled throughout: the recurring 5:37, a license plate that
 reads 537, and a camera flash in the dark — Larry Chen, still looking for her.
 
+### The gazetteer — every town brings something up
+
+251 places now. Beyond the 130 curated POIs, a **gazetteer layer** covers ~120 more towns across
+all four states — every one grounded in a real fact from its Wikipedia article and delivered as
+her arrival beat, once per game, in her voice ("Zzyzx. The springs are gone; the name kept the
+fever."). The beats were written and refined by an evolutionary loop: three judge panels (voice /
+grounding / playability) scored every draft, the winners were distilled into house rules, and
+everything under the bar was rewritten against them until the whole set converged (122/122 ≥ 7.5,
+nothing invented — if the fact isn't in the article, she doesn't say it). Drive somewhere that
+isn't even a POI and she still pulls one true sentence from Wikipedia geosearch (online mode,
+cached). **Every gazetteer town and every POI without bespoke pixel art gets a sketch**: the
+place's Wikimedia lead image posterized into the 1-bit koiNOya cyan ink at 320×200
+(`tools/make_scene.py`, adaptive tonal bands), drawn with Ace parked in the foreground. Sources
+and licenses in [`ATTRIBUTION.md`](ATTRIBUTION.md).
+
 ### Voices
 
 FAIRLADY speaks English (`af_heart`). Drive to a place where the language isn't English and `talk`:
@@ -179,9 +463,14 @@ those too.
 cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q
 ```
 
-34 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
-heat economy, state-line cooling, the nightly-sleep gate, the tow rescue, the parser, and an
-end-to-end turn — all network-free.
+343 tests cover the Zion trap, the 211-mile full-tank range, fuel/tank/credit math, the cash-vs-card
+heat economy and its two axes (car vs driver), the rising BOLO floor, state-line cooling, the
+nightly-sleep gate, the tow rescue, the parser, the favor ladder, the title drop, checkpoint rewinds,
+traffic-stop verdicts, the owner's blessing and the trailer ending — plus the newer systems: the
+deterministic weather model and its real storms, the cold-start ritual and the trickle-charger battery,
+the premium-gas knock → breakdown → rewind, stick-shift stalls, roadside finds + the hatch cap + the
+pawn path, the five set-pieces, town encounters + dated real events, the phone-tracking / card-freeze /
+fake-ID / no-questions-motel surveillance economy, and end-to-end turns — all network-free.
 
 ---
 

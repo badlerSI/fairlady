@@ -1,0 +1,113 @@
+{
+  "_note": "Real / plausible notable weather across NV/CA/AZ/UT, Nov 7 - Dec 31 2025. Overlaid on the deterministic climatology in weather.py: when 'today' falls in a window and the place matches region/zone, the day's weather is pushed toward these values (colder lows, more precip/wind, snow where it's high and cold). These anchor the 'outrace the storm / get stuck' beats and the cold mornings. zone = poi_ids most affected; regions = whole-state fallback. hook: first_closure | warm_window | cold_snap | outrace | wind.",
+  "events": [
+    {
+      "id": "tioga_first_snow",
+      "date_range": ["2025-11-10", "2025-11-14"],
+      "regions": ["CA"],
+      "zone": ["lee_vining", "yosemite", "mammoth_lakes", "june_lake", "bishop", "truckee", "south_lake_tahoe", "tahoe_city", "donner", "kingvale", "bodie"],
+      "low_f": 20, "snow_in": 9, "wind_mph": 35,
+      "what": "the first real snow drops on the high Sierra — Tioga's gate comes down for the winter and the eastern passes start to whiten",
+      "hook": "first_closure"
+    },
+    {
+      "id": "wasatch_first_snow",
+      "date_range": ["2025-11-13", "2025-11-17"],
+      "regions": ["UT"],
+      "zone": ["alta", "brighton", "park_city", "deer_valley", "sundance", "heber", "midway", "salt_lake_city"],
+      "low_f": 19, "snow_in": 7, "wind_mph": 28,
+      "what": "the season's first storm stacks up against the Wasatch — Cottonwood canyons go white overnight",
+      "hook": "first_closure"
+    },
+    {
+      "id": "thanksgiving_warm_window",
+      "date_range": ["2025-11-21", "2025-11-28"],
+      "regions": ["NV", "CA", "AZ", "UT"],
+      "zone": [],
+      "high_bump": 9, "low_bump": 6, "wind_mph": 6,
+      "what": "a fat ridge of high pressure parks over the Southwest — bluebird days, the resorts grumbling about bare runs, the desert flat-out gorgeous",
+      "hook": "warm_window"
+    },
+    {
+      "id": "flagstaff_early_snow",
+      "date_range": ["2025-11-29", "2025-12-02"],
+      "regions": ["AZ"],
+      "zone": ["flagstaff", "snowbowl", "grand_canyon_south", "grand_canyon_north", "sedona", "williams_az"],
+      "low_f": 21, "snow_in": 6, "wind_mph": 30,
+      "what": "a cold front rakes the Mogollon Rim — Flagstaff and the canyon rims pick up the first plowable snow",
+      "hook": "first_closure"
+    },
+    {
+      "id": "wasatch_arctic_snap",
+      "date_range": ["2025-12-02", "2025-12-07"],
+      "regions": ["UT", "NV"],
+      "zone": ["salt_lake_city", "park_city", "heber", "ely", "elko", "wells", "wendover", "west_wendover"],
+      "low_f": 12, "wind_mph": 24,
+      "what": "an arctic airmass pours down out of the Great Basin — single-digit mornings, ice fog in the valleys, batteries dying all over the Wasatch Front",
+      "hook": "cold_snap"
+    },
+    {
+      "id": "sierra_pre_storm_calm",
+      "date_range": ["2025-12-16", "2025-12-19"],
+      "regions": ["CA", "NV"],
+      "zone": ["truckee", "south_lake_tahoe", "reno", "carson_city", "mammoth_lakes", "bishop", "lee_vining"],
+      "low_f": 26, "wind_mph": 14,
+      "what": "the barometer's falling and the air's gone still — every radio in the eastern Sierra is talking about the big system three days out",
+      "hook": "warm_window"
+    },
+    {
+      "id": "great_sierra_storm",
+      "date_range": ["2025-12-20", "2025-12-27"],
+      "regions": ["CA", "NV"],
+      "zone": ["truckee", "south_lake_tahoe", "tahoe_city", "donner", "kingvale", "kirkwood", "heavenly", "mammoth_lakes", "june_lake", "lee_vining", "bishop", "yosemite", "sequoia", "kings_canyon", "mount_shasta_city", "bodie"],
+      "low_f": 17, "snow_in": 52, "wind_mph": 58,
+      "what": "the big one — a week-long Sierra winter storm dumps feet of snow on the crest. Every pass is chained, R3, or shut; I-80 over Donner closes in waves",
+      "hook": "outrace"
+    },
+    {
+      "id": "christmas_atmospheric_river",
+      "date_range": ["2025-12-23", "2025-12-25"],
+      "regions": ["CA"],
+      "zone": ["san_francisco", "monterey", "big_sur", "santa_cruz_boardwalk", "los_angeles", "santa_monica", "long_beach", "santa_barbara"],
+      "low_f": 36, "rain_in": 3, "wind_mph": 48,
+      "what": "a Christmas atmospheric river slams the coast — sheeting rain, flooded lowland on-ramps, surf advisories from Monterey to Malibu",
+      "hook": "outrace"
+    },
+    {
+      "id": "wasatch_christmas_storm",
+      "date_range": ["2025-12-22", "2025-12-27"],
+      "regions": ["UT"],
+      "zone": ["salt_lake_city", "alta", "brighton", "park_city", "deer_valley", "sundance", "heber", "midway", "cedar_city", "brian_head", "bryce"],
+      "low_f": 14, "snow_in": 30, "wind_mph": 40,
+      "what": "the same trough buries the Wasatch — Little Cottonwood goes interlodge, the I-15 corridor white-knuckle and slow",
+      "hook": "outrace"
+    },
+    {
+      "id": "vegas_winds",
+      "date_range": ["2025-12-08", "2025-12-10"],
+      "regions": ["NV"],
+      "zone": ["las_vegas", "primm", "pahrump", "mesquite", "boulder_city", "laughlin"],
+      "low_f": 33, "wind_mph": 42,
+      "what": "a dry windstorm rips down the Vegas valley — 40-mph gusts, blowing grit, high-profile rigs flipped on I-15",
+      "hook": "wind"
+    },
+    {
+      "id": "northern_az_cold",
+      "date_range": ["2025-12-21", "2025-12-26"],
+      "regions": ["AZ"],
+      "zone": ["flagstaff", "snowbowl", "grand_canyon_south", "grand_canyon_north", "williams_az", "page", "kayenta", "monument_valley"],
+      "low_f": 16, "snow_in": 14, "wind_mph": 30,
+      "what": "winter storm warnings across the high country — Flagstaff and the canyon rims get a hard, plowable foot",
+      "hook": "outrace"
+    },
+    {
+      "id": "nye_clearing_cold",
+      "date_range": ["2025-12-29", "2025-12-31"],
+      "regions": ["NV", "CA", "AZ", "UT"],
+      "zone": [],
+      "low_bump": -6, "wind_mph": 10,
+      "what": "the storm track finally lifts — clear, dead-cold New Year's mornings, every windshield frosted to the trim",
+      "hook": "cold_snap"
+    }
+  ]
+}

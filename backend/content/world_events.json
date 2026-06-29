@@ -1,0 +1,392 @@
+[
+  {
+    "name": "Formula 1 Heineken Las Vegas Grand Prix",
+    "date": "2025-11-20/2025-11-22",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Las Vegas Strip Circuit",
+    "kind": "motorsport",
+    "reserved": false,
+    "blurb": "F1 night race weekend run on a 3.8-mile street circuit down the Las Vegas Strip, with the main grand prix held November 22, 2025."
+  },
+  {
+    "name": "Wrangler National Finals Rodeo (NFR)",
+    "date": "2025-12-04/2025-12-13",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Thomas & Mack Center",
+    "kind": "rodeo",
+    "reserved": false,
+    "blurb": "The PRCA's championship rodeo runs ten nightly performances at 5:45 p.m. with a purse exceeding $17.5 million."
+  },
+  {
+    "name": "Cowboy Christmas Gift Show",
+    "date": "2025-12-04/2025-12-13",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Las Vegas Convention Center",
+    "kind": "market",
+    "reserved": false,
+    "blurb": "The free official NFR gift show fills South Hall with 350-plus Western-lifestyle exhibitors daily from 9 a.m. to 4 p.m."
+  },
+  {
+    "name": "SRS Distribution Las Vegas Bowl",
+    "date": "2025-12-31",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Allegiant Stadium",
+    "kind": "college football",
+    "reserved": false,
+    "blurb": "The college football bowl game, played on its first-ever New Year's Eve date, saw Utah defeat Nebraska 44-22."
+  },
+  {
+    "name": "Ethel M Chocolates' 32nd Annual Holiday Cactus Garden Lights",
+    "date": "2025-11-06/2026-01-03",
+    "city": "Henderson",
+    "state": "NV",
+    "venue": "Ethel M Botanical Cactus Garden",
+    "kind": "holiday lights",
+    "reserved": false,
+    "blurb": "Over one million lights wrap hundreds of cacti and desert plants nightly from 5 p.m., with a $3 entry fee benefiting local food banks."
+  },
+  {
+    "name": "Glittering Lights at Las Vegas Motor Speedway",
+    "date": "2025-11-07/2026-01-04",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Las Vegas Motor Speedway",
+    "kind": "holiday lights",
+    "reserved": false,
+    "blurb": "A 2.5-mile drive-through display of over six million lights and 750-plus exhibits, open nightly for its 25th season."
+  },
+  {
+    "name": "Magical Forest at Opportunity Village",
+    "date": "2025-11-28/2025-12-31",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Opportunity Village (6300 W. Oakey Blvd.)",
+    "kind": "holiday festival",
+    "reserved": false,
+    "blurb": "A walkable holiday lights park with rides, mini golf, a train and Santa, opening with a tree-lighting ceremony on November 28."
+  },
+  {
+    "name": "Las Vegas Great Santa Run",
+    "date": "2025-12-06",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Downtown Las Vegas Events Center",
+    "kind": "charity run",
+    "reserved": false,
+    "blurb": "The 21st annual 5K and 1-mile run sends thousands of red-suited Santas through downtown, benefiting Opportunity Village."
+  },
+  {
+    "name": "Santa's Electric Night Parade",
+    "date": "2025-12-06",
+    "city": "Boulder City",
+    "state": "NV",
+    "venue": "Historic Downtown Boulder City",
+    "kind": "parade",
+    "reserved": false,
+    "blurb": "The 57th annual lighted-float night parade winds through the historic district near Hoover Dam, starting at 4:30 p.m."
+  },
+  {
+    "name": "Las Vegas Veterans Day Parade",
+    "date": "2025-11-11",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Downtown Las Vegas (4th Street, Garces to Stewart)",
+    "kind": "parade",
+    "reserved": false,
+    "blurb": "The largest Veterans Day parade west of the Mississippi ran 10 a.m. to noon with roughly 150 entries and tens of thousands of spectators."
+  },
+  {
+    "name": "Dia de los Muertos Free Festival",
+    "date": "2025-11-01",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Carolyn G. Goodman Plaza",
+    "kind": "cultural festival",
+    "reserved": false,
+    "blurb": "A free City of Las Vegas Day of the Dead festival from 3 to 9 p.m. with altars, artisan vendors, food and live entertainment."
+  },
+  {
+    "name": "Dia de Muertos at Springs Preserve",
+    "date": "2025-11-07/2025-11-09",
+    "city": "Las Vegas",
+    "state": "NV",
+    "venue": "Springs Preserve",
+    "kind": "cultural festival",
+    "reserved": false,
+    "blurb": "A ticketed evening Day of the Dead festival with mariachis, folklorico dancers, ofrendas and artisans, 5 to 9 p.m."
+  },
+  {
+    "name": "Sparks Hometowne Christmas Tree Lighting & Parade",
+    "date": "2025-12-05/2025-12-06",
+    "city": "Sparks",
+    "state": "NV",
+    "venue": "Victorian Avenue",
+    "kind": "parade",
+    "reserved": false,
+    "blurb": "A tree lighting on December 5 and the 38th annual Christmas parade down Victorian Avenue on December 6, themed 'Christmas in Toyland.'"
+  },
+  {
+    "name": "Holiday Lights Festival at BELIEVE Plaza",
+    "date": "2025-12-05/2025-12-06",
+    "city": "Reno",
+    "state": "NV",
+    "venue": "BELIEVE Plaza, Downtown Reno",
+    "kind": "holiday festival",
+    "reserved": true,
+    "blurb": "A free downtown festival with Santa, vendors and a Christmas tree lighting at 7 p.m. on December 5."
+  },
+  {
+    "name": "Leonid Meteor Shower peak",
+    "date": "2025-11-17/2025-11-18",
+    "city": "Great Basin National Park",
+    "state": "NV",
+    "venue": "Great Basin International Dark Sky Park",
+    "kind": "natural / astronomy",
+    "reserved": false,
+    "blurb": "The Leonids peak overnight November 17-18, 2025 under a thin crescent moon, favoring dark Nevada skies away from city light."
+  },
+  {
+    "name": "Geminid Meteor Shower peak",
+    "date": "2025-12-13/2025-12-14",
+    "city": "Great Basin National Park",
+    "state": "NV",
+    "venue": "Great Basin International Dark Sky Park",
+    "kind": "natural / astronomy",
+    "reserved": false,
+    "blurb": "The Geminids peak overnight December 13-14, 2025 at up to about 120 meteors per hour with a non-interfering waning crescent moon."
+  },
+  {
+    "name": "Death Valley '49ers Annual Encampment",
+    "date": "2025-10-31/2025-11-02",
+    "city": "Stovepipe Wells",
+    "state": "CA",
+    "venue": "Stovepipe Wells Village, Death Valley National Park",
+    "kind": "festival",
+    "reserved": false,
+    "blurb": "A free Old West heritage gathering with historical reenactments, live music, blacksmith and Dutch oven demonstrations, a vendor show, and an art show in the desert."
+  },
+  {
+    "name": "Dia de los Muertos Procession (44th Annual)",
+    "date": "2025-11-02",
+    "city": "San Francisco",
+    "state": "CA",
+    "venue": "Mission District, staging on Bryant St between 19th and 22nd",
+    "kind": "art",
+    "reserved": false,
+    "blurb": "A free community Day of the Dead ritual procession with Aztec dancers, lowriders, live bands, and altars winding from 22nd and Bryant down to 24th and Mission and back, starting around 7 p.m."
+  },
+  {
+    "name": "Palm Springs Pride Parade",
+    "date": "2025-11-09",
+    "city": "Palm Springs",
+    "state": "CA",
+    "venue": "Historic Palm Canyon Drive",
+    "kind": "festival",
+    "reserved": false,
+    "blurb": "The free 'Be Heard' Pride parade steps off at 9:30 a.m. down palm-lined Palm Canyon Drive as the centerpiece of the Nov 6-9 Palm Springs Pride weekend."
+  },
+  {
+    "name": "Doo Dah Takeover ('No Doo Dah Day')",
+    "date": "2025-11-23",
+    "city": "Pasadena",
+    "state": "CA",
+    "venue": "Dog Haus Biergarten, 93 E. Green St.",
+    "kind": "art",
+    "reserved": false,
+    "blurb": "With the irreverent Doo Dah Parade on hiatus until 2026, a day of cabaret and Doo Dah Queen tryouts keeps the absurdist tradition alive starting at 11 a.m."
+  },
+  {
+    "name": "Hollywood Christmas Parade (93rd Annual)",
+    "date": "2025-11-30",
+    "city": "Los Angeles",
+    "state": "CA",
+    "venue": "Hollywood Boulevard",
+    "kind": "holiday",
+    "reserved": false,
+    "blurb": "From 6-8 p.m. the Hollywood Boulevard parade features character balloons, marching bands, celebrities, and Santa, with actor Luke Wilson as grand marshal."
+  },
+  {
+    "name": "Official Holiday Tree Lighting",
+    "date": "2025-12-05",
+    "city": "Palm Springs",
+    "state": "CA",
+    "venue": "Frances Stevens Park",
+    "kind": "holiday",
+    "reserved": false,
+    "blurb": "The city's 22-foot holiday tree is lit at 5:15 p.m., kicking off the Festival of Lights weekend in downtown Palm Springs."
+  },
+  {
+    "name": "Palm Springs Festival of Lights Parade (33rd Annual)",
+    "date": "2025-12-06",
+    "city": "Palm Springs",
+    "state": "CA",
+    "venue": "Palm Canyon Drive at Ramon Road",
+    "kind": "holiday",
+    "reserved": false,
+    "blurb": "A nighttime holiday parade beginning at 5:45 p.m. with illuminated floats, marching bands, giant Macy's-style balloons, and Santa Claus down Palm Canyon Drive."
+  },
+  {
+    "name": "California International Marathon",
+    "date": "2025-12-07",
+    "city": "Sacramento",
+    "state": "CA",
+    "venue": "Finish line at the State Capitol",
+    "kind": "race",
+    "reserved": false,
+    "blurb": "A point-to-point road marathon starting at 7 a.m. and finishing at the California State Capitol, known as a fast Boston-qualifying course."
+  },
+  {
+    "name": "Newport Beach Christmas Boat Parade (117th Annual)",
+    "date": "2025-12-17/2025-12-21",
+    "city": "Newport Beach",
+    "state": "CA",
+    "venue": "Newport Harbor, departing from Lido Isle",
+    "kind": "holiday",
+    "reserved": false,
+    "blurb": "Over 100 decorated yachts and boats themed 'Magical Nights of Lights' sail a 14-mile harbor loop each evening around 6:30 p.m., free to watch from shore, with fireworks on opening and closing nights."
+  },
+  {
+    "name": "All Souls Procession and Grand Finale",
+    "date": "2025-11-09",
+    "city": "Tucson",
+    "state": "AZ",
+    "venue": "Downtown Tucson / Barrio Hollywood (Mercado San Agustin area)",
+    "kind": "procession",
+    "reserved": false,
+    "blurb": "The 36th annual two-mile, human-powered Dia de los Muertos procession culminates Sunday Nov 9 with the ceremonial burning of The Urn."
+  },
+  {
+    "name": "Moab Trail Marathon & Half Marathon",
+    "date": "2025-11-08",
+    "city": "Moab",
+    "state": "UT",
+    "venue": "Behind the Rocks / Amasa Back trails, Moab",
+    "kind": "trail race",
+    "reserved": false,
+    "blurb": "A red-rock trail marathon and half-marathon weekend (Nov 8-9) routed through the Behind the Rocks Wilderness with views into Canyonlands."
+  },
+  {
+    "name": "Moab Folk Festival",
+    "date": "2025-11-07",
+    "city": "Moab",
+    "state": "UT",
+    "venue": "Star Hall and venues in downtown Moab",
+    "kind": "music festival",
+    "reserved": false,
+    "blurb": "An annual folk-music festival (Nov 7-9) featuring more than ten bands and musicians across downtown Moab."
+  },
+  {
+    "name": "The Polar Express",
+    "date": "2025-11-07",
+    "city": "Williams",
+    "state": "AZ",
+    "venue": "Williams Depot, Grand Canyon Railway (233 N Grand Canyon Blvd)",
+    "kind": "holiday train ride",
+    "reserved": false,
+    "blurb": "The Grand Canyon Railway's 90-minute Polar Express holiday train runs nightly from Nov 7 through Dec 30, 2025, departing the historic Williams Depot."
+  },
+  {
+    "name": "Moab Turkey Trot 5K",
+    "date": "2025-11-22",
+    "city": "Moab",
+    "state": "UT",
+    "venue": "Moab Recreation and Aquatics Center (MRAC)",
+    "kind": "fun run",
+    "reserved": false,
+    "blurb": "Moab City's annual Turkey Trot 5K starts at 9 AM on Nov 22 at the MRAC, with a free Kids' K around Swanny Park."
+  },
+  {
+    "name": "Scottsdale Waterfront Art & Light Festival",
+    "date": "2025-11-07",
+    "city": "Scottsdale",
+    "state": "AZ",
+    "venue": "Scottsdale Waterfront",
+    "kind": "art and light festival",
+    "reserved": false,
+    "blurb": "A 10-day outdoor art-and-light festival (Nov 7-16) with large-scale installations, workshops, live performances, and food trucks along the Scottsdale Waterfront."
+  },
+  {
+    "name": "Flagstaff Winter Wonderland & Christmas Tree Lighting",
+    "date": "2025-12-06",
+    "city": "Flagstaff",
+    "state": "AZ",
+    "venue": "Heritage Square, Historic Downtown Flagstaff",
+    "kind": "tree lighting",
+    "reserved": false,
+    "blurb": "A free Dec 6 celebration (3-6 PM) at Heritage Square with hot cocoa, s'mores, live music, and a tree lighting at 6:15 PM."
+  },
+  {
+    "name": "Zion Joy to the World Light Parade & Sweets Social",
+    "date": "2025-12-12",
+    "city": "Springdale",
+    "state": "UT",
+    "venue": "SR-9 to Canyon Community Center (126 Lion Blvd)",
+    "kind": "light parade",
+    "reserved": false,
+    "blurb": "Springdale's annual Zion Canyon light parade rolls down SR-9 at 7 PM on Dec 12, ending with a sweets social and photos with the Clauses at the gateway to Zion."
+  },
+  {
+    "name": "Temple Square Christmas Lights",
+    "date": "2025-11-28",
+    "city": "Salt Lake City",
+    "state": "UT",
+    "venue": "Temple Square, downtown Salt Lake City",
+    "kind": "holiday lights",
+    "reserved": false,
+    "blurb": "Over one million Christmas lights illuminate Temple Square nightly (4:30-10:00 PM) from Nov 28, 2025 through Jan 1, 2026."
+  },
+  {
+    "name": "Tabernacle Choir Christmas Concert",
+    "date": "2025-12-11",
+    "city": "Salt Lake City",
+    "state": "UT",
+    "venue": "Conference Center, Temple Square",
+    "kind": "choir concert",
+    "reserved": false,
+    "blurb": "The Tabernacle Choir's annual Christmas concert series runs Dec 11-13, 2025, with guest artists Stephanie J. Block and Sebastian Arcelus."
+  },
+  {
+    "name": "Winterhaven Festival of Lights",
+    "date": "2025-12-13",
+    "city": "Tucson",
+    "state": "AZ",
+    "venue": "Historic Winterhaven Neighborhood (Country Club Rd & Fort Lowell Rd)",
+    "kind": "holiday lights",
+    "reserved": false,
+    "blurb": "Tucson's longest-running holiday tradition lights up more than 200 homes nightly 6-10 PM from Dec 13-27, 2025, with free admission."
+  },
+  {
+    "name": "Park City Mountain Opening Day",
+    "date": "2025-12-05",
+    "city": "Park City",
+    "state": "UT",
+    "venue": "Park City Mountain (Park City and Canyons Village bases)",
+    "kind": "ski resort opening",
+    "reserved": false,
+    "blurb": "Utah's largest ski resort opened for the 2025-26 winter season out of both bases on Dec 5, 2025."
+  },
+  {
+    "name": "Phoenix Marathon",
+    "date": "2025-12-13",
+    "city": "Phoenix",
+    "state": "AZ",
+    "venue": "Phoenix metro course (near Papago Park)",
+    "kind": "marathon",
+    "reserved": false,
+    "blurb": "The inaugural Phoenix Marathon on Dec 13 routes runners across the Valley past desert vistas and Papago Park."
+  },
+  {
+    "name": "Noon Year's Eve",
+    "date": "2025-12-31",
+    "city": "Flagstaff",
+    "state": "AZ",
+    "venue": "Heritage Square, Historic Downtown Flagstaff",
+    "kind": "new year celebration",
+    "reserved": false,
+    "blurb": "A free family New Year's event (10 AM-noon) at Heritage Square on Dec 31 with crafts, cookie decorating, and a midday pinecone drop and cider toast."
+  }
+]

@@ -15,8 +15,19 @@ from config import (
 )
 from engine.state import Place
 
+# POIs that exist and are drivable BY NAME, but never appear on the map or in the auto-destination
+# lists. Area 51's back gate is the canonical one — "you can't find Area 51 on the map." You have to
+# know it's out there and ask for it.
+HIDDEN_POIS = {"area51_gate"}
+
+
+def is_hidden(poi_id: Optional[str]) -> bool:
+    return bool(poi_id) and poi_id in HIDDEN_POIS
+
+
 _POIS: Optional[list] = None
 _BY_ID: dict = {}
+_BEATS: dict = {}              # poi_id → her arrival beat (the gazetteer layer)
 _START: Optional[Place] = None
 _last_nominatim_call = [0.0]   # crude 1 req/sec throttle (list for mutability)
 
@@ -29,6 +40,7 @@ def _place_from_poi(d: dict) -> Place:
         services=list(d.get("services", [])), blurb=d.get("blurb", ""),
         gas_price=d.get("gas_price"), terrain=float(d.get("terrain", 1.0)),
         heat_zone=bool(d.get("heat_zone", False)),
+        camera_density=d.get("camera_density"),
         language=d.get("language"), voice=d.get("voice"), npc=d.get("npc"),
         scene=d.get("scene"),
     )
@@ -43,6 +55,13 @@ def _load() -> None:
     _POIS = [_place_from_poi(p) for p in data["pois"]]
     _BY_ID = {p.poi_id: p for p in _POIS if p.poi_id}
     _BY_ID[_START.poi_id] = _START
+    _BEATS.update({p["id"]: p["beat"] for p in data["pois"] if p.get("beat")})
+
+
+def beat_for(poi_id: Optional[str]) -> Optional[str]:
+    """Her arrival line for a gazetteer town (told once per game; game.py tracks that)."""
+    _load()
+    return _BEATS.get(poi_id) if poi_id else None
 
 
 def start_place() -> Place:
@@ -229,6 +248,40 @@ def route(origin: Place, dest: Place) -> dict:
     # offline / fallback: roads wind, and you don't average freeway speed everywhere
     dist = straight * ROAD_WINDING_FACTOR
     return {"distance_mi": dist, "duration_h": dist / OFFLINE_AVG_MPH, "source": "offline"}
+
+
+def wiki_fact(lat: float, lon: float) -> Optional[str]:
+    """One true sentence about wherever the player just geocoded to — Wikipedia geosearch,
+    disk-cached, online (osm) mode only. ANY town in the four states brings something up."""
+    if ROUTING != "osm":
+        return None
+    key = f"{round(lat, 3)},{round(lon, 3)}"
+    cached = _cache_get("fact", key)
+    if cached is not None:
+        return cached or None
+    fact = ""
+    try:
+        r = httpx.get("https://en.wikipedia.org/w/api.php",
+                      params={"action": "query", "list": "geosearch", "format": "json",
+                              "gscoord": f"{lat}|{lon}", "gsradius": 10000, "gslimit": 1},
+                      headers={"User-Agent": GEO_USER_AGENT}, timeout=ROUTING_TIMEOUT)
+        r.raise_for_status()
+        hits = r.json().get("query", {}).get("geosearch", [])
+        if hits:
+            title = hits[0]["title"]
+            sr = httpx.get("https://en.wikipedia.org/api/rest_v1/page/summary/"
+                           + title.replace(" ", "_"),
+                           headers={"User-Agent": GEO_USER_AGENT}, timeout=ROUTING_TIMEOUT)
+            sr.raise_for_status()
+            extract = (sr.json().get("extract") or "").strip()
+            if extract:
+                fact = extract.split(". ")[0].strip()[:220]
+                if fact and not fact.endswith("."):
+                    fact += "."
+    except Exception:
+        pass
+    _cache_put("fact", key, fact)
+    return fact or None
 
 
 def nearest_with_service(origin: Place, service: str, limit: int = 6) -> list:

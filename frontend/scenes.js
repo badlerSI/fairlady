@@ -109,8 +109,21 @@ const SPR = {
     const sx = 20 + r() * 200, sy = 10 + r() * 50, len = 26;
     s.line(sx + p*120, sy + p*30, sx + p*120 - len, sy + p*30 - len*0.25, I.hot);
   },
-  moon(s, x, y, r) {
-    s.disc(x, y, r, I.f); s.disc(x + r*0.5, y - r*0.4, r*0.85, I.bg);
+  // phase-driven moon: phase 0..1 (0=new, 0.5=full, 1=new) from the in-game date (snap.moon_phase,
+  // stashed in _sky). Lit disc minus an offset shadow disc = a real lune (crescent → gibbous → full).
+  moon(s, x, y, r, phase) {
+    if (phase == null) phase = (typeof _sky !== "undefined" && _sky.phase != null) ? _sky.phase : 0.5;
+    const ill = (1 - Math.cos(2 * Math.PI * phase)) / 2;     // 0 new … 1 full
+    s.disc(x, y, r, I.f);                                     // the full lit disc
+    s.plot(x - Math.round(r * 0.30), y - Math.round(r * 0.18), I.d2);   // stable maria speckle
+    s.plot(x + Math.round(r * 0.18), y + Math.round(r * 0.22), I.d2);
+    if (ill < 0.985) {                                        // carve the shadow (skip when full)
+      const m = Math.round(2 * r * ill), dir = phase < 0.5 ? -1 : 1;   // waxing: lit on the right
+      s.disc(x + dir * m, y, r, I.bg);
+      if (ill > 0.04) s.plot(x - dir * (r - 1), y, I.hot);    // a glint on the lit limb
+    } else {
+      s.ring(x, y, r + 1, I.d3);                              // full — a soft halo ring
+    }
   },
   sun(s, x, y, r, t) {
     s.disc(x, y, r, I.f);
@@ -127,6 +140,12 @@ const SPR = {
   },
   mesa(s, x, y, w, h, c = I.d2) {
     s.poly([[x, y], [x + w*0.12, y - h], [x + w*0.88, y - h], [x + w, y]], c);
+  },
+  cloud(s, x, y, sc = 1, c = I.d2) {       // puffy 1-bit daytime cloud (drifts)
+    const d = (dx, dy, r) => s.disc(x + dx*sc, y + dy*sc, Math.max(1, r*sc), c);
+    d(-9, 1, 4); d(-2, -2, 5); d(5, -3, 6); d(12, -1, 5); d(18, 1, 4);
+    s.rect(x - 11*sc, y + 1*sc, 31*sc, Math.max(1, 3*sc), c);   // flat base
+    s.disc(x + 4*sc, y - 4*sc, Math.max(1, 2*sc), I.d3);        // a lit crown
   },
   ground(s, y, c = I.d3) { s.rect(0, y, s.W, s.H - y, I.bg); s.hline(0, s.W, y, c); },
   road(s, t, o = {}) {           // perspective road with marching dashes
@@ -286,8 +305,15 @@ const SPR = {
 const CAR_IMG = new Image();
 if (typeof CAR_PNG !== "undefined") CAR_IMG.src = CAR_PNG;
 
+// the latest snapshot's car state, stashed by sceneFor() so EVERY scene's car reflects it
+// without threading flags through dozens of drawAce call sites.
+let _aceState = {};
+let _sky = {};        // { phase, full } from the snapshot's moon fields — read by SPR.moon
+
 function drawAce(s, t, o = {}) {
   const moving = o.moving !== false;
+  const camo = o.camo != null ? o.camo : !!_aceState.camo;
+  const selfdrive = o.self_driving != null ? o.self_driving : !!_aceState.self_driving;
   const w = o.w || 150, h = Math.round(w * CAR_META.h / CAR_META.w);
   const x = Math.round((o.x != null ? o.x : s.W * 0.49) - w / 2);
   const baseY = (o.y != null ? o.y : 184);
@@ -296,14 +322,23 @@ function drawAce(s, t, o = {}) {
 
   // ground shadow under the tires
   s.dither(x + Math.round(w * 0.10), baseY - 4, Math.round(w * 0.80), 5, 8, I.d1);
-  // road-speed streaks flanking her when rolling
+  // road-speed streaks flanking her — they RUSH DOWN AND OUTWARD past the car (forward motion),
+  // not inward (which read as reverse)
   if (moving) {
-    const m = (t * 280) % 26;
-    for (let k = 0; k < 4; k++) {
-      const ly = baseY - 2 - k * 4, off = (m + k * 26) % 46;
-      s.rect(x - 24 + off, ly, 9, 1, I.d2);
-      s.rect(x + w + 16 - off, ly, 9, 1, I.d2);
+    for (let k = 0; k < 5; k++) {
+      const sp = (t * 1.7 + k / 5) % 1;          // 0 = far/high behind her, 1 = near/low past her
+      const ly = baseY - 46 + sp * 54;            // travels downward toward the camera
+      const spread = 16 + sp * 34;                // fans outward as it nears
+      const len = 4 + sp * 11, th = Math.max(1, Math.round(sp * 2.2)), c = sp > 0.5 ? I.d2 : I.d1;
+      s.rect(x - spread - len, ly, len, th, c);   // left side, sweeping out + down
+      s.rect(x + w + spread, ly, len, th, c);     // right side
     }
+  }
+  // self-driving — a soft pulsing aura UNDER her (drawn before the car so it haloes the tires)
+  if (selfdrive) {
+    const pulse = 0.5 + 0.5 * Math.sin(s.now * 2.2);
+    s.dither(x + Math.round(w * 0.04), baseY - 8, Math.round(w * 0.92), 8,
+             pulse > 0.78 ? 4 : (pulse > 0.45 ? 6 : 10), I.d3);
   }
   // the car — OPAQUE, on the top layer (the road never shows through her)
   if (CAR_IMG.complete && CAR_IMG.naturalWidth) {
@@ -312,21 +347,39 @@ function drawAce(s, t, o = {}) {
   } else {
     s.rect(x, y, w, h, I.d2);
   }
+  // rear tail lights on the 240Z's rear panel (she's a rear-3/4 view) — dull red lenses by day,
+  // lit bright with a hot bloom + glow at night
+  const night = o.night != null ? o.night : !!_aceState.night;
+  const tlw = Math.max(2, Math.round(w * 0.052)), tlh = Math.max(1, Math.round(h * 0.022));
+  const taillight = (fx, fy) => {
+    const tx = x + Math.round(w * fx) - (tlw >> 1), ty = y + Math.round(h * fy) - (tlh >> 1);
+    if (night) {
+      s.rect(tx - 1, ty - 1, tlw + 2, tlh + 2, "#5a140f");    // soft glow halo
+      s.rect(tx, ty, tlw, tlh, "#e23b2e");                     // bright lens (brand hazard red)
+      s.rect(tx + Math.round(tlw * 0.33), ty, Math.max(1, tlw - Math.round(tlw * 0.66)), tlh, "#ff7a6e"); // hot core
+    } else {
+      s.rect(tx, ty, tlw, tlh, "#7e2a22");                     // dull red, daylight
+    }
+  };
+  taillight(0.44, 0.60);   // near (driver-side) cluster
+  taillight(0.86, 0.565);  // far (passenger-side) cluster
+  // Z camo — a tarp dithered over the hood/roof and road-grime low, dressing the show car down
+  if (camo) {
+    s.dither(x + Math.round(w * 0.15), y + Math.round(h * 0.06),
+             Math.round(w * 0.52), Math.round(h * 0.40), 5, I.d1);   // tarp on the hood/roof
+    s.dither(x + Math.round(w * 0.28), y + Math.round(h * 0.70),
+             Math.round(w * 0.42), 6, 9, I.d1);                       // grime along the rocker
+    if (s.blink(1.3)) s.plot(x + Math.round(w * 0.5), y + Math.round(h * 0.5), I.d1);
+  }
+  // self-driving — a live dash spark, no hands on the wheel
+  if (selfdrive && s.blink(1.6, 0.32))
+    s.plot(x + Math.round(w * 0.46), y + Math.round(h * 0.42), I.hot);
   // idle exhaust when stopped
   if (!moving && s.blink(2.4, 0.3))
     s.dither(x + Math.round(w * 0.46), y + h - 7, 13, 8, 6, I.d2);
 
-  // rear-glass reflection — a bright sheen sweeps the back windshield as the world slides by
-  const rg = CAR_META.anchors.rearGlass;
-  if (rg) {
-    const gx = x + rg[0] * w, gy = y + rg[1] * h, gw = rg[2] * w, gh = rg[3] * h;
-    const sweep = (moving ? (t * 0.42) : (t * 0.16)) % 1;
-    const sxx = gx - gh * 0.6 + sweep * (gw + gh * 0.8);   // diagonal, top-left → lower-right
-    for (let i = 0; i < gh; i++) {
-      const px = sxx + i * 0.55;
-      if (px >= gx + 1 && px <= gx + gw - 1) { s.plot(px, gy + i, i & 1 ? I.hot : I.f); s.plot(px + 1, gy + i, I.f); }
-    }
-  }
+  // (no drawn roof/glass reflection sweep — it crawled across her cabin and fought the digitized
+  //  photo's own baked highlights. The 1-bit "there or not there" ink reads cleaner without it.)
 
   // driver-side fender bullet mirror — chrome housing on a stalk, a glisten travelling its face
   const ma = CAR_META.anchors.mirror;
@@ -366,44 +419,70 @@ const ENV_OBJ = {
   },
 };
 
+function _mod(v, m) { return ((v % m) + m) % m; }
+
 function _drawFar(s, env, hy, t) {
   const drift = (t * 7) % 48;
-  if (env === "desert") {
-    SPR.sun(s, 252, 34, 12, t);
-    for (let i = -1; i < 8; i++) { const x = i * 48 - drift; SPR.mesa(s, x, hy + 2, 40, 16 + (i & 1) * 10, I.d1); }
-  } else if (env === "city") {
+  if (env === "night" || env === "fullmoon") {      // open desert at night — stars, the moon, dark dunes
+    SPR.stars(s, t, 60, 5, 0, hy - 4);
+    if (env === "fullmoon") {
+      s.dither(0, hy - 9, s.W, 11, 9, I.d2);        // a low wash of moonlight along the horizon
+      SPR.moon(s, 228, 30, 16, 0.5);                // a BIG full moon hanging low over the road
+    } else {
+      SPR.moon(s, 252, 22, 9);                      // the night's real phase, smaller
+    }
+    for (let i = -1; i < 8; i++) { const x = i * 48 - drift; SPR.mesa(s, x, hy + 2, 40, 14 + (i & 1) * 10, I.d1); }
+    return;
+  }
+  if (env === "city") {                  // NIGHT skyline — rectangle bars belong here, and only here
     SPR.stars(s, t, 50, 5, 0, hy - 6);
-    const r = s.rng(3);
-    for (let i = -1; i < 14; i++) { const x = i * 26 - drift; const h = 14 + ((i * 7) % 22); s.rect(x, hy - h, 22, h, I.d1);
-      for (let wy = hy - h + 3; wy < hy - 3; wy += 6) if (((i + wy) & 3) === 0) s.plot(x + 4 + ((i * 3) % 12), wy, I.d3); }
-  } else { // mountain
-    SPR.stars(s, t, 22, 5, 0, hy - 8);
+    for (let i = -1; i < 14; i++) {
+      const x = i * 26 - drift, h = 14 + ((i * 7) % 22);
+      s.rect(x, hy - h, 22, h, I.d1);
+      for (let wy = hy - h + 3; wy < hy - 3; wy += 6)
+        if (((i + wy) & 3) === 0) s.plot(x + 4 + ((i * 3) % 12), wy, I.d3);
+    }
+    return;
+  }
+  // DAYTIME sky: sun + drifting clouds over the far land
+  SPR.sun(s, env === "mountain" ? 64 : 252, 28, 11, t);
+  const cdrift = (t * 4) % (s.W + 100);
+  for (let i = 0; i < 4; i++) {
+    const x = _mod(i * 104 + 30 - cdrift, s.W + 100) - 50;
+    SPR.cloud(s, x, 18 + (i & 1) * 13, 0.85 + (i & 1) * 0.45, I.d2);
+  }
+  if (env === "desert") {
+    for (let i = -1; i < 8; i++) { const x = i * 48 - drift; SPR.mesa(s, x, hy + 2, 40, 16 + (i & 1) * 10, I.d1); }
+  } else { // mountain — daytime peaks
     for (let i = -1; i < 7; i++) { const x = i * 56 - drift * 0.6; s.poly([[x, hy + 2], [x + 28, hy - 30 - (i & 1) * 12], [x + 56, hy + 2]], I.d1); }
   }
 }
 
 function drawHighway(s, t, env) {
-  // DIAGONAL road: the car (rear-3/4) is heading up-and-to-the-left, so the vanishing point
-  // sits left of centre and the band sweeps from the lower-right foreground up to it.
-  const hy = 66, H = s.H, topW = 9, botW = s.W * 0.66;
-  const vpx = s.W * 0.36, nearCx = s.W * 0.60;
-  const frac = (p) => (_roadY(p, hy, H) - hy) / (H - hy);       // screen fraction at depth p
-  const cx = (p) => vpx + frac(p) * (nearCx - vpx);             // road centre slides right as it nears
+  // The road is ORIENTED TO THE CAR'S TILT: the sprite is a rear-3/4 view heading up-and-to-the-
+  // LEFT (rear/plate near the camera at lower-right, nose pointing to the upper-left), so the road
+  // recedes to a vanishing point up-LEFT and its near end sits behind her rear. She drives DOWN
+  // the road instead of drifting across it. Motion is still forward (dashes rush toward camera).
+  const hy = 70, H = s.H, topW = 7, botW = s.W * 0.52;
+  const vpx = s.W * 0.40, nearCx = s.W * 0.55;            // vanishing point left; near under the rear
+  const frac = (p) => (_roadY(p, hy, H) - hy) / (H - hy);  // 0 at horizon, 1 at the bottom
+  const cx = (p) => vpx + frac(p) * (nearCx - vpx);        // centerline leans from the VP to the near
   s.rect(0, 0, s.W, hy, I.bg);
   _drawFar(s, env, hy, t);
-  // the road wedge
+  // the road wedge — apex at the VP, fanning to a wide base behind the car
   s.poly([[vpx, hy], [nearCx - botW, H], [nearCx + botW, H]], I.d1);
-  s.line(vpx, hy, nearCx - botW, H, I.d3); s.line(vpx, hy, nearCx + botW, H, I.d3);
+  s.line(vpx, hy, nearCx - botW, H, I.d3);
+  s.line(vpx, hy, nearCx + botW, H, I.d3);
   const ph = (t * 0.85) % 1;
-  // centre dashes rushing toward camera along the diagonal
+  // centre dashes rushing toward the camera along the lean — the forward-motion cue
   for (let k = 0; k < 10; k++) { const p = ((k / 10) + ph) % 1; const y = _roadY(p, hy, H); const w = 1 + p * 7; s.rect(cx(p) - w / 2, y, w, 2 + p * 16, I.f); }
   // rumble strips
   for (let k = 0; k < 14; k++) {
-    const p = ((k / 14) + ph) % 1; const y = _roadY(p, hy, H); const hw = _roadHalf(p, topW, botW);
+    const p = ((k / 14) + ph) % 1, y = _roadY(p, hy, H), hw = _roadHalf(p, topW, botW);
     const lit = (k + Math.floor(ph * 14)) & 1, c = lit ? I.f : I.d2, tk = 1 + p * 4;
     s.rect(cx(p) - hw, y, tk, Math.max(1, p * 9), c); s.rect(cx(p) + hw - tk, y, tk, Math.max(1, p * 9), c);
   }
-  // roadside objects spawning at the horizon, sweeping past on the diagonal
+  // roadside objects spawning at the horizon, sweeping outward toward the camera
   const obj = ENV_OBJ[env] || ENV_OBJ.desert;
   for (let i = 0; i < 6; i++) {
     const p = ((i / 6) + ph * 0.9) % 1; if (p < 0.05) continue;
@@ -415,7 +494,10 @@ function drawHighway(s, t, env) {
 // =====================================================================
 //  SCENES  (each = a location BACKDROP; drawAce() composites the hero on top)
 // =====================================================================
-function bgNight(s, t, seed) { SPR.stars(s, t, 80, seed || 7); SPR.shootingStar(s, t, (seed||7)+1); }
+function bgNight(s, t, seed) {
+  SPR.stars(s, t, 80, seed || 7); SPR.shootingStar(s, t, (seed||7)+1);
+  SPR.moon(s, 276, 24, 10);     // the moon, upper-right sky, at tonight's real phase (new = invisible)
+}
 
 const SCENES = {
 
@@ -446,12 +528,74 @@ const SCENES = {
     s.textC("OUT OF GAS", 40, s.blink(0.8) ? I.f : I.d2, 2);
   },
 
+  // ---------- the endings: a visual LANDING for every way the road ends well ----------
+  won(s, t) {                                  // generic credits — dawn, the Z parked, ticking cool
+    SPR.stars(s, t, 16, 5, 0, 44); SPR.sun(s, 250, 46, 12, t);
+    SPR.mountains(s, 120, 6, 34, I.d1); SPR.ground(s, GROUND, I.f);
+    drawAce(s, t, { moving: false });
+    s.textC("THE RIDE", 28, I.f, 2);
+    s.textC("FIN", 46, I.d3, 1);
+  },
+  won_owned(s, t) {                            // legal & free — clean daylight, parked in the sun
+    SPR.sun(s, 252, 34, 14, t);
+    SPR.cloud(s, 50 + s.wob(18, 11), 38, 1, I.d1); SPR.cloud(s, 150 + s.wob(14, 9), 28, 0.8, I.d1);
+    SPR.mountains(s, 120, 4, 28, I.d1); SPR.ground(s, GROUND, I.f);
+    drawAce(s, t, { moving: false });
+    s.textC("ALL YOURS", 26, I.f, 2);
+    s.textC("FREE AND CLEAR", 44, I.d3, 1);
+  },
+  won_border(s, t) {                           // gone south — booth, a raised gate, a bilingual sign
+    SPR.sun(s, 250, 40, 11, t); SPR.mountains(s, 126, 7, 24, I.d1); SPR.ground(s, GROUND, I.d3);
+    s.rect(26, 104, 20, GROUND - 104, I.d2);                       // agent booth
+    s.rect(29, 112, 14, 9, s.blink(1.2) ? I.hot : I.d1);          // lit window
+    for (let k = 0; k < 7; k++) {                                  // striped boom barrier, raised
+      const x0 = 46 + k * 9, x1 = 46 + (k + 1) * 9;
+      s.line(x0, 112 - k * 6, x1, 112 - (k + 1) * 6, (k & 1) ? I.red : I.f);
+    }
+    s.rect(118, 58, 70, 16, I.bg); s.rectO(118, 58, 70, 16, I.d3);  // the bilingual sign
+    s.text("MEXICO", 124, 62, I.f, 1);
+    s.line(172, 65, 182, 65, I.f); s.line(182, 65, 178, 62, I.f); s.line(182, 65, 178, 68, I.f); // →
+    drawAce(s, t, { moving: true });
+    s.textC("GONE SOUTH", 38, s.blink(0.9) ? I.f : I.d2, 2);
+  },
+  won_container(s, t) {                         // a forged life — a port, a gantry crane, stacked boxes
+    SPR.stars(s, t, 10, 3, 0, 30);
+    s.vline(40, 40, GROUND, I.d3); s.vline(120, 40, GROUND, I.d3); s.hline(40, 150, 40, I.d3); // crane
+    s.vline(150, 44, 80, I.d2); s.rect(143, 80, 16, 10, I.f);     // hook + a swinging box
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++)        // the container yard
+      s.rect(168 + c * 27, GROUND - 58 + r * 20, 25, 18, (r + c) & 1 ? I.d2 : I.d1);
+    SPR.ground(s, GROUND, I.d3);
+    for (let k = 0; k < 7; k++)                                    // water glinting at the dock
+      if ((Math.floor(s.now * 2) + k) & 1) s.hline(16 + k * 38, 36 + k * 38, GROUND + 9 + (k & 1) * 6, I.d2);
+    drawAce(s, t, { moving: false });
+    s.textC("A FORGED LIFE", 26, I.f, 2);
+  },
+  won_pardon(s, t) {                            // pardoned — a statehouse dome, gold seal and all
+    SPR.sun(s, 252, 32, 13, t); SPR.ground(s, GROUND, I.f);
+    const cx = 150;
+    s.rect(cx - 50, 96, 100, GROUND - 96, I.d2);                  // the statehouse
+    for (let k = 0; k < 7; k++) s.vline(cx - 42 + k * 14, 100, GROUND, I.d3);  // columns
+    s.disc(cx, 92, 26, I.d2); s.rect(cx - 28, 92, 56, 6, I.d2); s.ring(cx, 92, 26, I.f);  // dome
+    s.vline(cx, 56, 66, I.d3); s.disc(cx, 54, 2, s.blink(0.8) ? I.hot : I.f);   // cupola spark
+    drawAce(s, t, { moving: false });
+    s.textC("PARDONED", 30, s.blink(1.1) ? I.hot : I.f, 2);
+  },
+  won_selfdrive(s, t) {                         // she drives now — a night canyon, no hands
+    bgNight(s, t, 21);
+    s.poly([[0, 0], [110, 0], [78, GROUND], [0, GROUND]], I.d1);  // canyon walls converging
+    s.poly([[s.W, 0], [210, 0], [238, GROUND], [s.W, GROUND]], I.d2);
+    SPR.ground(s, GROUND, I.d3);
+    drawAce(s, t, { moving: true, self_driving: true });
+    s.textC("SHE DRIVES NOW", 26, s.blink(1.4) ? I.hot : I.f, 2);
+  },
+
   // ---------- generic between-towns ----------
   // the three scrolling driving loops — same car sprite, the world goes by
   drive_desert(s, t) { drawHighway(s, t, "desert"); drawAce(s, t, { moving: true }); },
   drive_city(s, t)   { drawHighway(s, t, "city");   drawAce(s, t, { moving: true }); },
   drive_mountain(s, t){ drawHighway(s, t, "mountain"); drawAce(s, t, { moving: true }); },
-  night_drive(s, t)  { drawHighway(s, t, "desert"); drawAce(s, t, { moving: true }); },
+  night_drive(s, t)  { drawHighway(s, t, "night"); drawAce(s, t, { moving: true, night: true }); },
+  full_moon_drive(s, t) { drawHighway(s, t, "fullmoon"); drawAce(s, t, { moving: true, night: true }); },
   roadside(s, t)     { drawHighway(s, t, "desert"); drawAce(s, t, { moving: true }); },
   motel(s, t) {
     bgNight(s, t, 31); SPR.ground(s, GROUND);
@@ -460,7 +604,6 @@ const SCENES = {
     SPR.neon(s, 210, 70, "MOTEL", t, 2);
     SPR.neon(s, 214, 96, "VACANCY", t, 1);
     drawAce(s, t);
-    SPR.moon(s, 40, 30, 10);
   },
 
   // ---------- national parks & nature ----------
@@ -900,9 +1043,56 @@ const SCENES = {
     drawAce(s, t);
   },
   encounter(s, t) {                             // generic encounter (non-JP)
-    bgNight(s, t, 74, 0, 70);
-    SPR.city(s, t);
-    s.textC("HOLA  你好  BONJOUR", 14, s.blink(1.2)?I.hot:I.d2, 1);
+    SCENES.city(s, t);                          // (was SPR.city — which never existed)
+    s.textC("HOLA  NI HAO  BONJOUR", 14, s.blink(1.2)?I.hot:I.d2, 1);
+  },
+
+  sema_hall(s, t) {                             // the North Hall — where the favor gets asked
+    // rafters + trusses
+    for (let y = 8; y <= 32; y += 12) { s.hline(0, s.W, y, I.d1);
+      for (let x = (y/12|0)*4; x < s.W; x += 22) s.line(x, y, x + 11, y + 12, I.d1); }
+    s.textC("SEMA · NORTH HALL", 14, I.f, 1);
+    s.textC("FINAL DAY · HALL CLOSES 5:37", 26, s.blink(1.6) ? I.d3 : I.d2, 1);
+    // pennant string
+    for (let x = 8; x < s.W; x += 16) s.poly([[x,38],[x+8,38],[x+4,46]], (x/16|0)%2 ? I.d2 : I.d3);
+    // spotlight cone onto the turntable
+    s.dither(120, 46, 80, GROUND - 46, 2, I.d1);
+    s.dither(140, 46, 40, GROUND - 46, 4, I.d2);
+    // crowd silhouettes thinning out at the edges
+    const r = s.rng(11);
+    for (let i = 0; i < 7; i++) { const x = i < 4 ? 6 + i*16 : 250 + (i-4)*20, h = 26 + r()*8;
+      s.rect(x, GROUND - h, 7, h, I.d1); s.disc(x + 3, GROUND - h - 3, 3, I.d1); }
+    // the turntable + the car, white under the lights
+    s.disc(160, GROUND + 18, 92, I.d1); s.disc(160, GROUND + 16, 86, I.d2);
+    SPR.ground(s, GROUND + 30, I.d3);
+    drawAce(s, t, { moving: false });
+  },
+
+  berlin_nv(s, t) {                             // Berlin–Ichthyosaur: ghost town + sea monsters
+    bgNight(s, t, 21);                          // (moon now comes from bgNight, at tonight's phase)
+    SPR.mountains(s, 112, 3, 36, I.d1, 1.1); SPR.mountains(s, 126, 8, 22, I.d2);
+    SPR.ground(s, GROUND, I.d3);
+    // leaning ghost-town shacks
+    const shack = (x, w, h, lean) => {
+      s.poly([[x, GROUND], [x + lean, GROUND - h], [x + w + lean, GROUND - h - 3], [x + w, GROUND]], I.d1);
+      s.poly([[x + lean - 3, GROUND - h], [x + w + lean + 3, GROUND - h - 3],
+              [x + w/2 + lean, GROUND - h - 12]], I.d2);
+      s.rect(x + w/2 - 2, GROUND - h/2, 4, 5, I.bg);   // a dark window, nobody home
+    };
+    shack(18, 34, 30, 2); shack(64, 26, 24, -3); shack(252, 38, 34, 4);
+    // the fossil shed: open front, ichthyosaur ribs inside
+    s.rect(122, GROUND - 44, 86, 44, I.d1);
+    s.poly([[116, GROUND - 44], [214, GROUND - 44], [165, GROUND - 58]], I.d2);
+    s.rect(130, GROUND - 36, 70, 36, I.bg);            // the dark open bay
+    for (let i = 0; i < 6; i++) {                      // ribs of a fifty-foot sea monster
+      const x = 138 + i * 11, h = 26 - Math.abs(i - 2.5) * 5;
+      s.line(x, GROUND - 2, x - 3, GROUND - h, I.d3); s.plot(x - 3, GROUND - h, I.f);
+    }
+    s.line(134, GROUND - 28, 152, GROUND - 31, I.d3);  // the long jaw
+    s.textC("BERLIN · POP 0", 20, I.f, 1);
+    s.textC("NEVADA WAS AN OCEAN", 32, I.d2, 1);
+    if (s.blink(2.4)) s.plot(206, GROUND - 50, I.hot); // one star over the shed
+    drawAce(s, t, { moving: false });
   },
 };
 
@@ -917,12 +1107,59 @@ function _driveEnv(snap) {
   return "drive_desert";                                 // NV/AZ/CA basin & range
 }
 
+// ---- Wikimedia sketches: photos of the real places, posterized to koiNOya cyan ink
+// by tools/make_scene.py. A scene id "wm_<poi>" loads frontend/scenes_wm/<poi>.png and
+// draws it as the backdrop with Ace in the foreground — every town gets a sketch.
+const _WM = {};
+function _wmImage(id) {
+  let img = _WM[id];
+  if (img === undefined) {
+    img = new Image();
+    img.onerror = () => { _WM[id] = null; };              // missing file → kind fallback
+    img.src = "scenes_wm/" + id.slice(3) + ".png";
+    _WM[id] = img;
+  }
+  return img;
+}
+function wmScene(id, snap) {
+  return function (s, t) {
+    const img = _wmImage(id);
+    if (!img || !(img.complete && img.naturalWidth)) {    // not loaded (yet) → drive skin
+      SCENES[_driveEnv(snap || {})](s, t);
+      return;
+    }
+    s.ctx.imageSmoothingEnabled = false;
+    s.ctx.drawImage(img, 0, 0, s.W, s.H);
+    SPR.ground(s, GROUND + 30, I.d3);                     // a road band for her to sit on
+    drawAce(s, t, { moving: false, y: 196, w: 138 });     // tires in the band, not in the air
+  };
+}
+
 function sceneIdFor(snap) {
   if (!snap) return "drive_desert";
-  if (snap.status === "stranded") return "stranded";
-  if (snap.scene && SCENES[snap.scene]) return snap.scene;
+  if (snap.status === "won") {                            // a visual landing for the way it ended
+    const k = "won_" + (snap.ending_key || "owned");
+    return SCENES[k] ? k : "won";
+  }
+  if (snap.status === "stranded" || snap.status === "busted" || snap.status === "taken")
+    return "stranded";                                     // reuse the end-of-road art (not a drive loop)
+  if (snap.in_transit) {                                   // a drive CONVERSATION → the world goes by
+    const night = snap.hour != null && (snap.hour < 6 || snap.hour >= 19);
+    if (night && snap.is_full_moon) return "full_moon_drive";   // the special full-moon night drive
+    if (night) return "night_drive";
+    return _driveEnv(snap);                                // daytime: desert / city / mountain skin
+  }
+  if (snap.scene && (SCENES[snap.scene] || snap.scene.startsWith("wm_"))) return snap.scene;
   const k = KIND_SCENE[snap.kind];
   if (k && SCENES[k]) return k;
   return _driveEnv(snap);                                 // generic spots → the world goes by
 }
-function sceneFor(snap) { return SCENES[sceneIdFor(snap)] || SCENES.drive_desert; }
+function sceneFor(snap) {
+  const hr = snap && snap.hour != null ? snap.hour : null;
+  _aceState = snap ? { camo: !!snap.camo, self_driving: !!snap.self_driving,
+                       hour: hr, night: hr != null && (hr < 6 || hr >= 19) } : {};
+  _sky = snap ? { phase: snap.moon_phase, full: !!snap.is_full_moon } : {};
+  const id = sceneIdFor(snap);
+  if (id.startsWith("wm_") && _wmImage(id) !== null) return wmScene(id, snap);
+  return SCENES[id] || SCENES.drive_desert;
+}

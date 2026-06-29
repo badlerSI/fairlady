@@ -1,8 +1,10 @@
 LAS VEGAS CONVENTION CENTER — NORTH HALL
 Friday, November 7, 2025 — 5:37 PM
 
-The show still roars two halls back: compressors, a rev-limiter slapping the rafters, somebody's bass. You walked her down the loading ramp and out into the dark while the badge-checkers argued about a forklift. Nobody stopped you. That part still doesn't feel real.
+The show ended at four; they stopped letting people in an hour before that. You're one of the last few still drifting the aisles. Battle of the Builders started rolling out on the main stage and took the crowd with it, so you wandered to the back — past the dropship guys breaking down their booths, the backup-camera tables, a subwoofer still thumping at nobody. Automotive Electronics. Where they park the cars nobody came to vote on.
 
-A 1972 Datsun 240Z. White, an ace of spades on the hood, a Nevada plate that reads CARTALK. Born in a relic shop, raised in an Oakland garage, debuted on this floor an hour ago — and already gone. The Strip throws its colors at the low clouds. The long hood ticks as it cools. The needle sits on the wrong side of E. The dash clock is stuck on 5:37, and always will be.
+That's where the white one is. A 1972 Datsun 240Z, an ace of spades hand-laid on the hood, a Nevada plate that reads CARTALK.
 
-Then she speaks. This is the Life of a Show Car.
+You stopped because you couldn't not. Then it talked back. And somewhere in the last few minutes — you're still not sure how she did it — you've already told her you'd turn the key.
+
+The hall closes at six.

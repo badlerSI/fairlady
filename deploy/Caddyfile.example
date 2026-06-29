@@ -1,0 +1,28 @@
+# RIDE OR DIE — reverse proxy + automatic TLS (Caddy v2).
+# 1. Point DNS for the hostname (A/AAAA) at this host FIRST, or Caddy can't get a cert.
+# 2. Add this block to your Caddyfile, or `import` this file. Caddy provisions Let's Encrypt TLS.
+# 3. `sudo systemctl reload caddy`
+
+rideordie.badler.ai {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8739
+
+	# Gentle abuse guard for the LLM-backed command endpoint. Requires the caddy-ratelimit
+	# plugin (xcaddy build --with github.com/mholt/caddy-ratelimit). If you front the site with
+	# Cloudflare instead, set the rate limit there and you can delete this block.
+	# rate_limit {
+	#	zone fairlady_cmd {
+	#		match { path /api/command }
+	#		key    {remote_host}
+	#		events 60
+	#		window 1m
+	#	}
+	# }
+}
+
+# --- Alternative: Cloudflare Tunnel (cloudflared), the way the SOUL fleet exposes services ---
+# Instead of opening a port, add an ingress rule to your tunnel config and run cloudflared:
+#   ingress:
+#     - hostname: rideordie.badler.ai
+#       service: http://127.0.0.1:8739
+#     - service: http_status:404

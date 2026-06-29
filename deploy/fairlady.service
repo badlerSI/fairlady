@@ -1,0 +1,27 @@
+[Unit]
+Description=RIDE OR DIE (愛車) — FAIRLADY game server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fairlady
+Group=fairlady
+WorkingDirectory=/opt/fairlady
+EnvironmentFile=/opt/fairlady/deploy/fairlady.env
+# State is file-backed PER SESSION, so multiple workers are safe (no shared in-memory game).
+# --proxy-headers makes the Secure cookie + request scheme reflect the real protocol behind Caddy.
+ExecStart=/opt/fairlady/.venv/bin/uvicorn app:app \
+    --app-dir backend --host 127.0.0.1 --port 8739 \
+    --workers 4 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=3
+
+# light hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

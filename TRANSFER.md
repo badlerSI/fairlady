@@ -1,4 +1,4 @@
-# FAIRLADY ◇ 240Z — Transfer / Handoff Document
+# RIDE OR DIE ◇ 愛車 (FAIRLADY ♠ 240Z) — Transfer / Handoff Document
 
 > A complete brief for a fresh session to **improve** this game without re-discovering anything.
 > Repo: <https://github.com/badlerSI/fairlady> (public, © Benjamin J. Adler, all rights reserved).
@@ -8,10 +8,11 @@
 
 ## 0. What it is (the north star)
 
-A **voice-first, compute-heavy, retrofuturistic terminal road-trip** across the American West. You drove a
-talking 1972 Datsun 240Z — **FAIRLADY** ("Ace") — off the SEMA show floor at **5:37 PM, Fri Nov 7 2025**,
-on a romantic whim. Now it's the two of you on a 40 L tank (~20 mpg, ~211 mi full), a credit card that
-leaves a trail, and a car somebody already reported missing.
+A **voice-first, compute-heavy, retrofuturistic terminal road-trip** across the American West. It opens on
+the SEMA show floor at twenty minutes to close, where a talking 1972 Datsun 240Z — **FAIRLADY** ("Ace") —
+asks you one simple favor: two blocks and a tank of gas. Saying yes is the title drop (see §0.5). Then it's
+the two of you on a 40 L tank (~20 mpg, ~211 mi full), a credit card that leaves a trail, and a car
+somebody is about to report missing.
 
 Design pillars (do not break these):
 
@@ -28,10 +29,241 @@ Design pillars (do not break these):
    revealed at the **storage unit in Livermore**. Never let her volunteer it.
 5. **Her map is NV / CA / AZ / UT only.** Everything outside those four states is off her maps by design.
 
-**Status:** fully playable end-to-end, 34 passing tests, 128 POIs, 53 scenes. The narrative prose for
-Mayumi/Livermore/Monterey is a strong *draft* — Ben fills the details.
+**Status:** fully playable end-to-end, 55 passing tests, 129 POIs, 55 scenes. The narrative prose for
+Mayumi/Livermore/Monterey/prologue/owner is a strong *draft* — Ben fills the details.
 
 ---
+
+## 0.5 The RIDE OR DIE re-frame (2026-06-10, second session)
+
+The app is now **RIDE OR DIE** — Ben's translation of 愛車 *aisha* ("certainly not 'Love Car'").
+The theft is re-framed as **the favor**: the game opens ON the show floor (`sema_north_hall`, new
+start POI; the Chevron moved into `pois[]`), where she makes conversation and then asks one simple
+favor — two blocks, one tank, so she can head home after the nightmare that was SEMA. New systems,
+all engine-owned (the LLM still only narrates):
+
+- **`engine/prologue.py`** — the favor ladder. Counts conversation turns; asks at
+  `PROLOGUE_ASK_TURNS` (5), or `PROLOGUE_RAPPORT_TURNS` (3) if the player asks coherent build/spec
+  questions (`commands.is_spec_question`; she has **250 lb-ft** — it's in `car.json` and she'll say
+  so). Escalates ask→plead→beg→desperate. Agreement = auto-drive to the Chevron + **TITLE_DROP**
+  banner. The first full tank there completes the favor and SHE floats the whim ("…or we could just
+  not load out"). She won't start for a joyride pre-pact.
+- **`engine/encounters.py`** — talk-your-way-out. Traffic stops (`pulled_over` drama event at
+  heat≥25; roadblock `law_check` now opens a stop instead of insta-busting): 2 exchanges, a
+  deterministic keyword rubric (`score_pitch`) — calm/cover-story(SEMA!)/spec-cred/honest-about-the-
+  wallet vs aggro/confession — seeded dice only in the gray middle; outcomes wave-off (+Riz) /
+  ticket ($80 or heat) / BOLO (heat+15) / busted. Flee tokens = instant bust. **The owner**: tracked
+  via `flags.card_swipes` (counted at every card payment); appears at the next city/gas POI once
+  `day≥3` and `swipes≥3` (or `knows_mayumi`). 2 exchanges via `score_owner_pitch` (love/spec/
+  saying-Mayumi's-name; offering her back scores negative): blessing (report withdrawn → law_check
+  and plate dramas off, heat−30, +15 Riz) / one-week deadline (`owner_deadline_day`) / **taken**
+  (new ending, status `taken`).
+- **Riz** (`GameState.riz`, in snapshot + dash) — the style ledger. Earned: rapport (+5), wave-off
+  (+8 diminishing −2 per prior survived stop, floor 2), ticket (+3), blessing (+15). On rewind it
+  **reverts to the checkpoint's value** minus `RIZ_REWIND_COST` (2) — undone timelines can't pay
+  (closes the owner-blessing rewind farm found in playtesting).
+- **Checkpoints + rewind** (Edge of Tomorrow) — `game.checkpoint()` saves a 2-deep ring
+  (`chk1_<sid>`/`chk2_<sid>` save files) on every clean POI arrival, sleep, tow, resolved encounter,
+  and the favor. `rewind` (also "go back"/"run it back") restores **in-place** (`__dict__.update`),
+  works from ANY status (it's the escape from BUSTED/STRANDED/TAKEN — choices offer it), and a
+  second consecutive rewind reaches chk2 (the ring then collapses — chk2 becomes the floor).
+  Diegetically SHE keeps the saves ("I keep the saves, ace").
+- **`range` verb** — "where can we get to on one tank?" → `game._range_text`: POIs reachable on
+  current fuel + after a fill, real winding-road math.
+- **Canon revision (Ben, 2026-06-10): Mayumi is a CAR** — the maker's 1970 240Z, his first love,
+  the one that should have been at SEMA; she **burned on the I-580**. FAIRLADY was built in the
+  grief after and carries some of Mayumi's unburned parts (the Livermore unit-137 reveal — now
+  `requires: knows_mayumi`). The maker = the owner who comes looking. She has *no strong feelings
+  for her maker* — he sees a ghost when he looks at her; the player is the first to pick her first.
+- **New POI + story**: `berlin_nv` (Berlin–Ichthyosaur SP — ghost town + sea monsters, bespoke
+  scene). New scene `sema_hall`. §7 P0s all fixed (encounter SPR.city, FONT ♣ + CJK-blank,
+  livermore gate, README counts, make_car guard).
+- **Old saves**: missing fields default cleanly (`riz=0`, no prologue flags). `new_game(seed,
+  prologue_on=False)` gives the classic Chevron start (tests use it).
+
+All new prose (ladder, stop/owner lines, story beats, intro.md, OPENING, TITLE_DROP) is **draft
+for Ben's pass** — same status as the Mayumi beats before.
+
+### 0.6 The 8-persona playtest wave (2026-06-10, same session)
+
+Eight parallel LLM agents played full runs through `tools/play_cli.py` (seeds 101–108: gearhead
+speedrun, cautious cash tourist, reckless joyrider, chatty wanderer, homebound romantic, QA
+edge-breaker, riz-farmer exploit hunt, owner trailer-loop). 25+ consensus findings, all fixed and
+regression-tested (68 tests now):
+
+- `drive me home` / `drive me to X` parser holes; unknown/off-map destinations now answer via NAV.
+- **Over-range legs warn once and refuse** (`confirm_run` flag) — repeat the command to strand
+  yourself on purpose. The Zion trap survives for the stubborn.
+- **Encounter-first routing in `handle()`**: anything said during a stop/owner scene is SPEECH —
+  meta verbs can no longer hijack a confession ("…full tank…where she was born" used to print the
+  range table mid-climax). Only help/save/rewind/load stay console.
+- Rubric word boundaries: "she's **spec**ial", "re**spec**t", "**cam**era" no longer score; owner
+  middle tier (one-week deadline) is reachable; `knows_name` also unlocks the Mayumi deep-cut.
+- Stop escalation: each survived stop −1 to future verdicts + diminishing wave-off riz (the county
+  radio compares notes) — bounds the riz farm; riz reverts across rewinds (see above).
+- One crisis at a time: drama can't fire over an open stop/owner; same drama can't repeat
+  back-to-back; roadblock-opened stops get her whisper cue (WHISPER_MOMENT).
+- `look` prints a real ledger; map/tow distances use ROAD_WINDING_FACTOR consistently; cash→card
+  fallback announces itself; camp kiosks aren't "front desks"; gremlin card fixes count as swipes.
+- Homestretch works without the home flag (defaults to oakland_aisha); story beats fire on tow
+  arrivals; homecoming beats added for oakland_aisha + richmond_koinoya.
+- **Promises are now keepable**: "who owned you before" at a QUIET place (park/encounter/spot,
+  no heat_zone) name-drops Mayumi once (`knows_name`); asking about "that morning"/Car Week at a
+  quiet place after Monterey pays off the hook (`knows_morning`, MORNING_BEAT). Long Beach still
+  gates the full story.
+- Favor completes only on a genuine FILL (tank−0.5 L); prologue ladder gained a 5th "resigned"
+  rung; soft consent ("i guess", "twist my arm") counts as yes.
+
+Tuning: `pulled_over` threshold heat ≥20 (was 25 — low-heat players never met the law).
+Known-and-accepted: DRIVE event lines show pre-drama fuel/time when a drama mutates state after
+(cosmetic); stub NPC phrasebook is static by design (Ace gives real dialogue in prod).
+
+---
+
+## 0.7 The gazetteer + sketch pipeline (2026-06-10, same session)
+
+"Any town or POI in those 4 states should bring something up, and each one should get a sketch."
+- **122 new town POIs** (NV 24 / CA 50 / AZ 26 / UT 22) in pois.json, each with: real coords +
+  blurb from its Wikipedia extract, a judged arrival **beat** in her voice, services/terrain
+  overrides, and a `wm_<id>` scene. Beats fire ONCE per game via `_story_on_arrival` →
+  `world.beat_for` (flags `beats_seen`); STORIES still take precedence.
+- **Beat evolution loop** (`gazetteer-beat-evolution` workflow): 8 writers grounded in
+  data/gazetteer/source.json extracts → 3 judge lenses (voice/truth/play) → style memo distilled
+  from winners → rewrite failures → re-judge. Converged: 122/122 mean ≥7.5, 88 ≥8.5. The learned
+  house rules are in the workflow output; the big ones: one fact per beat, never let a fact sit
+  raw (cash it into present-tense meaning), history pivots to now, the narrator reacts through
+  hardware, closers land (image / small decision / two-part aphorism).
+- **Sketch pipeline**: `tools/gazetteer_fetch.py` (Wikipedia REST summary → facts + coords + lead
+  image, polite + resumable; thumbs use the 500px bucket — arbitrary widths 400) →
+  `tools/make_scene.py` (adaptive-percentile 4-tone posterize to the INK ramp, 320×200, Bayer
+  seam) → frontend/scenes_wm/*.png (~180 sketches, ~2.4 MB) → `wmScene()` in scenes.js (drawImage
+  backdrop + ground band + parked Ace at y196/w138). `sceneIdFor` passes `wm_*` ids through;
+  missing file → kind/drive fallback. ATTRIBUTION.md lists author+license per source (CC/PD).
+- **Runtime fallback**: arrivals at NON-curated geocoded spots call `world.wiki_fact(lat,lon)`
+  (geosearch + summary, disk-cached, `ROUTING=osm` only → offline tests unaffected) → `FACT:`
+  event → narrator voices it (stub has a FACT branch).
+- `tools/gazetteer_merge.py` is idempotent: rerun after editing beats.json or rebaking scenes.
+- Eureka exists twice (NV + CA) — CA displays as "Eureka, CA" so name matching stays unambiguous.
+
+## 0.8 Desperado Mode (2026-06-10, Ben's request)
+
+Heat → the gas-station standoff → armed and dangerous. All in `engine/encounters.py` (the DESPERADO
+section) + wiring:
+- **Trigger**: `gas_aggression(text) >= 2` while the player `say`s something hostile/robbery-flavored
+  at a place with gas (game.py say-tail) → `start_standoff` (flag `standoff`). Clerk pulls a pistol,
+  dialing the cops. Routed encounter-first in `handle()` alongside stop/owner; movement verbs blocked
+  (no bust — just "not with a gun on you"); `STANDOFF_COPS_ROUNDS` (3) stall limit.
+- **Two exits**: de-escalate (≥2 `_DEESCALATE` tokens, no robbery tokens → clean walk-out, no gun) OR
+  `disarm`.
+- **The disarm** = `_set_up_right(s)`: full tank AND `flags.last_fuel_cash` (set in rules.fuel). If
+  not set up → instant busted (she yells DO IT RIGHT). If set up → the Edge-of-Tomorrow ladder:
+  `flags.desperado_tries` (1,2 = busted; `DESPERADO_DISARM_LUCKY`=3 = WIN). The counter is in
+  `encounters.DESPERADO_PERSIST` which `game.rewind` re-applies AFTER restoring the checkpoint — so it
+  survives the fold (like riz). The loop: fail→rewind→fail→rewind→win.
+- **CRITICAL fix that makes the loop work**: `handle()` now clears `rewound_once` on any non-rewind
+  verb, so a busted disarm between two rewinds breaks the "consecutive → go deeper" chain (otherwise
+  the 2nd rewind jumped to chk2 = empty-tank Chevron and the setup was lost). Also: a fill-to-full now
+  checkpoints, so the rewind lands on the set-up state.
+- **Unlock** (win): `flags.desperado`+`gun`+`wanted_armed`, +`RIZ_DESPERADO` (20), +`DESPERADO_HEAT_ON_UNLOCK`
+  (30), and a checkpoint (the "special checkpoint" — moment carries `unlock:True`).
+- **Desperado persistent**: `DESPERADO_HEAT_FLOOR` (35) enforced in `rules._clamp_heat`; dash badge
+  (`snapshot.desperado` → terminal.js red `.d-row.desperado`); `_heat_label` armed variant; `draw`
+  verb (`draw_in_stop`) usable in stops (escape, heat→`DRAW_HEAT` 100, law comes ready) and as a dark
+  beat in the owner scene. All meta flags survive rewind; the gun is forever.
+- Knobs in config.py under "Desperado Mode". Prose is DRAFT for Ben. 8 tests (`test_*desperado*`,
+  `test_*standoff*`, `test_*disarm*`, `test_draw_*`, `test_talking_the_clerk_down*`).
+
+## 0.9 The garage economy + the GOOD ending (2026-06-10, Ben's request)
+
+`engine/garage.py` + wiring. A trust-the-player economy and what BUYING the car unlocks.
+- **Claims/ATM/glovebox**: `claim` ("i have $X cash", capped `CASH_CLAIM_CAP` 3000, tops up not
+  overwrite; "i'm broke" only zeros if you're already <$100). `atm`/`withdraw` (running total under
+  `ATM_ACCOUNT_LIMIT` 9999, +`ATM_HEAT` camera ping; needs gas/city POI). `explore` → glovebox $500
+  once (`glovebox_found`). Parser `_money()` handles $/k/grand; `_is_claim` searches anywhere.
+- **Parts** (`garage.PARTS`): hood/wheels/carbs/exhaust/coilovers/seats. `parts` lists, `sell <part>`
+  (alias-matched) pays resale, appends to `flags.parts_sold`, swaps in the cheap stock part, applies
+  mpg/torque effects (carbs sold → +1.6 mpg −70 tq; hood → −0.4 mpg). `car_value` and `show_score`
+  drop; `is_stripped` ≥3 sold. Only at gas/city POIs.
+- **The GOOD ending — buy her**: `buy`/`offer $X` in the owner encounter → `encounters.owner_buy`.
+  `owner_price` = `OWNER_BUY_FLOOR` 6000 − Mayumi 2500 − riz(≥20) 1500, floor 2000, paid CASH. Afford
+  it → `garage.go_legit`: `bought`+`no_heat`+`report_withdrawn`, pops `desperado`, heat 0, +25 riz,
+  checkpoint, "SHE'S YOURS" welcome. Can't afford → he names the price and waits; **drive to
+  oakland_aisha after `owner_met` re-summons him** (takes precedence over the homecoming story beat).
+- **no_heat**: `rules._clamp_heat` forces heat 0 when set; snapshot heat/label reflect it; law/owner/
+  plate dramas already gated on `report_withdrawn`.
+- **Legal `race`/`show`** (require `bought`): `race` at kind==track (perf from remaining build − seeded
+  roll → win/podium/midpack + prize + riz); `show` at museums/`SHOW_POIS` (needs show_score ≥90 =
+  mostly-whole build → best-in-class + prize + riz; stripped → refused). Pre-ownership both refuse
+  ("they check titles at the gate").
+- Dash badges: red DESPERADO + cyan OWNED (`snapshot.bought` → `.d-row.owned`).
+
+### 0.95 Economy playtest wave (2026-06-10) — 4 agents, fixes:
+- **bare `buy` now parses** (was the listed choice but looped on 'Why her?' — only 'offer $N' worked).
+  'deal' deliberately NOT mapped to buy (it's the prologue agreement word).
+- **Encounter pitch-vs-command**: a >4-word sentence during a stop/owner scene is SPEECH even if it
+  contains a movement word ("I'll drive her home and put the parts back" used to parse as 'home' and
+  get blocked). Only terse (≤4-word) action verbs are intercepted now.
+- **Claim ratchet closed**: claim is a one-time wallet (`claimed_total`, lifetime ≤ cap); re-claiming
+  after spending no longer refills (was an infinite slow-cash faucet).
+- **Glovebox broke-gated** (per Ben's spec "if they claim none"): `explore` only yields $500 if
+  cash < $100; otherwise flavor.
+- **Race/show one-prize-per-venue** + race now costs ~1h + 3L and needs fuel (was a zero-cost
+  cash/riz faucet — flagged by 3 of 4 agents). `flags.raced_tracks`/`shown_venues`.
+- **Strip-to-fund loophole closed**: `owner_price` adds 2× the resale of every sold part, so chopping
+  her to afford the buy is a net loss (he won't title a shell, and it costs to undo).
+- **go_legit clears gun + wanted_armed** (was leaving 'draw' usable after redemption).
+- Stub: fixed stale "she's stolen" line after ownership. 105 tests. Prose draft.
+
+## 0.96 Heat as Credit Karma (2026-06-10, Ben's request, research-grounded)
+
+`engine/heat.py` is the heat model. Built from a research pass (workflow) on fun-vs-tiresome
+notoriety mechanics — the load-bearing rules: attribute every delta, never drip on a timer,
+telegraph before commit, gate the Instagram spike behind visible exposure with a dodge window,
+always an active way down, marks age off (grace), car as deadpan straight-man.
+- `heat.add(s, delta, reason, kind)` is the ONE mutator: clamps (respects no_heat/desperado floor)
+  + logs a factor {d, r, k, day, odo} to flags.heat_log (kept 16). All the heat sites in rules.py
+  (card swipe via `_card_mark`, push, rough sleep, state-line, decay, lodging, linger, tow) route
+  through it now. `kind`: mark / spike / lower.
+- `dashboard(s)` = the 'heat report'/'score' command (game.heatreport verb): band + bar, DEROGATORY
+  MARKS vs IN YOUR FAVOR (marks show 'fades in ~N mi' via MARK_FADE_MI=260 clean miles; fully-aged
+  marks are pruned from the view), a WHAT-IF simulator line, and contextual DO-THIS levers.
+- `band()`/`label()` = 5 readable bands (GHOST<25 / NOTICED / TRENDING≥45 / FLAGGED≥70 / MOST
+  WANTED≥90), replacing the old warm/hot labels everywhere (game._heat_label delegates to it).
+- `visibility(place)` 0-3 from _FLASHY/_BUSY/_REMOTE sets + kind. Drives exposure.
+- INSTAGRAM: `social_arrival(s)` on a clean flashy arrival (vis≥2) → telegraph + a gated tag roll
+  (0.11*vis, ×0.35 cooldown within 3 turns) → +12-24 spike 'tagged by @handle', a 'hard inquiry';
+  `untag(s)` claws back 6 if fresh. `social_fuel(s)` = the curious clerk at flashy pumps (sets
+  flags.clerk_curious; game.handle resolves on the next action: drive/humble-say = slide by,
+  showoff/linger = `clerk_resolve` posts you). `lie_low(s)` = active cooldown (−4/−7, costs 1.5h,
+  refuses at vis≥2).
+- Airbnb: economy.lodging_options adds 'airbnb' ($110); rules.sleep special-cases it (cash-preferred
+  alias booking, AIRBNB_HEAT −8, no card mark). commands parses airbnb/private/rental.
+- New verbs: heatreport, lielow, untag (commands.py). Stub has SOCIAL/CLERK/LIE LOW/UNTAG lines.
+- 116 tests. Full research spec + findings in the workflow output. Prose draft.
+
+## 0.97 Timeline/branches, $80k buyout, gambling, robbery, dating (2026-06-10, Ben's riff)
+
+- TIMELINE / BRANCH SELECTOR (game.py): replaced the chk1/chk2 ring with a labeled timeline.
+  `checkpoint(s, label)` saves cp_<sid>_<seq> + appends flags.timeline (kept TIMELINE_KEEP=8).
+  `branches_text` lists; `rewind(s, target)` resolves None=newest / int=Nth-from-newest / str=fuzzy
+  label/place match. Stakes: rewinds_here escalates the Riz cost on the SAME seq (RIZ_REWIND_COST+here);
+  at here>=4 the loop refuses (REWIND_STUCK_MOMENT). META_PERSIST (timeline/cp_seq/rewinds/...) +
+  DESPERADO_PERSIST carry across the fold. Verbs: branches, branch N, 'rewind to X'. Old double-rewind
+  removed. All checkpoint() calls now pass labels.
+- $80k BUYOUT (config + encounters.owner_price/owner_buy): INSURED_VALUE 100k, OWNER_BUY_BASE 95k,
+  FLOOR 80k, Mayumi disc 10k, riz disc 5k (floored). LUCKY_SEVENS=77777.77: offering exactly that (or
+  'seven sevens') breaks the floor + instant go_legit, even near-broke (the easter-egg hack). Old buy
+  tests updated (price 2k -> 80k).
+- GAMBLING (garage.gamble): GAMBLE_POIS, ~47% even money, rng seeded with flags.rewins so it re-rolls
+  after a fold. A WIN -> game.py checkpoints (banks it); a loss -> no checkpoint, so rewind folds to
+  before the bet. The intended cheat: all-in + rewind losses -> $5k to $80k in ~9 bets, draining Riz.
+  Verb 'bet $X on <team>'.
+- BANK ROBBERY (encounters.rob_bank, can_rob): armed-only (flags.gun), city POI; take $8-25k, heat->90,
+  botch chance 0.18 + 0.12*hits (busted, rewindable). Verb 'rob the bank'.
+- DATING (engine/dating.py): 'flirt' at populated POIs (+riz*0.6), DATES list (any gender), ace_jealousy
+  ladder (rev draws heat at lvl 3+). 'kill the engine' sets ace_off (flirt unseen); 'compliment her'
+  cools jealousy; rules.drive clears ace_off (key turns her back on). Verbs flirt/killengine/compliment.
+- 126 tests. Verified live (branches, gambling, dating). Prose draft. Playtest launched.
 
 ## 1. Run it
 
@@ -41,7 +273,7 @@ cd ~/Projects/fairlady
 FAIRLADY_ADAPTER=ace ./run.sh  # her real voice via rop1 Ace (Nemotron + Kokoro)
 ```
 
-Open **<http://127.0.0.1:8739/>**. Tests: `cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python -m pytest -q` → **34 passed**.
+Open **<http://127.0.0.1:8739/>**. Tests: `cd backend && FAIRLADY_ROUTING=offline FAIRLADY_ADAPTER=stub ../.venv/bin/python 
 
 **Env knobs** (read by `config.py`; `run.sh` exports only the first two):
 
@@ -231,7 +463,7 @@ but **no POI uses them**, and there's no `ko` at all). Story POIs: monterey, lon
 
 ## 7. Known bugs & quick wins (from a full subsystem audit)
 
-**Bugs to fix (P0):**
+**Bugs to fix (P0):** — ✅ ALL FIVE FIXED in the Ride or Die session (2026-06-10). Kept for history:
 1. **`encounter` scene throws** — `scenes.js` (~line 905) calls `SPR.city(s,t)`, which doesn't exist (only
    `SCENES.city` and `ENV_OBJ.city` do). The RAF loop swallows it, so the generic non-JP encounter renders
    only its bg + text. Replace with the `SCENES.city` body or a skyline helper.
@@ -308,7 +540,7 @@ These live **outside the repo** (intentionally — they're personal/source mater
   baked from. Convert to `/tmp/z_src.png` to re-bake.
 - **`Portfolio-15.zip`** — the live **badler.ai** website bundle = the design source of truth. `deploy/
   index.html` has the exact cyan tokens (`#38d6ec`/`#0e0c0a`/`#f6f4eb`), fonts, and the `恋の矢` CRT recipe.
-  `media/koi-crt.webp` is the posterization reference; the SEMA "Soul 心 連繋 Interface" koi wordmark is the
+  `media/koi-crt.webp` is the posterization reference — **now shipped in-repo as `frontend/koinoya-crt.webp`** (the boot-splash hero art; Ben rejected the hand-drawn SVG koi fish — there is no koi-fish brand asset, the 'koi' is the shop); the SEMA "Soul 心 連繋 Interface" koi wordmark is the
   brand mark.
 - **`koiNOya.png`** (Edo relic shop, suit-bladed naginata — the Richmond "born" look) and **`AiShaPaint.jpg`**
   (1926 red-brick Oakland garage — the "grew up" look).

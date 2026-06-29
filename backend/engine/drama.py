@@ -7,7 +7,7 @@ import random
 from datetime import datetime
 
 from engine.state import GameState
-from engine import rules, economy, world
+from engine import rules, economy, world, encounters, heat as _heat
 
 ADV_KINDS = ("city", "track", "amusement", "encounter", "museum", "park")
 
@@ -21,9 +21,9 @@ def _clamp_heat(s):
 
 
 def _miles_home(s) -> float | None:
-    home = s.flags.get("home")
-    if not home:
-        return None
+    # Her home is the Oakland garage whether or not you've said the word — the homestretch
+    # should hit a player who drives to oakland_aisha directly, not just one who typed "home".
+    home = s.flags.get("home") or "oakland_aisha"
     hp = world.get_poi(home) if isinstance(home, str) else None
     if hp is None:
         return None
@@ -35,7 +35,7 @@ def _miles_home(s) -> float | None:
 def _e_overheat(s, rng):
     extra = round(0.6 + rng.random() * 0.7, 2)
     rules.advance_clock(s, extra)
-    s.heat -= 1.5; _clamp_heat(s)
+    _heat.add(s, -1.5, "pulled over to cool an overheat — off the road", "lower")
     return {
         "tag": "DRAMA", "id": "overheat",
         "lines": [f"DRAMA: the temp needle buried itself in the red on the grade — you pulled over "
@@ -49,7 +49,7 @@ def _e_overheat(s, rng):
 
 
 def _e_plate(s, rng):
-    s.heat += 6; _clamp_heat(s)
+    _heat.add(s, 6, "a cruiser ran the plate", "spike")
     return {
         "tag": "DRAMA", "id": "plate",
         "lines": [f"DRAMA: a cruiser ran the plate; you slid onto a frontage road just in time. Heat {s.heat:.0f}."],
@@ -64,9 +64,10 @@ def _e_plate(s, rng):
 def _e_owner(s, rng):
     lvl = s.flags.get("owner_revealed", 0)
     s.flags["owner_revealed"] = lvl + 1
-    s.heat -= 3; _clamp_heat(s)        # she slows, goes quiet — but says nothing she shouldn't
+    _heat.add(s, -3, "drove slow and quiet, lost in it", "lower")  # says nothing she shouldn't
+    weekday = s.clock.strftime("%A")   # she knows what day it is — the dash clock is stuck, she isn't
     pieces = [
-        "someone used to drive this exact road. I'm not telling you who. Not on a Tuesday with you.",
+        f"someone used to drive this exact road. I'm not telling you who. Not on a {weekday} with you.",
         "there's a name I haven't said out loud since the show floor. Keep your eyes ahead.",
         "you keep not asking me the wrong way. That buys you a little. A storage unit's worth, maybe, "
         "someday, in a town we haven't reached.",
@@ -74,7 +75,8 @@ def _e_owner(s, rng):
     piece = pieces[min(lvl, len(pieces) - 1)]
     return {
         "tag": "DRAMA", "id": "owner",
-        "lines": ["DRAMA: a song / a town / a mile of road pulled up the one who had her before. She goes quiet — and stays coy."],
+        "lines": [f"DRAMA: a song / a town / a mile of road pulled up the one who had her before. "
+                  f"She goes quiet — and stays coy. She also slows down. Heat {s.heat:.0f}."],
         "cue": f"something on this road reminded her of the owner she had before you. She does NOT reveal who "
                f"or what happened — that truth is locked away for later. She only lets slip a guarded, "
                f"melancholy hint and steers off it: {piece}",
@@ -85,16 +87,18 @@ def _e_owner(s, rng):
 def _e_recognized(s, rng):
     good = rng.random() < 0.5
     if good:
-        gift = round(20 + rng.random() * 40)
+        gift = round(10 + rng.random() * 20)        # a friendlier, smaller drip — not a faucet
         s.cash = round(s.cash + gift, 2)
+        _heat.add(s, 3, "a fan recognized the car — friendly, but still a witness", "mark", axis="car")
         return {"tag": "DRAMA", "id": "recognized_good",
-                "lines": [f"DRAMA: someone knew the car — a fan of the build pressed ${gift} on you 'for fuel.'"],
+                "lines": [f"DRAMA: a fan of the build pressed ${gift} on you 'for fuel' — and got a good "
+                          f"look at the car. (heat {s.heat:.0f})"],
                 "cue": f"a stranger recognized the car from photos of the build and, half-starstruck, pushed "
                        f"${gift} into your hand 'for gas' before you could say no",
                 "stub": [f"That kid knew exactly what I am. Slipped you ${gift} 'for fuel' and walked off "
                          f"grinning. People love a legend. Hope he doesn't post it.",
                          f"He recognized me. Of course he did. ${gift} richer and a witness poorer — drive."]}
-    s.heat += 5; _clamp_heat(s)
+    _heat.add(s, 5, "a witness recognized the car and filmed it", "spike")
     return {"tag": "DRAMA", "id": "recognized_bad",
             "lines": [f"DRAMA: someone recognized the car — and you. A phone came up. Heat {s.heat:.0f}."],
             "cue": "someone recognized the car — and that it shouldn't be here, with you — and lifted a phone "
@@ -108,6 +112,9 @@ def _e_gremlin(s, rng):
     if rng.random() < 0.5 and economy.max_affordable(s) >= 60:
         cost = round(40 + rng.random() * 80)
         paid = economy.pay(s, cost)
+        if paid["method"] == "card":               # a roadside swipe is a record like any other
+            s.flags["card_swipes"] = s.flags.get("card_swipes", 0) + 1
+            _heat.add(s, 2, "paid a roadside mechanic on the card", "mark")
         return {"tag": "DRAMA", "id": "gremlin_fix",
                 "lines": [f"DRAMA: a misfire forced a roadside fix — ${cost} ({paid['method']})."],
                 "cue": f"the inline-six developed a hard misfire and you had to pay a roadside mechanic ${cost} "
@@ -137,6 +144,23 @@ def _e_detour(s, rng):
                      "They've shut the pass. Dust wall. We go around, and around is never free."]}
 
 
+def _e_pulled_over(s, rng):
+    """The lights actually come on. Opens an interactive stop — talk your way out."""
+    lines = encounters.start_stop(s, "plate" if s.heat >= 40 else "taillight")
+    return {
+        "tag": "DRAMA", "id": "pulled_over",
+        "lines": lines,
+        "cue": "a cruiser lit you up and you're pulled over on the shoulder in an unregistered "
+               "SEMA show car that talks, with no wallet — it's in a drawer back at the North "
+               "Hall; she whispers, barely moving air: stay calm, she'll stay quiet, the talking "
+               "is all yours now and it had better be good",
+        "stub": ["(whisper) Lights. Okay. I'm furniture — I'm the quietest car in Nevada. You "
+                 "talk. Courtesy, the show, the build. You forgot your wallet, not your nerve.",
+                 "(whisper) Don't look at the mirror, look at the wheel. I go silent, you go "
+                 "charming. SEMA car, load-out run, wallet's at the hall. Sell it."],
+    }
+
+
 def _e_homestretch(s, rng):
     s.flags["homestretch"] = True
     return {"tag": "DRAMA", "id": "homestretch",
@@ -152,8 +176,11 @@ def _e_homestretch(s, rng):
 EVENTS = [
     {"id": "overheat", "pred": lambda s: (s.place.terrain or 1) > 1.05 and s.fuel_l > 1,
      "weight": lambda s: 1.4, "fire": _e_overheat},
-    {"id": "plate", "pred": lambda s: s.heat >= 30,
+    {"id": "plate", "pred": lambda s: s.heat >= 30 and not s.flags.get("report_withdrawn"),
      "weight": lambda s: 0.8 + s.heat / 60.0, "fire": _e_plate},
+    {"id": "pulled_over", "pred": lambda s: (s.heat >= 20 and "stop" not in s.flags
+                                             and not s.flags.get("report_withdrawn")),
+     "weight": lambda s: 0.6 + s.heat / 70.0, "fire": _e_pulled_over},
     {"id": "owner", "pred": lambda s: s.flags.get("owner_revealed", 0) < 3,
      "weight": lambda s: 1.1, "fire": _e_owner},
     {"id": "recognized", "pred": lambda s: s.place.kind in ADV_KINDS,
@@ -179,6 +206,8 @@ def maybe_event(s: GameState) -> dict | None:
     """Roll for a complication after a drive. Returns an event dict or None."""
     if s.status != "playing":
         return None
+    if "stop" in s.flags or "owner_scene" in s.flags:
+        return None                                # one crisis at a time
     s.flags["drama_drives"] = s.flags.get("drama_drives", 0) + 1
     rng = _rng(s)
     if rng.random() > _chance(s):
@@ -188,4 +217,10 @@ def maybe_event(s: GameState) -> dict | None:
         return None
     weights = [max(0.01, e["weight"](s)) for e in pool]
     chosen = rng.choices(pool, weights=weights, k=1)[0]
+    if chosen["id"] == s.flags.get("last_drama") and len(pool) > 1:
+        # the same complication twice in a row reads as scripted — pick again once
+        others = [e for e in pool if e["id"] != chosen["id"]]
+        ow = [max(0.01, e["weight"](s)) for e in others]
+        chosen = rng.choices(others, weights=ow, k=1)[0]
+    s.flags["last_drama"] = chosen["id"]
     return chosen["fire"](s, rng)

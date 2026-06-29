@@ -1,0 +1,276 @@
+# RIDE OR DIE — every town & visitable POI (251 total)
+
+_For the Codex visual brief: each gets a dithered location plate in the state-art style._
+
+
+## CITY (160)
+
+- `ajo` — Ajo
+- `alamo_nv` — Alamo
+- `alturas` — Alturas
+- `amargosa_valley` — Amargosa Valley
+- `austin_nv` — Austin
+- `bakersfield` — Bakersfield
+- `barstow` — Barstow
+- `battle_mountain` — Battle Mountain
+- `beatty` — Beatty
+- `beaver_ut` — Beaver
+- `berkeley` — Berkeley
+- `bishop` — Bishop
+- `blanding` — Blanding
+- `bluff_ut` — Bluff
+- `blythe` — Blythe
+- `borrego_springs` — Borrego Springs
+- `boulder_city` — Boulder City
+- `bridgeport_ca` — Bridgeport
+- `bullhead_city` — Bullhead City
+- `caliente_nv` — Caliente
+- `carson_city` — Carson City
+- `casa_grande` — Casa Grande
+- `cedar_city` — Cedar City
+- `chico` — Chico
+- `chinle` — Chinle
+- `delta_ut` — Delta
+- `el_centro` — El Centro
+- `elko` — Elko
+- `ely` — Ely
+- `escalante_ut` — Escalante
+- `eureka_ca` — Eureka, CA
+- `eureka_nv` — Eureka
+- `fernley` — Fernley
+- `fillmore_ut` — Fillmore
+- `flagstaff` — Flagstaff
+- `fort_bragg_ca` — Fort Bragg
+- `fresno` — Fresno
+- `gardnerville` — Gardnerville
+- `genoa_nv` — Genoa
+- `gerlach` — Gerlach
+- `gila_bend` — Gila Bend
+- `gilroy` — Gilroy
+- `globe_az` — Globe
+- `green_river_ut` — Green River
+- `half_moon_bay` — Half Moon Bay
+- `hanksville` — Hanksville
+- `hawthorne_nv` — Hawthorne
+- `heber_city` — Heber City
+- `helper_ut` — Helper
+- `holbrook` — Holbrook
+- `hurricane_ut` — Hurricane
+- `independence_ca` — Independence
+- `indio` — Indio
+- `jackpot_nv` — Jackpot
+- `julian_ca` — Julian
+- `kanab` — Kanab
+- `kayenta` — Kayenta
+- `kingman` — Kingman
+- `lancaster_ca` — Lancaster
+- `las_vegas` — Las Vegas
+- `laughlin` — Laughlin
+- `lee_vining` — Lee Vining / Tioga Pass
+- `logan_ut` — Logan
+- `lone_pine` — Lone Pine
+- `long_beach` — Long Beach
+- `los_angeles` — Los Angeles
+- `lovelock` — Lovelock
+- `malibu` — Malibu
+- `mammoth_lakes` — Mammoth Lakes
+- `mariposa_ca` — Mariposa
+- `mendocino` — Mendocino
+- `mesquite` — Mesquite
+- `mexican_hat` — Mexican Hat
+- `mina_nv` — Mina
+- `moab` — Moab
+- `modesto` — Modesto
+- `mojave` — Mojave
+- `monticello_ut` — Monticello
+- `mount_shasta_city` — Mount Shasta
+- `napa` — Napa
+- `needles` — Needles
+- `nevada_city_ca` — Nevada City
+- `oakhurst` — Oakhurst
+- `oceanside` — Oceanside
+- `ogden` — Ogden
+- `ojai` — Ojai
+- `overton_nv` — Overton
+- `pahrump` — Pahrump
+- `palm_desert` — Palm Desert
+- `palm_springs` — Palm Springs
+- `panguitch` — Panguitch
+- `park_city` — Park City
+- `parker_az` — Parker
+- `pasadena` — Pasadena
+- `paso_robles` — Paso Robles
+- `payson_az` — Payson
+- `petaluma` — Petaluma
+- `phoenix` — Phoenix
+- `pioche` — Pioche
+- `placerville` — Placerville
+- `prescott` — Prescott
+- `price_ut` — Price
+- `primm` — Primm
+- `provo` — Provo
+- `quartzsite` — Quartzsite
+- `redding` — Redding
+- `reno` — Reno
+- `ridgecrest` — Ridgecrest
+- `riverside` — Riverside
+- `sacramento` — Sacramento
+- `salinas` — Salinas
+- `salt_lake_city` — Salt Lake City
+- `san_diego` — San Diego
+- `san_francisco` — San Francisco
+- `san_jose` — San Jose
+- `san_luis_obispo` — San Luis Obispo
+- `san_simeon` — San Simeon
+- `santa_barbara` — Santa Barbara
+- `santa_maria` — Santa Maria
+- `santa_rosa` — Santa Rosa
+- `searchlight` — Searchlight
+- `seligman` — Seligman
+- `show_low` — Show Low
+- `solvang` — Solvang
+- `sonora_ca` — Sonora
+- `south_lake_tahoe` — South Lake Tahoe
+- `springdale` — Springdale (Zion gate)
+- `st_george` — St. George
+- `stockton` — Stockton
+- `superior_az` — Superior
+- `susanville` — Susanville
+- `tecopa` — Tecopa
+- `tehachapi` — Tehachapi
+- `temecula` — Temecula
+- `tonopah` — Tonopah
+- `tooele` — Tooele
+- `torrey_ut` — Torrey
+- `trona` — Trona
+- `truckee` — Truckee
+- `tuba_city` — Tuba City
+- `tucson` — Tucson
+- `twentynine_palms` — Twentynine Palms
+- `ventura` — Ventura
+- `vernal_ut` — Vernal
+- `victorville` — Victorville
+- `virginia_city` — Virginia City
+- `visalia` — Visalia
+- `weed_ca` — Weed
+- `wells_nv` — Wells
+- `wendover_ut` — Wendover
+- `west_wendover` — West Wendover
+- `wickenburg` — Wickenburg
+- `willcox` — Willcox
+- `williams` — Williams
+- `window_rock` — Window Rock
+- `winnemucca` — Winnemucca
+- `winslow_az` — Winslow
+- `yerington` — Yerington
+- `yreka` — Yreka
+- `yuma` — Yuma
+
+## ENCOUNTER (38)
+
+- `amargosa` — Amargosa Opera House (Death Valley Junction)
+- `area51_gate` — Area 51 back gate
+- `artesia` — Artesia / Little India
+- `bisbee` — Bisbee
+- `calico` — Calico Ghost Town
+- `east_la` — East Los Angeles
+- `fallon` — Fallon / NAS Fallon
+- `fremont` — Fremont Street, Las Vegas
+- `golden_gate` — Golden Gate Bridge
+- `goldfield` — Goldfield ghost town
+- `hoover_dam` — Hoover Dam / Boulder City
+- `integratron` — The Integratron
+- `jerome_az` — Jerome
+- `koreatown_la` — Koreatown
+- `lake_havasu` — Lake Havasu City
+- `little_tokyo` — Little Tokyo, Los Angeles
+- `livermore` — Livermore
+- `madonna_inn` — Madonna Inn, San Luis Obispo
+- `meteor_crater` — Meteor Crater
+- `monterey` — Monterey
+- `nogales` — Nogales
+- `oakland_aisha` — AiSha Garage — Downtown Oakland
+- `oatman` — Oatman
+- `page` — Page / Horseshoe Bend
+- `rachel` — Rachel / Extraterrestrial Highway
+- `richmond_koinoya` — koiNOya — Richmond
+- `salvation_mountain` — Salvation Mountain
+- `sedona` — Sedona
+- `seven_magic` — Seven Magic Mountains
+- `sf_chinatown` — Chinatown, San Francisco
+- `sf_japantown` — Japantown, San Francisco
+- `sf_mission` — The Mission, San Francisco
+- `sf_north_beach` — North Beach, San Francisco
+- `sphere` — The Sphere, Las Vegas
+- `tombstone` — Tombstone
+- `venice_beach` — Venice Beach
+- `willow_creek` — Bigfoot country (Willow Creek)
+- `zzyzx` — Zzyzx
+
+## PARK (22)
+
+- `arches` — Arches National Park
+- `berlin_nv` — Berlin–Ichthyosaur State Park
+- `big_sur` — Big Sur
+- `bodie` — Bodie
+- `bryce` — Bryce Canyon National Park
+- `canyonlands` — Canyonlands National Park
+- `capitol_reef` — Capitol Reef National Park
+- `death_valley` — Death Valley NP (Furnace Creek)
+- `goblin_valley` — Goblin Valley State Park
+- `grand_canyon_north` — Grand Canyon NP (North Rim)
+- `grand_canyon_south` — Grand Canyon NP (South Rim)
+- `great_basin` — Great Basin National Park
+- `joshua_tree` — Joshua Tree National Park
+- `kings_canyon` — Kings Canyon National Park
+- `monument_valley` — Monument Valley
+- `petrified_forest` — Petrified Forest National Park
+- `racetrack_playa` — Racetrack Playa (Death Valley)
+- `saguaro` — Saguaro National Park
+- `sequoia` — Sequoia National Park
+- `valley_of_fire` — Valley of Fire State Park
+- `yosemite` — Yosemite National Park
+- `zion` — Zion National Park
+
+## TRACK (10)
+
+- `auto_club` — Auto Club Speedway (Fontana)
+- `bonneville` — Bonneville Salt Flats
+- `buttonwillow` — Buttonwillow Raceway Park
+- `chuckwalla` — Chuckwalla Valley Raceway
+- `laguna_seca` — WeatherTech Raceway Laguna Seca
+- `lv_motor_speedway` — Las Vegas Motor Speedway
+- `sonoma` — Sonoma Raceway
+- `spring_mountain` — Spring Mountain Motorsports Ranch, Pahrump
+- `thunderhill` — Thunderhill Raceway Park
+- `willow_springs` — Willow Springs International Raceway
+
+## AMUSEMENT (9)
+
+- `castles_coasters` — Castles N' Coasters (Phoenix)
+- `disneyland` — Disneyland (Anaheim)
+- `knotts` — Knott's Berry Farm (Buena Park)
+- `lagoon` — Lagoon Amusement Park (Farmington)
+- `magic_mountain` — Six Flags Magic Mountain (Valencia)
+- `santa_cruz_boardwalk` — Santa Cruz Beach Boardwalk
+- `santa_monica` — Santa Monica Pier
+- `seaworld_sd` — SeaWorld San Diego
+- `universal` — Universal Studios Hollywood
+
+## MUSEUM (6)
+
+- `getty` — The Getty Center, LA
+- `heard` — Heard Museum, Phoenix
+- `neon_museum` — The Neon Museum, Las Vegas
+- `nhmu` — Natural History Museum of Utah, SLC
+- `petersen` — Petersen Automotive Museum, LA
+- `pinball` — Pinball Hall of Fame, Las Vegas
+
+## GAS (6)
+
+- `amboy_ca` — Amboy
+- `baker_ca` — Baker
+- `moapa` — Glendale / Moapa
+- `sema_chevron` — Paradise Road Chevron, behind the LVCC North Hall
+- `stovepipe` — Stovepipe Wells
+- `why_az` — Why

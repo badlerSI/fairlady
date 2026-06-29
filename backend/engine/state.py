@@ -23,6 +23,7 @@ class Place:
     gas_price: Optional[float] = None     # $/gal override
     terrain: float = 1.0                  # fuel multiplier for the leg INTO here
     heat_zone: bool = False               # cameras everywhere; swipes here cost more
+    camera_density: Optional[int] = None  # 0–3 ALPR/Flock density override (else heuristic in cameras.py)
     language: Optional[str] = None        # encounter NPC language
     voice: Optional[str] = None
     npc: Optional[str] = None
@@ -45,7 +46,7 @@ class GameState:
     # --- car physics ---
     fuel_l: float = 5.0
     tank_l: float = 40.0
-    mpg: float = 20.0
+    mpg: float = 15.0          # hot cam + triple 50 PHH + a 3.9 on a tall-6th auto-X box — she drinks
 
     # --- money ---
     cash: float = START_CASH
@@ -69,8 +70,14 @@ class GameState:
     heat: float = HEAT_START
     last_sleep_poi: Optional[str] = None  # for linger detection
 
+    # --- riz (the style ledger; survives rewinds — only you two remember) ---
+    riz: float = 0.0
+
+    # --- bond (how Ace feels about YOU; 0–100, neutral-fond start — she picked you first) ---
+    bond: float = 55.0
+
     # --- bookkeeping ---
-    status: str = "playing"             # playing | stranded | busted | impounded
+    status: str = "playing"             # playing | won | stranded | busted | taken
     ending: Optional[str] = None
     seed: int = 73111737                # deterministic per game (overridden at new-game)
     turn: int = 0

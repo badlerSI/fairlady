@@ -1,0 +1,8 @@
+[Unit]
+Description=Prune abandoned RIDE OR DIE web sessions
+
+[Service]
+Type=oneshot
+User=fairlady
+Group=fairlady
+ExecStart=/opt/fairlady/deploy/sweep-sessions.sh /opt/fairlady/data/saves 30
